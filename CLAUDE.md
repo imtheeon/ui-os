@@ -61,6 +61,13 @@ from an org whose `subscription_tier` doesn't entitle them to the feature
 that produced the payload — set this status instead of silently dropping
 the row, so there's always a record of the rejected request.
 
+> **TODO (email dedup, deferred to Phase 8 / Resend):** migration 0003
+> generalized `inbound_payloads` for file uploads and **dropped** the old
+> `UNIQUE` on `email_message_id` (it's email-specific and conflicts with NULL
+> upload rows). When the Resend inbound-email path lands, restore email
+> de-duplication with a partial unique index:
+> `CREATE UNIQUE INDEX inbound_payloads_email_msg_id_uniq ON inbound_payloads(email_message_id) WHERE source = 'email';`
+
 ## 4. Project layout
 
 ```

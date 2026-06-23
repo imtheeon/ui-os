@@ -13,7 +13,8 @@
     "db:check": "tsx src/connection-check.ts",
     "check:signup": "tsx src/check-signup.ts",
     "check:tier": "tsx src/check-tier-gate.ts",
-    "check:login": "tsx src/check-login.ts"
+    "check:login": "tsx src/check-login.ts",
+    "check:upload": "tsx src/check-upload.ts"
   },
   "keywords": [],
   "author": "",
