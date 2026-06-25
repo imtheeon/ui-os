@@ -31,6 +31,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { requireTierForAction } from "../tier-gate";
+import { enqueue } from "./queue";
 
 export const INBOUND_BUCKET = "inbound";
 export const DEFAULT_MAX_UPLOAD_BYTES = 25 * 1024 * 1024; // 25 MB
@@ -217,5 +218,12 @@ export async function finalizeUpload(
   if (updErr) return { ok: false, httpStatus: 500, code: "DB_ERROR", message: "could not update payload" };
 
   await writeAudit(db, orgId, "upload.finalized", { payloadId, actualSize, actualMime });
+
+  // Hand the now-'processing' upload to the async lifecycle (scan → parse).
+  // enqueue() only RECORDS the event and returns — it does not run handlers
+  // here, so finalize keeps its fast 'processing' contract. The sole producer
+  // of 'upload/finalized' is this line; orgId rides inside the trusted event.
+  enqueue({ name: "upload/finalized", data: { orgId, payloadId } });
+
   return { ok: true, payloadId, status: "processing" };
 }

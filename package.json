@@ -14,7 +14,10 @@
     "check:signup": "tsx src/check-signup.ts",
     "check:tier": "tsx src/check-tier-gate.ts",
     "check:login": "tsx src/check-login.ts",
-    "check:upload": "tsx src/check-upload.ts"
+    "check:upload": "tsx src/check-upload.ts",
+    "check:http": "tsx src/check-http-negative.ts",
+    "check:scan": "tsx src/check-scan.ts",
+    "check:parse": "tsx src/check-parse.ts"
   },
   "keywords": [],
   "author": "",
