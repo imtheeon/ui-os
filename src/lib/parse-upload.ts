@@ -168,7 +168,7 @@ async function writeAudit(
   if (error) console.error(`[parse] audit '${action}' failed: ${error.message}`);
 }
 
-function formatOf(mimeType: string | null, filename: string | null): "csv" | "pdf" | "other" {
+export function formatOf(mimeType: string | null, filename: string | null): "csv" | "pdf" | "other" {
   const ext = (filename ?? "").slice((filename ?? "").lastIndexOf(".") + 1).toLowerCase();
   if (mimeType === "text/csv" || ext === "csv") return "csv";
   if (mimeType === "application/pdf" || ext === "pdf") return "pdf";

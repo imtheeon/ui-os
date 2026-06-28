@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "../../src/lib/supabaseServer";
 import { resolveOrgFromSession } from "../../src/lib/resolveOrgFromSession";
 import { supabase as serviceClient } from "../../src/db";
+import UploadPanel from "./UploadPanel";
 
 export default async function DashboardPage() {
   // Read the session the browser stored in cookies.
@@ -44,6 +45,11 @@ export default async function DashboardPage() {
         Subscription tier: <strong>{org.subscription_tier}</strong>
       </p>
       <p style={styles.meta}>org_id (resolved server-side): {orgId}</p>
+
+      <section style={{ marginTop: "2.5rem" }}>
+        <h2 style={{ fontSize: "1.1rem" }}>Upload data</h2>
+        <UploadPanel />
+      </section>
     </main>
   );
 }
