@@ -234,5 +234,10 @@ export async function parseUpload(
     truncated: parsed.truncated,
   });
 
+  // Hand off to the Ruflo swarm (Phase 6): a completed payload is now eligible
+  // for Manager routing. Same queue seam as upload/finalized; orgId rides along.
+  const { enqueue } = await import("./queue");
+  enqueue({ name: "payload/completed", data: { orgId, payloadId } });
+
   return { ok: true, outcome: "parsed", rowCount: parsed.rowCount, truncated: parsed.truncated };
 }

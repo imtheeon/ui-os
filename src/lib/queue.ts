@@ -38,7 +38,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 /** The events that move a payload through its post-finalize lifecycle. */
 export type UiEvent =
   | { name: "upload/finalized"; data: { orgId: string; payloadId: string } }
-  | { name: "upload/scanned"; data: { orgId: string; payloadId: string } };
+  | { name: "upload/scanned"; data: { orgId: string; payloadId: string } }
+  | { name: "payload/completed"; data: { orgId: string; payloadId: string } }
+  | { name: "agent/run"; data: { orgId: string; payloadId: string; role: "accountant" | "analyst" } };
 
 export interface DrainDeps {
   /** Service-role client handed to every handler. */
@@ -71,9 +73,9 @@ export function resetQueue(): void {
 
 /**
  * Drain the queue: route each pending event to its handler until empty.
- * Handlers may enqueue follow-on events (scan → 'upload/scanned'); those are
- * picked up by later iterations of this same loop, so a single drainQueue()
- * call runs the whole chain.
+ * Handlers may enqueue follow-on events (scan → 'upload/scanned', parse →
+ * 'payload/completed', manager → 'agent/run'); those are picked up by later
+ * iterations of this same loop, so a single drainQueue() call runs the chain.
  *
  * Handlers are imported lazily to keep this module free of an import-time
  * cycle (scan-upload.ts imports `enqueue` from here).
@@ -90,6 +92,16 @@ export async function drainQueue(deps: DrainDeps): Promise<void> {
       case "upload/scanned": {
         const { parseUpload } = await import("./parse-upload");
         await parseUpload(event.data, { db: deps.db });
+        break;
+      }
+      case "payload/completed": {
+        const { routePayload } = await import("./manager");
+        await routePayload(event.data, { db: deps.db, enqueue });
+        break;
+      }
+      case "agent/run": {
+        const { runAgent } = await import("./run-agent");
+        await runAgent(event.data, { db: deps.db });
         break;
       }
     }

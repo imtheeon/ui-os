@@ -16,6 +16,7 @@ import { randomUUID } from "node:crypto";
 import { validateProposal } from "./lib/agent-actions";
 import { applyAction } from "./lib/executor";
 import type { AgentBrain } from "./lib/agent-brain";
+import type { UiEvent } from "./lib/queue";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: resolve(__dirname, "..", ".env.local"), quiet: true });
@@ -151,6 +152,30 @@ async function main() {
   ok("free tier wrote no proposals", (freeProps?.length ?? 0) === 0);
 
   for (const o of [orgB, orgC, orgFree]) await db.from("organizations").delete().eq("id", o);
+
+  console.log("== manager ==");
+  const { looksFinancial, routePayload } = await import("./lib/manager");
+  ok("looksFinancial true on amount", looksFinancial(["name", "Amount"]));
+  ok("looksFinancial false on plain", !looksFinancial(["name", "city"]));
+
+  const orgD = await makeOrg("pro");
+  const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
+  const enq: UiEvent[] = [];
+  const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
+  ok("financial routes to [accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["accountant", "analyst"]));
+  ok("two agent/run events enqueued", enq.length === 2 && enq.every((e) => e.name === "agent/run"));
+
+  // non-financial → analyst only
+  const { data: plainPayload } = await db.from("inbound_payloads").insert({
+    org_id: orgD, source: "upload", storage_path: `${orgD}/y/z.csv`, original_filename: "z.csv",
+    mime_type: "text/csv", scan_status: "clean", status: "completed",
+    extracted_json: { columns: ["name", "city"], rowCount: 1, rows: [["a", "b"]], truncated: false, parser: "static-mvp" },
+  }).select("id").single();
+  const enq2: UiEvent[] = [];
+  const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
+  ok("non-financial routes to [analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["analyst"]));
+
+  await db.from("organizations").delete().eq("id", orgD);
 
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
