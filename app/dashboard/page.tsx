@@ -12,6 +12,7 @@ import { supabaseServer } from "../../src/lib/supabaseServer";
 import { resolveOrgFromSession } from "../../src/lib/resolveOrgFromSession";
 import { supabase as serviceClient } from "../../src/db";
 import UploadPanel from "./UploadPanel";
+import ActionsPanel from "./ActionsPanel";
 
 export default async function DashboardPage() {
   // Read the session the browser stored in cookies.
@@ -49,6 +50,11 @@ export default async function DashboardPage() {
       <section style={{ marginTop: "2.5rem" }}>
         <h2 style={{ fontSize: "1.1rem" }}>Upload data</h2>
         <UploadPanel />
+      </section>
+
+      <section style={{ marginTop: "2.5rem" }}>
+        <h2 style={{ fontSize: "1.1rem" }}>Proposals awaiting approval</h2>
+        <ActionsPanel />
       </section>
     </main>
   );
