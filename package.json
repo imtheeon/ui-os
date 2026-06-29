@@ -17,7 +17,8 @@
     "check:upload": "tsx src/check-upload.ts",
     "check:http": "tsx src/check-http-negative.ts",
     "check:scan": "tsx src/check-scan.ts",
-    "check:parse": "tsx src/check-parse.ts"
+    "check:parse": "tsx src/check-parse.ts",
+    "scan": "bash scripts/secret-scan.sh"
   },
   "keywords": [],
   "author": "",
