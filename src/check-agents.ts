@@ -102,6 +102,13 @@ async function main() {
   // cleanup (cascades from org delete)
   await db.from("organizations").delete().eq("id", orgA);
 
+  console.log("== brain (stub) ==");
+  const { stubBrain } = await import("./lib/agent-brain");
+  const acc = await stubBrain.propose({ role: "accountant", columns: ["amount"], sampleRows: [["10"]], rowCount: 1 });
+  ok("stub accountant proposes a ledger entry", acc.proposals[0]?.kind === "record_ledger_entry" && acc.brain === "stub");
+  const ana = await stubBrain.propose({ role: "analyst", columns: ["x"], sampleRows: [["y"]], rowCount: 1 });
+  ok("stub analyst proposes a report", ana.proposals[0]?.kind === "store_report");
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }
