@@ -177,6 +177,29 @@ async function main() {
 
   await db.from("organizations").delete().eq("id", orgD);
 
+  console.log("== full chain (manager → agent/run handoff) ==");
+  const { resetQueue } = await import("./lib/queue");
+  const { runAgent: runAgent2 } = await import("./lib/run-agent");
+  const { stubBrain: sb2 } = await import("./lib/agent-brain");
+  const { routePayload: route3 } = await import("./lib/manager");
+  resetQueue();
+  const orgE = await makeOrg("pro");
+  const payloadE = await makePayload(orgE); // financial (amount col)
+
+  // Route via the Manager, capturing the enqueued agent/run events, then run
+  // each with the stub brain — proves routing + handoff without real tokens
+  // (drainQueue's agent/run case would use the real claudeBrain).
+  const captured: UiEvent[] = [];
+  await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
+  ok("manager enqueued accountant+analyst", captured.length === 2);
+  for (const e of captured) {
+    if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
+  }
+  const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
+  ok("chain produced 2 proposals (ledger + report)", chainProps?.length === 2);
+  await db.from("organizations").delete().eq("id", orgE);
+  resetQueue();
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }
