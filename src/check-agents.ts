@@ -200,6 +200,47 @@ async function main() {
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
+  console.log("== approval gate (service level) ==");
+  const { approveAction, rejectAction, listPending } = await import("./lib/actions-service");
+  const { runAgent: runAgent3 } = await import("./lib/run-agent");
+  const { stubBrain: sb3 } = await import("./lib/agent-brain");
+  const decider = randomUUID();
+
+  // approve → execute writes a record + flips to applied
+  const orgG = await makeOrg("pro");
+  const payloadG = await makePayload(orgG);
+  await runAgent3({ orgId: orgG, payloadId: payloadG, role: "accountant" }, { db, brain: sb3 });
+  const pendingG = await listPending(orgG, { db });
+  ok("listPending returns the pending action", pendingG.length === 1);
+  const appr = await approveAction(orgG, pendingG[0].id, decider, { db });
+  ok("approve writes ledger record", appr.ok && appr.recordTable === "ledger_entries", JSON.stringify(appr));
+  const { data: ledgerG } = await db.from("ledger_entries").select("org_id").eq("org_id", orgG);
+  ok("record exists, org-stamped", ledgerG?.length === 1 && ledgerG[0].org_id === orgG);
+  const { data: actG } = await db.from("proposed_actions").select("status").eq("id", pendingG[0].id).single();
+  ok("proposal flipped to applied", actG?.status === "applied");
+
+  // double-approve idempotency → exactly one record
+  const appr2 = await approveAction(orgG, pendingG[0].id, decider, { db });
+  ok("second approve is no-op", !appr2.ok && appr2.code === "NOT_FOUND");
+  const { data: ledgerG2 } = await db.from("ledger_entries").select("id").eq("org_id", orgG);
+  ok("still exactly one record", ledgerG2?.length === 1);
+
+  // cross-org approve is a 404 (can't approve another org's action)
+  const orgH = await makeOrg("pro");
+  const payloadH = await makePayload(orgH);
+  await runAgent3({ orgId: orgH, payloadId: payloadH, role: "analyst" }, { db, brain: sb3 });
+  const pendingH = await listPending(orgH, { db });
+  const crossApprove = await approveAction(orgG, pendingH[0].id, decider, { db });
+  ok("cannot approve another org's action", !crossApprove.ok && crossApprove.code === "NOT_FOUND");
+
+  // reject → no record, status rejected
+  const rej = await rejectAction(orgH, pendingH[0].id, decider, { db });
+  ok("reject ok", rej.ok);
+  const { data: reportsH } = await db.from("analyst_reports").select("id").eq("org_id", orgH);
+  ok("reject wrote no record", (reportsH?.length ?? 0) === 0);
+
+  for (const o of [orgG, orgH]) await db.from("organizations").delete().eq("id", o);
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }
