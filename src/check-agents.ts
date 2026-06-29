@@ -15,6 +15,7 @@ import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { validateProposal } from "./lib/agent-actions";
 import { applyAction } from "./lib/executor";
+import type { AgentBrain } from "./lib/agent-brain";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 loadEnv({ path: resolve(__dirname, "..", ".env.local"), quiet: true });
@@ -108,6 +109,48 @@ async function main() {
   ok("stub accountant proposes a ledger entry", acc.proposals[0]?.kind === "record_ledger_entry" && acc.brain === "stub");
   const ana = await stubBrain.propose({ role: "analyst", columns: ["x"], sampleRows: [["y"]], rowCount: 1 });
   ok("stub analyst proposes a report", ana.proposals[0]?.kind === "store_report");
+
+  console.log("== runAgent ==");
+  const { runAgent } = await import("./lib/run-agent");
+  const { stubBrain: sb } = await import("./lib/agent-brain");
+
+  // proposals land pending + org-stamped
+  const orgB = await makeOrg("pro");
+  const payloadB = await makePayload(orgB);
+  const r1 = await runAgent({ orgId: orgB, payloadId: payloadB, role: "accountant" }, { db, brain: sb });
+  ok("runAgent ok", r1.ok && r1.proposalCount === 1, JSON.stringify(r1));
+  const { data: pendB } = await db.from("proposed_actions").select("org_id,status,kind").eq("org_id", orgB);
+  ok("proposal is pending + org-stamped", pendB?.length === 1 && pendB[0].status === "pending" && pendB[0].org_id === orgB);
+
+  // org scoping: org C cannot see org B's proposals via a scoped read
+  const orgC = await makeOrg("pro");
+  const { data: seenByC } = await db.from("proposed_actions").select("id").eq("org_id", orgC).eq("payload_id", payloadB);
+  ok("org C sees none of org B's proposals", (seenByC?.length ?? 0) === 0);
+
+  // identity integrity: stub brain that injects a foreign org_id in payload
+  const evilBrain: AgentBrain = { async propose() { return { brain: "stub", inputTokens: 0, outputTokens: 0,
+    proposals: [{ kind: "store_report", action_payload: { title: "t", body: "b", org_id: orgC }, rationale: "r" }] }; } };
+  const payloadB2 = await makePayload(orgB);
+  await runAgent({ orgId: orgB, payloadId: payloadB2, role: "analyst" }, { db, brain: evilBrain });
+  const { data: evilRows } = await db.from("proposed_actions").select("org_id").eq("payload_id", payloadB2);
+  ok("model-supplied org_id ignored; row stamped with event org", evilRows?.every((r) => r.org_id === orgB) ?? false);
+
+  // injection smoke: unknown kind → rejected, no row
+  const badBrain: AgentBrain = { async propose() { return { brain: "stub", inputTokens: 0, outputTokens: 0,
+    proposals: [{ kind: "wire_money", action_payload: { to: "attacker" }, rationale: "x" }] }; } };
+  const payloadB3 = await makePayload(orgB);
+  const r2 = await runAgent({ orgId: orgB, payloadId: payloadB3, role: "accountant" }, { db, brain: badBrain });
+  ok("unknown kind produces zero proposals", r2.ok && r2.proposalCount === 0);
+
+  // tier gate: free org → skipped_tier, no proposals
+  const orgFree = await makeOrg("free");
+  const payloadF = await makePayload(orgFree);
+  const rf = await runAgent({ orgId: orgFree, payloadId: payloadF, role: "accountant" }, { db, brain: sb });
+  ok("free tier skipped", rf.ok && rf.skippedTier === true && rf.proposalCount === 0);
+  const { data: freeProps } = await db.from("proposed_actions").select("id").eq("org_id", orgFree);
+  ok("free tier wrote no proposals", (freeProps?.length ?? 0) === 0);
+
+  for (const o of [orgB, orgC, orgFree]) await db.from("organizations").delete().eq("id", o);
 
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
