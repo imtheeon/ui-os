@@ -128,6 +128,16 @@ export const stubBrain: AgentBrain = {
         }],
       };
     }
+    if (ctx.role === "anomaly_detector") {
+      return {
+        brain: "stub", inputTokens: 0, outputTokens: 0,
+        proposals: [{
+          kind: "flag_anomaly",
+          action_payload: { description: "Stub anomaly", severity: "low", row_reference: "row 1" },
+          rationale: "stub: always flags one",
+        }],
+      };
+    }
     return {
       brain: "stub", inputTokens: 0, outputTokens: 0,
       proposals: [{

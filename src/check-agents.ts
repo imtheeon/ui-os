@@ -246,6 +246,25 @@ async function main() {
 
   for (const o of [orgG, orgH]) await db.from("organizations").delete().eq("id", o);
 
+  console.log("== anomaly detector ==");
+  ok("flag_anomaly accepts good", validateProposal("flag_anomaly", { description: "Outlier value 9e9", severity: "high", row_reference: "row 7" }).ok);
+  ok("flag_anomaly rejects bad severity", !validateProposal("flag_anomaly", { description: "x", severity: "critical", row_reference: "row 1" }).ok);
+  ok("anomaly_detector → haiku model", (await import("./lib/agent-brain")).modelForRole("anomaly_detector") === "claude-haiku-4-5");
+
+  const { runAgent: runAgentAn } = await import("./lib/run-agent");
+  const { stubBrain: sbAn } = await import("./lib/agent-brain");
+  const { approveAction: approveAn, listPending: listAn } = await import("./lib/actions-service");
+  const orgAn = await makeOrg("pro");
+  const payloadAn = await makePayload(orgAn);
+  const rAn = await runAgentAn({ orgId: orgAn, payloadId: payloadAn, role: "anomaly_detector" }, { db, brain: sbAn });
+  ok("anomaly run produced a flag", rAn.ok && rAn.proposalCount === 1);
+  const pendAn = await listAn(orgAn, { db });
+  const apprAn = await approveAn(orgAn, pendAn[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes flagged_anomalies", apprAn.ok && apprAn.recordTable === "flagged_anomalies", JSON.stringify(apprAn));
+  const { data: anRows } = await db.from("flagged_anomalies").select("org_id,severity").eq("org_id", orgAn);
+  ok("anomaly record org-stamped", anRows?.length === 1 && anRows[0].org_id === orgAn);
+  await db.from("organizations").delete().eq("id", orgAn);
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }
