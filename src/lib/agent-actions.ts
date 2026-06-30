@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -42,6 +42,16 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       kind: "record_ledger_entry",
       payload: { description, amount_cents: amount, direction, occurred_on },
     };
+  }
+
+  if (kind === "flag_anomaly") {
+    const description = str(p.description);
+    const severity = p.severity === "low" || p.severity === "medium" || p.severity === "high" ? p.severity : null;
+    const row_reference = str(p.row_reference);
+    if (!description) return { ok: false, reason: "missing_description" };
+    if (!severity) return { ok: false, reason: "bad_severity" };
+    if (!row_reference) return { ok: false, reason: "missing_row_reference" };
+    return { ok: true, kind: "flag_anomaly", payload: { description, severity, row_reference } };
   }
 
   // store_report
