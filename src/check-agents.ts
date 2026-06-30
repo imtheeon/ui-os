@@ -265,6 +265,33 @@ async function main() {
   ok("anomaly record org-stamped", anRows?.length === 1 && anRows[0].org_id === orgAn);
   await db.from("organizations").delete().eq("id", orgAn);
 
+  console.log("== categorizer ==");
+  ok("categorize_items accepts good", validateProposal("categorize_items", {
+    scheme: "expense_type", assignments: [{ row_reference: "row 1", category: "travel" }],
+  }).ok);
+  ok("categorize_items rejects missing scheme", !validateProposal("categorize_items", {
+    scheme: "", assignments: [],
+  }).ok);
+  ok("categorize_items accepts empty assignments", validateProposal("categorize_items", {
+    scheme: "product_line", assignments: [],
+  }).ok);
+  ok("categorizer → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("categorizer") === "claude-haiku-4-5");
+
+  const { runAgent: runAgentCat } = await import("./lib/run-agent");
+  const { stubBrain: sbCat } = await import("./lib/agent-brain");
+  const { approveAction: approveCat, listPending: listCat } = await import("./lib/actions-service");
+  const orgCat = await makeOrg("pro");
+  const payloadCat = await makePayload(orgCat);
+  const rCat = await runAgentCat({ orgId: orgCat, payloadId: payloadCat, role: "categorizer" }, { db, brain: sbCat });
+  ok("categorizer run produced a categorization", rCat.ok && rCat.proposalCount === 1);
+  const pendCat = await listCat(orgCat, { db });
+  const apprCat = await approveCat(orgCat, pendCat[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes categorization_runs", apprCat.ok && apprCat.recordTable === "categorization_runs", JSON.stringify(apprCat));
+  const { data: catRows } = await db.from("categorization_runs").select("org_id,scheme").eq("org_id", orgCat);
+  ok("categorization record org-stamped", catRows?.length === 1 && catRows[0].org_id === orgCat);
+  await db.from("organizations").delete().eq("id", orgCat);
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }

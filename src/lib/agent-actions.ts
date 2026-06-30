@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -52,6 +52,22 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
     if (!severity) return { ok: false, reason: "bad_severity" };
     if (!row_reference) return { ok: false, reason: "missing_row_reference" };
     return { ok: true, kind: "flag_anomaly", payload: { description, severity, row_reference } };
+  }
+
+  if (kind === "categorize_items") {
+    const scheme = str(p.scheme);
+    if (!scheme) return { ok: false, reason: "missing_scheme" };
+    if (!Array.isArray(p.assignments)) return { ok: false, reason: "assignments_not_array" };
+    const MAX_ASSIGNMENTS = 50;
+    const raw = (p.assignments as unknown[]).slice(0, MAX_ASSIGNMENTS);
+    const assignments: { row_reference: string; category: string }[] = [];
+    for (const a of raw) {
+      if (typeof a !== "object" || a === null) continue;
+      const rr = str((a as Record<string, unknown>).row_reference);
+      const cat = str((a as Record<string, unknown>).category);
+      if (rr && cat) assignments.push({ row_reference: rr, category: cat });
+    }
+    return { ok: true, kind: "categorize_items", payload: { scheme, assignments } };
   }
 
   // store_report
