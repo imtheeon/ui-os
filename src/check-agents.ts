@@ -167,8 +167,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["accountant", "analyst"]));
-  ok("two agent/run events enqueued", enq.length === 2 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "accountant", "analyst"]));
+  ok("three agent/run events enqueued", enq.length === 3 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -178,7 +178,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["analyst"]));
+  ok("non-financial routes to [anomaly_detector, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -196,12 +196,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued accountant+analyst", captured.length === 2);
+  ok("manager enqueued anomaly_detector+accountant+analyst", captured.length === 3);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 2 proposals (ledger + report)", chainProps?.length === 2);
+  ok("chain produced 3 proposals (anomaly + ledger + report)", chainProps?.length === 3);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
