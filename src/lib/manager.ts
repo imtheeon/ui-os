@@ -37,7 +37,7 @@ export async function routePayload(
   if (!row || row.status !== "completed") return { ok: false, code: "NOT_ELIGIBLE" };
 
   const columns = ((row.extracted_json as { columns?: string[] } | null)?.columns) ?? [];
-  const plan: LLMRole[] = ["anomaly_detector"];
+  const plan: LLMRole[] = ["anomaly_detector", "categorizer"];
   if (looksFinancial(columns)) plan.push("accountant");
   plan.push("analyst"); // always
 
