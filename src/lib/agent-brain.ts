@@ -18,8 +18,13 @@ export interface AgentProposal {
   action_payload: Record<string, unknown>;
   rationale: string;
 }
+/** Every role recorded in agent_runs.role (incl. the deterministic Manager). */
+export type AgentRole = "manager" | "accountant" | "analyst";
+/** Roles that actually call a model (Manager is deterministic — brain: null). */
+export type LLMRole = Exclude<AgentRole, "manager">;
+
 export interface AgentContext {
-  role: "accountant" | "analyst";
+  role: LLMRole;
   columns: string[];
   sampleRows: string[][];
   rowCount: number;
@@ -34,12 +39,25 @@ export interface AgentBrain {
   propose(ctx: AgentContext): Promise<BrainResult>;
 }
 
-const MODEL_BY_ROLE = {
-  accountant: "claude-haiku-4-5",
-  analyst: "claude-sonnet-4-6",
+/** ONE place a tier maps to a concrete model id. Swap a tier here = every role on that tier moves together. */
+const TIER_MODEL = {
+  haiku:  "claude-haiku-4-5",   // simple classification
+  sonnet: "claude-sonnet-4-6",  // moderate reasoning
+  opus:   "claude-opus-4-8",    // complex judgment (reserved; no role yet)
 } as const;
+type ModelTier = keyof typeof TIER_MODEL;
 
-const SYSTEM_BY_ROLE: Record<AgentContext["role"], string> = {
+/** Each LLM role declares its tier explicitly. Add a role = add one line. */
+const ROLE_TIER: Record<LLMRole, ModelTier> = {
+  accountant: "haiku",
+  analyst:    "sonnet",
+};
+
+export function modelForRole(role: LLMRole): string {
+  return TIER_MODEL[ROLE_TIER[role]];
+}
+
+const SYSTEM_BY_ROLE: Record<LLMRole, string> = {
   accountant:
     "You are the Accountant agent in the U-I-OS Ruflo swarm. You review a BOUNDED, " +
     "UNTRUSTED sample of user-uploaded tabular data and propose bookkeeping actions. " +
@@ -117,7 +135,7 @@ export const claudeBrain: AgentBrain = {
   async propose(ctx) {
     const { default: Anthropic } = await import("@anthropic-ai/sdk");
     const client = new Anthropic(); // reads ANTHROPIC_API_KEY (server-only)
-    const model = MODEL_BY_ROLE[ctx.role];
+    const model = modelForRole(ctx.role);
     const resp = await client.messages.create({
       model,
       max_tokens: 2048,

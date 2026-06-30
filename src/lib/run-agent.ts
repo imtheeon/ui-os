@@ -14,7 +14,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { validateProposal } from "./agent-actions";
-import type { AgentBrain } from "./agent-brain";
+import type { AgentBrain, LLMRole } from "./agent-brain";
 
 const PAID_TIERS = new Set(["pro", "enterprise"]);
 const DEFAULT_SAMPLE_LIMIT = 20; // bounded projection into the prompt
@@ -23,7 +23,7 @@ type RunOk = { ok: true; runId: string; proposalCount: number; skippedTier?: boo
 type RunErr = { ok: false; code: string; message: string };
 
 export async function runAgent(
-  params: { orgId: string; payloadId: string; role: "accountant" | "analyst" },
+  params: { orgId: string; payloadId: string; role: LLMRole },
   deps?: { db?: SupabaseClient; brain?: AgentBrain; sampleLimit?: number }
 ): Promise<RunOk | RunErr> {
   const { orgId, payloadId, role } = params;

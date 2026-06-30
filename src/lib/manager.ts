@@ -6,6 +6,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UiEvent } from "./queue";
+import type { LLMRole } from "./agent-brain";
 
 const FINANCE_LEXICON = [
   "amount", "total", "price", "cost", "revenue", "debit", "credit",
@@ -23,7 +24,7 @@ export function looksFinancial(columns: string[]): boolean {
 export async function routePayload(
   params: { orgId: string; payloadId: string },
   deps?: { db?: SupabaseClient; enqueue?: (e: UiEvent) => void }
-): Promise<{ ok: true; plan: ("accountant" | "analyst")[] } | { ok: false; code: string }> {
+): Promise<{ ok: true; plan: LLMRole[] } | { ok: false; code: string }> {
   const { orgId, payloadId } = params;
   const db = deps?.db ?? (await import("../db")).supabase;
   const enqueue = deps?.enqueue ?? (await import("./queue")).enqueue;
@@ -36,7 +37,7 @@ export async function routePayload(
   if (!row || row.status !== "completed") return { ok: false, code: "NOT_ELIGIBLE" };
 
   const columns = ((row.extracted_json as { columns?: string[] } | null)?.columns) ?? [];
-  const plan: ("accountant" | "analyst")[] = [];
+  const plan: LLMRole[] = [];
   if (looksFinancial(columns)) plan.push("accountant");
   plan.push("analyst"); // always
 

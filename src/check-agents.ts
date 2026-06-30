@@ -104,6 +104,11 @@ async function main() {
   // cleanup (cascades from org delete)
   await db.from("organizations").delete().eq("id", orgA);
 
+  console.log("== model tiers ==");
+  const { modelForRole } = await import("./lib/agent-brain");
+  ok("accountant → haiku model", modelForRole("accountant") === "claude-haiku-4-5");
+  ok("analyst → sonnet model", modelForRole("analyst") === "claude-sonnet-4-6");
+
   console.log("== brain (stub) ==");
   const { stubBrain } = await import("./lib/agent-brain");
   const acc = await stubBrain.propose({ role: "accountant", columns: ["amount"], sampleRows: [["10"]], rowCount: 1 });

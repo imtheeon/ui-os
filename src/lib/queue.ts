@@ -34,13 +34,14 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { LLMRole } from "./agent-brain";
 
 /** The events that move a payload through its post-finalize lifecycle. */
 export type UiEvent =
   | { name: "upload/finalized"; data: { orgId: string; payloadId: string } }
   | { name: "upload/scanned"; data: { orgId: string; payloadId: string } }
   | { name: "payload/completed"; data: { orgId: string; payloadId: string } }
-  | { name: "agent/run"; data: { orgId: string; payloadId: string; role: "accountant" | "analyst" } };
+  | { name: "agent/run"; data: { orgId: string; payloadId: string; role: LLMRole } };
 
 export interface DrainDeps {
   /** Service-role client handed to every handler. */
