@@ -121,3 +121,20 @@ This foundation was validated end-to-end before being handed off:
   the intended descriptive error (not a crash, not a TS error).
 - The module was also smoke-tested with placeholder env vars present and
   confirmed to export a working `supabase` client instance.
+
+## Autonomous Build Rules — U-I-OS
+
+Proceed autonomously through all steps without stopping EXCEPT:
+- Migration needs applying in Supabase — show SQL, say "apply this and tell me when done"
+- typecheck fails after 2 fix attempts — stop and report
+- check:agents fails — stop and report
+- Before any git push — always confirm with user first
+- Real architectural decision needed — present options, wait
+
+For everything else: create files, edit code, run tests, fix errors, commit — proceed without asking.
+
+Always before committing: typecheck exit 0 + check:agents passing.
+Secret scan before every push.
+Never import executor.ts from agent code paths.
+org_id always code-owned, never from LLM output.
+stubBrain for all tests — zero real tokens.
