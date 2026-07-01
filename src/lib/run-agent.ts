@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { validateProposal } from "./agent-actions";
 import type { AgentBrain, LLMRole } from "./agent-brain";
+import { getOrgContext } from "./org-context";
 
 const PAID_TIERS = new Set(["pro", "enterprise"]);
 const DEFAULT_SAMPLE_LIMIT = 20; // bounded projection into the prompt
@@ -68,11 +69,13 @@ export async function runAgent(
 
   try {
     // 4. Bounded, org-scoped projection → brain. Model never sees org_id.
+    const { contextBlock } = await getOrgContext(orgId, { db });
     const result = await brain.propose({
       role,
       columns: ej.columns ?? [],
       sampleRows: (ej.rows ?? []).slice(0, sampleLimit),
       rowCount: ej.rowCount ?? 0,
+      orgContext: contextBlock,
     });
 
     // 5. Validate each proposal in CODE; code stamps org_id on every row.
@@ -86,14 +89,14 @@ export async function runAgent(
         });
         continue;
       }
-      const { error: insErr } = await db.from("proposed_actions").insert({
+      const { data: inserted, error: insErr } = await db.from("proposed_actions").insert({
         org_id: orgId, // CODE-OWNED — model's payload cannot set this
         payload_id: payloadId, agent_run_id: runId,
         kind: v.kind, action_payload: v.payload,
         rationale: typeof p.rationale === "string" ? p.rationale.slice(0, 2000) : "",
         status: "pending",
-      });
-      if (!insErr) written++;
+      }).select("id").single();
+      if (!insErr && inserted) written++;
     }
 
     await db.from("agent_runs").update({

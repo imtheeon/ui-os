@@ -316,6 +316,22 @@ async function main() {
     await db.from("organizations").delete().eq("id", orgId);
   }
 
+  // Task 3: runAgent succeeds with org memory context (no crash, context injected)
+  {
+    const { runAgent: runAgentCtx } = await import("./lib/run-agent");
+    const { stubBrain: sbCtx } = await import("./lib/agent-brain");
+    const orgCtx = await makeOrg("pro");
+    const payCtx = await makePayload(orgCtx);
+    await db.from("org_memory").insert({
+      org_id: orgCtx, memory_type: "spend_baseline", memory_key: "ledger:debit",
+      memory_value: { description: "past entry", amount_cents: 500, direction: "debit" },
+      confidence_score: 0.4, times_confirmed: 2, source_agent: "accountant",
+    });
+    const rCtx = await runAgentCtx({ orgId: orgCtx, payloadId: payCtx, role: "analyst" }, { db, brain: sbCtx });
+    ok("runAgent succeeds when org has memory context", rCtx.ok === true);
+    await db.from("organizations").delete().eq("id", orgCtx);
+  }
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }
