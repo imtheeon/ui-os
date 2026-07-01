@@ -332,6 +332,73 @@ async function main() {
     await db.from("organizations").delete().eq("id", orgCtx);
   }
 
+  console.log("== memory extractor ==");
+  {
+    const { extractMemory } = await import("./lib/memory-extractor");
+
+    const ledgerExtract = extractMemory(
+      { id: "id1", kind: "record_ledger_entry",
+        action_payload: { description: "Office supplies", amount_cents: 1299, direction: "debit" } },
+      "accountant"
+    );
+    ok("extractMemory ledger → spend_baseline",
+      ledgerExtract.length === 1 &&
+      ledgerExtract[0].memory_type === "spend_baseline" &&
+      ledgerExtract[0].memory_key === "ledger:debit");
+
+    const catExtract = extractMemory(
+      { id: "id2", kind: "categorize_items",
+        action_payload: { scheme: "vendor", assignments: [
+          { row_reference: "r1", category: "Office" },
+          { row_reference: "r2", category: "Travel" },
+          { row_reference: "r3", category: "Office" },
+        ] } },
+      "categorizer"
+    );
+    ok("extractMemory categorize → vendor_category with deduped top_categories",
+      catExtract.length === 1 &&
+      catExtract[0].memory_type === "vendor_category" &&
+      catExtract[0].memory_key === "scheme:vendor" &&
+      JSON.stringify((catExtract[0].memory_value as { top_categories: string[] }).top_categories) ===
+        JSON.stringify(["Office", "Travel"]));
+
+    const reportExtract = extractMemory(
+      { id: "id3", kind: "store_report", action_payload: { title: "Q", body: "B" } },
+      "analyst"
+    );
+    ok("extractMemory store_report → empty", reportExtract.length === 0);
+  }
+
+  console.log("== approval policy ==");
+  {
+    const { shouldAutoApprove } = await import("./lib/approval-policy");
+    ok("shouldAutoApprove false below threshold",
+      !shouldAutoApprove({ kind: "record_ledger_entry" }, { confidence_score: 0.8, times_confirmed: 15 }));
+    ok("shouldAutoApprove true at threshold",
+      shouldAutoApprove({ kind: "record_ledger_entry" }, { confidence_score: 0.9, times_confirmed: 10 }));
+  }
+
+  console.log("== memory upsert (approve gate) ==");
+  {
+    const { approveAction } = await import("./lib/actions-service");
+    const { stubBrain: sbMem } = await import("./lib/agent-brain");
+    const { runAgent: runMem } = await import("./lib/run-agent");
+
+    const orgMem = await makeOrg("pro");
+    const payMem = await makePayload(orgMem);
+    await runMem({ orgId: orgMem, payloadId: payMem, role: "accountant" }, { db, brain: sbMem });
+    const { data: pendMem } = await db.from("proposed_actions").select("id").eq("org_id", orgMem).eq("status", "pending");
+    const memActionId = pendMem?.[0]?.id as string;
+    await approveAction(orgMem, memActionId, randomUUID(), { db });
+    const { data: memRow } = await db.from("org_memory").select("memory_type,confidence_score").eq("org_id", orgMem).maybeSingle();
+    ok("approveAction writes org_memory entry",
+      memRow?.memory_type === "spend_baseline" && (memRow.confidence_score as number) >= 0.6);
+    const { data: accRow } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgMem).maybeSingle();
+    ok("approveAction writes agent_accuracy entry",
+      accRow?.agent_role === "accountant" && (accRow.approved_count as number) >= 1);
+    await db.from("organizations").delete().eq("id", orgMem);
+  }
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }
