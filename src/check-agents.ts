@@ -399,6 +399,55 @@ async function main() {
     await db.from("organizations").delete().eq("id", orgMem);
   }
 
+  console.log("== auto-approval ==");
+  {
+    const { runAgent: runAA } = await import("./lib/run-agent");
+    const { stubBrain: sbAA } = await import("./lib/agent-brain");
+
+    // Seed an org with memory at threshold → auto-approval should fire
+    const orgAA = await makeOrg("pro");
+    const payAA = await makePayload(orgAA);
+    // Insert a spend_baseline memory entry at the auto-approve threshold
+    await db.from("org_memory").insert({
+      org_id: orgAA, memory_type: "spend_baseline", memory_key: "ledger:debit",
+      memory_value: { description: "Stub entry", amount_cents: 1000, direction: "debit" },
+      confidence_score: 0.9, times_confirmed: 10, source_agent: "accountant",
+    });
+    const rAA = await runAA({ orgId: orgAA, payloadId: payAA, role: "accountant" }, { db, brain: sbAA });
+    ok("runAgent auto-approval: run succeeded", rAA.ok === true);
+    // The proposal should have been auto-applied (status = applied, not pending)
+    const { data: propsAA } = await db.from("proposed_actions").select("status").eq("org_id", orgAA);
+    ok("auto-approved proposal is applied (not pending)", propsAA?.length === 1 && propsAA[0].status === "applied");
+    // A ledger entry should exist
+    const { data: ledgerAA } = await db.from("ledger_entries").select("id").eq("org_id", orgAA);
+    ok("auto-approval wrote ledger entry", (ledgerAA?.length ?? 0) >= 1);
+    // Audit log should contain approval.auto_approved
+    const { data: auditAA } = await db.from("system_audit_logs")
+      .select("action").eq("org_id", orgAA).eq("action", "approval.auto_approved");
+    ok("auto-approval wrote audit log entry", (auditAA?.length ?? 0) >= 1);
+
+    // Below threshold → stays pending
+    const orgBT = await makeOrg("pro");
+    const payBT = await makePayload(orgBT);
+    await db.from("org_memory").insert({
+      org_id: orgBT, memory_type: "spend_baseline", memory_key: "ledger:debit",
+      memory_value: { description: "Stub entry", amount_cents: 1000, direction: "debit" },
+      confidence_score: 0.8, times_confirmed: 10, source_agent: "accountant",
+    });
+    await runAA({ orgId: orgBT, payloadId: payBT, role: "accountant" }, { db, brain: sbAA });
+    const { data: propsBT } = await db.from("proposed_actions").select("status").eq("org_id", orgBT);
+    ok("below-threshold proposal stays pending", propsBT?.length === 1 && propsBT[0].status === "pending");
+
+    // No memory → stays pending (cold start)
+    const orgNM = await makeOrg("pro");
+    const payNM = await makePayload(orgNM);
+    await runAA({ orgId: orgNM, payloadId: payNM, role: "accountant" }, { db, brain: sbAA });
+    const { data: propsNM } = await db.from("proposed_actions").select("status").eq("org_id", orgNM);
+    ok("no-memory proposal stays pending", propsNM?.length === 1 && propsNM[0].status === "pending");
+
+    for (const o of [orgAA, orgBT, orgNM]) await db.from("organizations").delete().eq("id", o);
+  }
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
 }

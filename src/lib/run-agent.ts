@@ -13,12 +13,47 @@
  * status='skipped_tier', no proposals (the entitlement check + the cost control).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomUUID } from "node:crypto";
 import { validateProposal } from "./agent-actions";
 import type { AgentBrain, LLMRole } from "./agent-brain";
 import { getOrgContext } from "./org-context";
+import { extractMemory } from "./memory-extractor";
+import { shouldAutoApprove } from "./approval-policy";
+import { approveAction } from "./actions-service";
 
 const PAID_TIERS = new Set(["pro", "enterprise"]);
 const DEFAULT_SAMPLE_LIMIT = 20; // bounded projection into the prompt
+
+async function tryAutoApprove(
+  db: SupabaseClient,
+  orgId: string,
+  actionId: string,
+  kind: string,
+  payload: Record<string, unknown>,
+  sourceAgent: string
+): Promise<void> {
+  const extracts = extractMemory({ id: actionId, kind, action_payload: payload }, sourceAgent);
+  if (extracts.length === 0) return;
+
+  // Check each relevant memory key; auto-approve if any meets the threshold.
+  for (const mu of extracts) {
+    const { data: entry } = await db.from("org_memory")
+      .select("confidence_score, times_confirmed")
+      .eq("org_id", orgId).eq("memory_type", mu.memory_type).eq("memory_key", mu.memory_key)
+      .maybeSingle();
+    if (!entry) continue;
+    if (shouldAutoApprove({ kind }, entry as { confidence_score: number; times_confirmed: number })) {
+      const result = await approveAction(orgId, actionId, randomUUID(), { db });
+      if (result.ok) {
+        await db.from("system_audit_logs").insert({
+          org_id: orgId, action: "approval.auto_approved",
+          log_meta: { actionId, kind, memoryKey: mu.memory_key, memoryType: mu.memory_type },
+        });
+      }
+      return; // Only one auto-approval attempt per proposal.
+    }
+  }
+}
 
 type RunOk = { ok: true; runId: string; proposalCount: number; skippedTier?: boolean };
 type RunErr = { ok: false; code: string; message: string };
@@ -96,7 +131,15 @@ export async function runAgent(
         rationale: typeof p.rationale === "string" ? p.rationale.slice(0, 2000) : "",
         status: "pending",
       }).select("id").single();
-      if (!insErr && inserted) written++;
+      if (!insErr && inserted) {
+        written++;
+        // Auto-approval: check memory threshold; fire-and-forget on failure.
+        try {
+          await tryAutoApprove(db, orgId, inserted.id as string, v.kind, v.payload, role);
+        } catch {
+          // Never block proposal write on auto-approval failures.
+        }
+      }
     }
 
     await db.from("agent_runs").update({
