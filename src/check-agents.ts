@@ -15,6 +15,7 @@ import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { validateProposal } from "./lib/agent-actions";
 import { applyAction } from "./lib/executor";
+import { getOrgContext } from "./lib/org-context";
 import type { AgentBrain } from "./lib/agent-brain";
 import type { UiEvent } from "./lib/queue";
 
@@ -291,6 +292,29 @@ async function main() {
   const { data: catRows } = await db.from("categorization_runs").select("org_id,scheme").eq("org_id", orgCat);
   ok("categorization record org-stamped", catRows?.length === 1 && catRows[0].org_id === orgCat);
   await db.from("organizations").delete().eq("id", orgCat);
+
+  console.log("== org context ==");
+  {
+    const freshOrg = await db
+      .from("organizations").insert({ name: "ctx-test", subscription_tier: "pro" })
+      .select("id").single();
+    const orgId = freshOrg.data!.id as string;
+
+    const { contextBlock } = await getOrgContext(orgId, { db });
+    ok("getOrgContext returns undefined when org has no data", contextBlock === undefined);
+
+    await db.from("org_memory").insert({
+      org_id: orgId, memory_type: "vendor_category",
+      memory_key: "scheme:test",
+      memory_value: { scheme: "test", top_categories: ["a", "b"] },
+      confidence_score: 0.7, times_confirmed: 3, source_agent: "categorizer",
+    });
+    const { contextBlock: cb2 } = await getOrgContext(orgId, { db });
+    ok("getOrgContext contextBlock includes memory entry",
+      typeof cb2 === "string" && cb2.includes("scheme:test"));
+
+    await db.from("organizations").delete().eq("id", orgId);
+  }
 
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
