@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -308,6 +308,48 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "flag_duplicates",
       payload: { duplicates, duplicate_count: duplicateCount },
+    };
+  }
+
+  if (kind === "compare_budget_actual") {
+    const OVERALL_STATUSES = ["on_track", "over_budget", "under_budget", "mixed"];
+    const overall_status = typeof p.overall_status === "string" && OVERALL_STATUSES.includes(p.overall_status) ? p.overall_status : null;
+    if (!overall_status) return { ok: false, reason: "bad_overall_status" };
+    const totalBudgetedCents = typeof p.total_budgeted_cents === "number" ? Math.round(p.total_budgeted_cents) : NaN;
+    if (!Number.isFinite(totalBudgetedCents) || totalBudgetedCents < 0) return { ok: false, reason: "bad_total_budgeted_cents" };
+    const totalActualCents = typeof p.total_actual_cents === "number" ? Math.round(p.total_actual_cents) : NaN;
+    if (!Number.isFinite(totalActualCents) || totalActualCents < 0) return { ok: false, reason: "bad_total_actual_cents" };
+    const totalVarianceCents = typeof p.total_variance_cents === "number" ? Math.round(p.total_variance_cents) : NaN;
+    if (!Number.isFinite(totalVarianceCents)) return { ok: false, reason: "bad_total_variance_cents" };
+    if (!Array.isArray(p.comparisons)) return { ok: false, reason: "comparisons_not_array" };
+    const COMPARISON_STATUSES = ["on_track", "over_budget", "under_budget"];
+    const MAX_COMPARISONS = 200;
+    const raw = (p.comparisons as unknown[]).slice(0, MAX_COMPARISONS);
+    const comparisons: { category: string; budgeted_cents: number; actual_cents: number; variance_cents: number; variance_pct: number; status: string }[] = [];
+    for (const c of raw) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const category = str(rec.category);
+      const budgeted_cents = typeof rec.budgeted_cents === "number" ? Math.round(rec.budgeted_cents) : NaN;
+      const actual_cents = typeof rec.actual_cents === "number" ? Math.round(rec.actual_cents) : NaN;
+      const variance_cents = typeof rec.variance_cents === "number" ? Math.round(rec.variance_cents) : NaN;
+      const variance_pct = typeof rec.variance_pct === "number" ? rec.variance_pct : NaN;
+      const status = typeof rec.status === "string" && COMPARISON_STATUSES.includes(rec.status) ? rec.status : null;
+      if (
+        category && Number.isFinite(budgeted_cents) && budgeted_cents >= 0 &&
+        Number.isFinite(actual_cents) && actual_cents >= 0 &&
+        Number.isFinite(variance_cents) && Number.isFinite(variance_pct) && status
+      ) {
+        comparisons.push({ category, budgeted_cents, actual_cents, variance_cents, variance_pct, status });
+      }
+    }
+    return {
+      ok: true,
+      kind: "compare_budget_actual",
+      payload: {
+        comparisons, total_budgeted_cents: totalBudgetedCents, total_actual_cents: totalActualCents,
+        total_variance_cents: totalVarianceCents, overall_status,
+      },
     };
   }
 
