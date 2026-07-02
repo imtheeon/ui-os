@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -190,6 +190,35 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "reconcile_records",
       payload: { match_details, matched_count: matchedCount, unmatched_count: unmatchedCount },
+    };
+  }
+
+  if (kind === "match_invoices") {
+    const totalMatched = typeof p.total_matched === "number" ? Math.round(p.total_matched) : NaN;
+    if (!Number.isFinite(totalMatched) || totalMatched < 0) return { ok: false, reason: "bad_total_matched" };
+    const totalDiscrepancyCents = typeof p.total_discrepancy_cents === "number" ? Math.round(p.total_discrepancy_cents) : NaN;
+    if (!Number.isFinite(totalDiscrepancyCents)) return { ok: false, reason: "bad_total_discrepancy_cents" };
+    if (!Array.isArray(p.matches)) return { ok: false, reason: "matches_not_array" };
+    const MATCH_STATUSES = ["matched", "partial", "unmatched"];
+    const MAX_MATCHES = 200;
+    const raw = (p.matches as unknown[]).slice(0, MAX_MATCHES);
+    const matches: { invoice_ref: string; po_ref: string; amount_cents: number; match_status: string; discrepancy_cents: number }[] = [];
+    for (const m of raw) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const invoice_ref = str(rec.invoice_ref);
+      const po_ref = str(rec.po_ref);
+      const amount_cents = typeof rec.amount_cents === "number" ? Math.round(rec.amount_cents) : NaN;
+      const match_status = typeof rec.match_status === "string" && MATCH_STATUSES.includes(rec.match_status) ? rec.match_status : null;
+      const discrepancy_cents = typeof rec.discrepancy_cents === "number" ? Math.round(rec.discrepancy_cents) : NaN;
+      if (invoice_ref && po_ref && Number.isFinite(amount_cents) && amount_cents >= 0 && match_status && Number.isFinite(discrepancy_cents)) {
+        matches.push({ invoice_ref, po_ref, amount_cents, match_status, discrepancy_cents });
+      }
+    }
+    return {
+      ok: true,
+      kind: "match_invoices",
+      payload: { matches, total_matched: totalMatched, total_discrepancy_cents: totalDiscrepancyCents },
     };
   }
 
