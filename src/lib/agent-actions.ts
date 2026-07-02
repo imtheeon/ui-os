@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -412,6 +412,41 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "flag_reorders",
       payload: { flags, critical_count: criticalCount, warning_count: warningCount },
+    };
+  }
+
+  if (kind === "analyze_suppliers") {
+    const RISK_LEVELS_CONC = ["low", "medium", "high", "critical"];
+    const concentration_risk = typeof p.concentration_risk === "string" && RISK_LEVELS_CONC.includes(p.concentration_risk) ? p.concentration_risk : null;
+    if (!concentration_risk) return { ok: false, reason: "bad_concentration_risk" };
+    const totalSuppliers = typeof p.total_suppliers === "number" ? Math.round(p.total_suppliers) : NaN;
+    if (!Number.isFinite(totalSuppliers) || totalSuppliers < 0) return { ok: false, reason: "bad_total_suppliers" };
+    if (!Array.isArray(p.suppliers)) return { ok: false, reason: "suppliers_not_array" };
+    const SUPPLIER_RISK_LEVELS = ["low", "medium", "high"];
+    const MAX_SUPPLIERS = 100;
+    const raw = (p.suppliers as unknown[]).slice(0, MAX_SUPPLIERS);
+    const suppliers: { supplier_name: string; total_spend_cents: number; order_count: number; on_time_rate: number; risk_level: string; notes: string }[] = [];
+    for (const s of raw) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const supplier_name = str(rec.supplier_name);
+      const total_spend_cents = typeof rec.total_spend_cents === "number" ? Math.round(rec.total_spend_cents) : NaN;
+      const order_count = typeof rec.order_count === "number" ? Math.round(rec.order_count) : NaN;
+      const on_time_rate = typeof rec.on_time_rate === "number" ? rec.on_time_rate : NaN;
+      const risk_level = typeof rec.risk_level === "string" && SUPPLIER_RISK_LEVELS.includes(rec.risk_level) ? rec.risk_level : null;
+      const notes = typeof rec.notes === "string" ? rec.notes.slice(0, MAX_STR) : "";
+      if (
+        supplier_name && Number.isFinite(total_spend_cents) && total_spend_cents >= 0 &&
+        Number.isFinite(order_count) && order_count >= 0 &&
+        Number.isFinite(on_time_rate) && on_time_rate >= 0.0 && on_time_rate <= 1.0 && risk_level
+      ) {
+        suppliers.push({ supplier_name, total_spend_cents, order_count, on_time_rate, risk_level, notes });
+      }
+    }
+    return {
+      ok: true,
+      kind: "analyze_suppliers",
+      payload: { suppliers, total_suppliers: totalSuppliers, concentration_risk },
     };
   }
 
