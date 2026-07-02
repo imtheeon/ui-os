@@ -189,6 +189,23 @@ export async function applyAction(
     return { ok: true, recordTable: "cash_flow_projections", recordId: data.id as string };
   }
 
+  if (v.kind === "categorize_tax_items") {
+    const { data, error } = await db
+      .from("tax_categorization_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        assignments: v.payload.assignments,
+        total_deductible_cents: v.payload.total_deductible_cents,
+        total_non_deductible_cents: v.payload.total_non_deductible_cents,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "tax_categorization_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

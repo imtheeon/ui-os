@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, invoice_matcher, cash_flow_agent, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "invoice_matcher", "cash_flow_agent", "accountant", "analyst"]));
-  ok("nine agent/run events enqueued", enq.length === 9 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "accountant", "analyst"]));
+  ok("ten agent/run events enqueued", enq.length === 10 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+invoice_matcher+cash_flow_agent+accountant+analyst", captured.length === 9);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+accountant+analyst", captured.length === 10);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 9 proposals (anomaly + categorization + cleanup + normalization + reconciliation + invoice match + cash flow + ledger + report)", chainProps?.length === 9);
+  ok("chain produced 10 proposals (anomaly + categorization + cleanup + normalization + reconciliation + invoice match + cash flow + tax categorization + ledger + report)", chainProps?.length === 10);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -495,6 +495,45 @@ async function main() {
   ok("approveAction writes agent_accuracy for cash_flow_agent",
     cfAccRows?.length === 1 && cfAccRows[0].agent_role === "cash_flow_agent" && cfAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgCf);
+
+  console.log("== tax categorizer ==");
+  ok("categorize_tax_items accepts good", validateProposal("categorize_tax_items", {
+    total_deductible_cents: 5000, total_non_deductible_cents: 0,
+    assignments: [{ row_reference: "row 1", description: "Stub expense", amount_cents: 5000, tax_category: "office_supplies", deductible: true }],
+  }).ok);
+  ok("categorize_tax_items filters out missing tax_category", (() => {
+    const r = validateProposal("categorize_tax_items", {
+      total_deductible_cents: 0, total_non_deductible_cents: 0,
+      assignments: [{ row_reference: "row 1", description: "x", amount_cents: 1000, deductible: true }],
+    });
+    return r.ok && (r.payload.assignments as unknown[]).length === 0;
+  })());
+  ok("categorize_tax_items filters out negative amount_cents", (() => {
+    const r = validateProposal("categorize_tax_items", {
+      total_deductible_cents: 0, total_non_deductible_cents: 0,
+      assignments: [{ row_reference: "row 1", description: "x", amount_cents: -500, tax_category: "travel", deductible: false }],
+    });
+    return r.ok && (r.payload.assignments as unknown[]).length === 0;
+  })());
+  ok("tax_categorizer → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("tax_categorizer") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentTx } = await import("./lib/run-agent");
+  const { stubBrain: sbTx } = await import("./lib/agent-brain");
+  const { approveAction: approveTx, listPending: listTx } = await import("./lib/actions-service");
+  const orgTx = await makeOrg("pro");
+  const payloadTx = await makePayload(orgTx);
+  const rTx = await runAgentTx({ orgId: orgTx, payloadId: payloadTx, role: "tax_categorizer" }, { db, brain: sbTx });
+  ok("tax_categorizer run produced a categorization", rTx.ok && rTx.proposalCount === 1);
+  const pendTx = await listTx(orgTx, { db });
+  const apprTx = await approveTx(orgTx, pendTx[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes tax_categorization_runs", apprTx.ok && apprTx.recordTable === "tax_categorization_runs", JSON.stringify(apprTx));
+  const { data: txRows } = await db.from("tax_categorization_runs").select("org_id,total_deductible_cents").eq("org_id", orgTx);
+  ok("tax categorization record org-stamped", txRows?.length === 1 && txRows[0].org_id === orgTx);
+  const { data: txAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgTx);
+  ok("approveAction writes agent_accuracy for tax_categorizer",
+    txAccRows?.length === 1 && txAccRows[0].agent_role === "tax_categorizer" && txAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgTx);
 
   console.log("== org context ==");
   {
