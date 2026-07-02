@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -16,6 +16,15 @@ type Err = { ok: false; reason: string };
 
 function str(v: unknown): string | null {
   return typeof v === "string" && v.length > 0 ? v.slice(0, MAX_STR) : null;
+}
+
+/** Filters a proposed array down to non-empty strings, truncated per-item, bounded in count. */
+function strArray(v: unknown, maxItems: number, maxLen: number): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((s): s is string => typeof s === "string" && s.length > 0)
+    .slice(0, maxItems)
+    .map((s) => s.slice(0, maxLen));
 }
 
 export function validateProposal(kind: string, payload: unknown): Ok | Err {
@@ -559,13 +568,6 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
     const confidence = typeof p.confidence === "string" && CONFIDENCE_LEVELS.includes(p.confidence) ? p.confidence : null;
     if (!confidence) return { ok: false, reason: "bad_confidence" };
 
-    const strArray = (v: unknown, maxItems: number, maxLen: number): string[] => {
-      if (!Array.isArray(v)) return [];
-      return v
-        .filter((s): s is string => typeof s === "string" && s.length > 0)
-        .slice(0, maxItems)
-        .map((s) => s.slice(0, maxLen));
-    };
     const key_findings = strArray(p.key_findings, 10, 500);
     const recommended_actions = strArray(p.recommended_actions, 5, 500);
     const risk_flags = strArray(p.risk_flags, 10, 500);
@@ -742,6 +744,26 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "assess_vendor_risk",
       payload: { vendors, total_vendors: totalVendors, high_risk_count: highRiskCount, concentration_risk },
+    };
+  }
+
+  if (kind === "generate_onboarding_guidance") {
+    const MAX_DATA_TYPE_LEN = 200;
+    const data_type_detected = typeof p.data_type_detected === "string" && p.data_type_detected.length > 0
+      ? p.data_type_detected.slice(0, MAX_DATA_TYPE_LEN) : null;
+    if (!data_type_detected) return { ok: false, reason: "missing_data_type_detected" };
+    const MAX_SUGGESTION_LEN = 500;
+    const next_upload_suggestion = typeof p.next_upload_suggestion === "string" && p.next_upload_suggestion.length > 0
+      ? p.next_upload_suggestion.slice(0, MAX_SUGGESTION_LEN) : null;
+    if (!next_upload_suggestion) return { ok: false, reason: "missing_next_upload_suggestion" };
+    const CONFIDENCE_LEVELS_OB = ["low", "medium", "high"];
+    const confidence = typeof p.confidence === "string" && CONFIDENCE_LEVELS_OB.includes(p.confidence) ? p.confidence : null;
+    if (!confidence) return { ok: false, reason: "bad_confidence" };
+    const guidance_steps = strArray(p.guidance_steps, 10, 500);
+    return {
+      ok: true,
+      kind: "generate_onboarding_guidance",
+      payload: { data_type_detected, guidance_steps, next_upload_suggestion, confidence },
     };
   }
 

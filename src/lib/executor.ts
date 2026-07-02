@@ -454,6 +454,24 @@ export async function applyAction(
     return { ok: true, recordTable: "vendor_risk_assessments", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_onboarding_guidance") {
+    const { data, error } = await db
+      .from("onboarding_guidance_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        data_type_detected: v.payload.data_type_detected,
+        guidance_steps: v.payload.guidance_steps,
+        next_upload_suggestion: v.payload.next_upload_suggestion,
+        confidence: v.payload.confidence,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "onboarding_guidance_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
