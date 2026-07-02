@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -642,6 +642,38 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_report",
       payload: { report_type, title: reportTitle, sections, word_count: wordCount },
+    };
+  }
+
+  if (kind === "assess_data_quality") {
+    const qualityScore = typeof p.quality_score === "number" ? Math.round(p.quality_score) : NaN;
+    if (!Number.isFinite(qualityScore) || qualityScore < 0 || qualityScore > 100) {
+      return { ok: false, reason: "bad_quality_score" };
+    }
+    const GRADES = ["A", "B", "C", "D", "F"];
+    const overall_grade = typeof p.overall_grade === "string" && GRADES.includes(p.overall_grade) ? p.overall_grade : null;
+    if (!overall_grade) return { ok: false, reason: "bad_overall_grade" };
+    if (!Array.isArray(p.issues)) return { ok: false, reason: "issues_not_array" };
+    const ISSUE_TYPES = ["missing_values", "wrong_type", "out_of_range", "inconsistent_format", "suspicious_value", "other"];
+    const SEVERITIES = ["low", "medium", "high"];
+    const MAX_ISSUES = 100;
+    const raw = (p.issues as unknown[]).slice(0, MAX_ISSUES);
+    const issues: { column: string; issue_type: string; affected_rows: number; severity: string }[] = [];
+    for (const i of raw) {
+      if (typeof i !== "object" || i === null) continue;
+      const rec = i as Record<string, unknown>;
+      const column = str(rec.column);
+      const issue_type = typeof rec.issue_type === "string" && ISSUE_TYPES.includes(rec.issue_type) ? rec.issue_type : null;
+      const affected_rows = typeof rec.affected_rows === "number" ? Math.round(rec.affected_rows) : NaN;
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      if (column && issue_type && Number.isFinite(affected_rows) && affected_rows >= 0 && severity) {
+        issues.push({ column, issue_type, affected_rows, severity });
+      }
+    }
+    return {
+      ok: true,
+      kind: "assess_data_quality",
+      payload: { issues, quality_score: qualityScore, overall_grade },
     };
   }
 
