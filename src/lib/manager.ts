@@ -40,7 +40,7 @@ export async function routePayload(
   const plan: LLMRole[] = ["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector"];
   const financial = looksFinancial(columns);
   if (financial) {
-    plan.push("reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "trend_detector", "period_comparator", "accountant");
+    plan.push("reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "trend_detector", "period_comparator", "accountant", "forecaster");
   } else {
     plan.push("inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "trend_detector", "period_comparator", "data_merger"); // non-financial only
   }
