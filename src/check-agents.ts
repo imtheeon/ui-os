@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -723,6 +723,45 @@ async function main() {
   ok("approveAction writes agent_accuracy for supplier_analyst",
     saAccRows?.length === 1 && saAccRows[0].agent_role === "supplier_analyst" && saAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgSa);
+
+  console.log("== po agent ==");
+  ok("process_purchase_orders accepts good", validateProposal("process_purchase_orders", {
+    total_orders: 1, total_value_cents: 75000, pending_count: 1,
+    purchase_orders: [{ po_number: "PO-001", vendor: "Stub Vendor", line_items: 3, total_cents: 75000, status: "pending" }],
+  }).ok);
+  ok("process_purchase_orders filters out bad status", (() => {
+    const r = validateProposal("process_purchase_orders", {
+      total_orders: 0, total_value_cents: 0, pending_count: 0,
+      purchase_orders: [{ po_number: "PO-002", vendor: "x", line_items: 1, total_cents: 100, status: "shipped" }],
+    });
+    return r.ok && (r.payload.purchase_orders as unknown[]).length === 0;
+  })());
+  ok("process_purchase_orders filters out negative total_cents", (() => {
+    const r = validateProposal("process_purchase_orders", {
+      total_orders: 0, total_value_cents: 0, pending_count: 0,
+      purchase_orders: [{ po_number: "PO-003", vendor: "x", line_items: 1, total_cents: -100, status: "pending" }],
+    });
+    return r.ok && (r.payload.purchase_orders as unknown[]).length === 0;
+  })());
+  ok("po_agent → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("po_agent") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentPo } = await import("./lib/run-agent");
+  const { stubBrain: sbPo } = await import("./lib/agent-brain");
+  const { approveAction: approvePo, listPending: listPo } = await import("./lib/actions-service");
+  const orgPo = await makeOrg("pro");
+  const payloadPo = await makePayload(orgPo);
+  const rPo = await runAgentPo({ orgId: orgPo, payloadId: payloadPo, role: "po_agent" }, { db, brain: sbPo });
+  ok("po_agent run produced a PO batch", rPo.ok && rPo.proposalCount === 1);
+  const pendPo = await listPo(orgPo, { db });
+  const apprPo = await approvePo(orgPo, pendPo[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes purchase_order_runs", apprPo.ok && apprPo.recordTable === "purchase_order_runs", JSON.stringify(apprPo));
+  const { data: poRows } = await db.from("purchase_order_runs").select("org_id,total_orders").eq("org_id", orgPo);
+  ok("purchase order record org-stamped", poRows?.length === 1 && poRows[0].org_id === orgPo);
+  const { data: poAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgPo);
+  ok("approveAction writes agent_accuracy for po_agent",
+    poAccRows?.length === 1 && poAccRows[0].agent_role === "po_agent" && poAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgPo);
 
   console.log("== org context ==");
   {

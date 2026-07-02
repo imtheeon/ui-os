@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -447,6 +447,40 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_suppliers",
       payload: { suppliers, total_suppliers: totalSuppliers, concentration_risk },
+    };
+  }
+
+  if (kind === "process_purchase_orders") {
+    const totalOrders = typeof p.total_orders === "number" ? Math.round(p.total_orders) : NaN;
+    if (!Number.isFinite(totalOrders) || totalOrders < 0) return { ok: false, reason: "bad_total_orders" };
+    const totalValueCents = typeof p.total_value_cents === "number" ? Math.round(p.total_value_cents) : NaN;
+    if (!Number.isFinite(totalValueCents) || totalValueCents < 0) return { ok: false, reason: "bad_total_value_cents" };
+    const pendingCount = typeof p.pending_count === "number" ? Math.round(p.pending_count) : NaN;
+    if (!Number.isFinite(pendingCount) || pendingCount < 0) return { ok: false, reason: "bad_pending_count" };
+    if (!Array.isArray(p.purchase_orders)) return { ok: false, reason: "purchase_orders_not_array" };
+    const PO_STATUSES = ["pending", "approved", "received", "cancelled"];
+    const MAX_POS = 200;
+    const raw = (p.purchase_orders as unknown[]).slice(0, MAX_POS);
+    const purchase_orders: { po_number: string; vendor: string; line_items: number; total_cents: number; status: string }[] = [];
+    for (const po of raw) {
+      if (typeof po !== "object" || po === null) continue;
+      const rec = po as Record<string, unknown>;
+      const po_number = str(rec.po_number);
+      const vendor = str(rec.vendor);
+      const line_items = typeof rec.line_items === "number" ? Math.round(rec.line_items) : NaN;
+      const total_cents = typeof rec.total_cents === "number" ? Math.round(rec.total_cents) : NaN;
+      const status = typeof rec.status === "string" && PO_STATUSES.includes(rec.status) ? rec.status : null;
+      if (
+        po_number && vendor && Number.isFinite(line_items) && line_items >= 0 &&
+        Number.isFinite(total_cents) && total_cents >= 0 && status
+      ) {
+        purchase_orders.push({ po_number, vendor, line_items, total_cents, status });
+      }
+    }
+    return {
+      ok: true,
+      kind: "process_purchase_orders",
+      payload: { purchase_orders, total_orders: totalOrders, total_value_cents: totalValueCents, pending_count: pendingCount },
     };
   }
 
