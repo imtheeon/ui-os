@@ -151,6 +151,23 @@ export async function applyAction(
     return { ok: true, recordTable: "reconciliation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "match_invoices") {
+    const { data, error } = await db
+      .from("invoice_matches")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        matches: v.payload.matches,
+        total_matched: v.payload.total_matched,
+        total_discrepancy_cents: v.payload.total_discrepancy_cents,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "invoice_matches", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "accountant", "analyst"]));
-  ok("seven agent/run events enqueued", enq.length === 7 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, invoice_matcher, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "invoice_matcher", "accountant", "analyst"]));
+  ok("eight agent/run events enqueued", enq.length === 8 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+accountant+analyst", captured.length === 7);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+invoice_matcher+accountant+analyst", captured.length === 8);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 7 proposals (anomaly + categorization + cleanup + normalization + reconciliation + ledger + report)", chainProps?.length === 7);
+  ok("chain produced 8 proposals (anomaly + categorization + cleanup + normalization + reconciliation + invoice match + ledger + report)", chainProps?.length === 8);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -423,6 +423,45 @@ async function main() {
   ok("approveAction writes agent_accuracy for reconciler",
     rcAccRows?.length === 1 && rcAccRows[0].agent_role === "reconciler" && rcAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgRc);
+
+  console.log("== invoice matcher ==");
+  ok("match_invoices accepts good", validateProposal("match_invoices", {
+    total_matched: 1, total_discrepancy_cents: 0,
+    matches: [{ invoice_ref: "INV-001", po_ref: "PO-001", amount_cents: 10000, match_status: "matched", discrepancy_cents: 0 }],
+  }).ok);
+  ok("match_invoices filters out bad match_status", (() => {
+    const r = validateProposal("match_invoices", {
+      total_matched: 0, total_discrepancy_cents: 0,
+      matches: [{ invoice_ref: "INV-002", po_ref: "PO-002", amount_cents: 5000, match_status: "voided", discrepancy_cents: 0 }],
+    });
+    return r.ok && (r.payload.matches as unknown[]).length === 0;
+  })());
+  ok("match_invoices filters out negative amount_cents", (() => {
+    const r = validateProposal("match_invoices", {
+      total_matched: 0, total_discrepancy_cents: 0,
+      matches: [{ invoice_ref: "INV-003", po_ref: "PO-003", amount_cents: -100, match_status: "matched", discrepancy_cents: 0 }],
+    });
+    return r.ok && (r.payload.matches as unknown[]).length === 0;
+  })());
+  ok("invoice_matcher → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("invoice_matcher") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentIm } = await import("./lib/run-agent");
+  const { stubBrain: sbIm } = await import("./lib/agent-brain");
+  const { approveAction: approveIm, listPending: listIm } = await import("./lib/actions-service");
+  const orgIm = await makeOrg("pro");
+  const payloadIm = await makePayload(orgIm);
+  const rIm = await runAgentIm({ orgId: orgIm, payloadId: payloadIm, role: "invoice_matcher" }, { db, brain: sbIm });
+  ok("invoice_matcher run produced a match proposal", rIm.ok && rIm.proposalCount === 1);
+  const pendIm = await listIm(orgIm, { db });
+  const apprIm = await approveIm(orgIm, pendIm[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes invoice_matches", apprIm.ok && apprIm.recordTable === "invoice_matches", JSON.stringify(apprIm));
+  const { data: imRows } = await db.from("invoice_matches").select("org_id,total_matched").eq("org_id", orgIm);
+  ok("invoice match record org-stamped", imRows?.length === 1 && imRows[0].org_id === orgIm);
+  const { data: imAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgIm);
+  ok("approveAction writes agent_accuracy for invoice_matcher",
+    imAccRows?.length === 1 && imAccRows[0].agent_role === "invoice_matcher" && imAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgIm);
 
   console.log("== org context ==");
   {
