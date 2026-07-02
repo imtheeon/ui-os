@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -705,6 +705,43 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "flag_compliance_issues",
       payload: { flags, pii_detected, risk_level },
+    };
+  }
+
+  if (kind === "assess_vendor_risk") {
+    const totalVendors = typeof p.total_vendors === "number" ? Math.round(p.total_vendors) : NaN;
+    if (!Number.isFinite(totalVendors) || totalVendors < 0) return { ok: false, reason: "bad_total_vendors" };
+    const highRiskCount = typeof p.high_risk_count === "number" ? Math.round(p.high_risk_count) : NaN;
+    if (!Number.isFinite(highRiskCount) || highRiskCount < 0) return { ok: false, reason: "bad_high_risk_count" };
+    const CONCENTRATION_RISKS = ["low", "medium", "high", "critical"];
+    const concentration_risk = typeof p.concentration_risk === "string" && CONCENTRATION_RISKS.includes(p.concentration_risk) ? p.concentration_risk : null;
+    if (!concentration_risk) return { ok: false, reason: "bad_concentration_risk" };
+    if (!Array.isArray(p.vendors)) return { ok: false, reason: "vendors_not_array" };
+    const VENDOR_RISK_LEVELS = ["low", "medium", "high"];
+    const MAX_VENDORS = 100;
+    const MAX_RISK_FACTORS = 5;
+    const raw = (p.vendors as unknown[]).slice(0, MAX_VENDORS);
+    const vendors: { vendor_name: string; spend_pct: number; risk_level: string; risk_factors: string[]; single_source: boolean }[] = [];
+    for (const v2 of raw) {
+      if (typeof v2 !== "object" || v2 === null) continue;
+      const rec = v2 as Record<string, unknown>;
+      const vendor_name = str(rec.vendor_name);
+      const spend_pct = typeof rec.spend_pct === "number" ? rec.spend_pct : NaN;
+      const risk_level = typeof rec.risk_level === "string" && VENDOR_RISK_LEVELS.includes(rec.risk_level) ? rec.risk_level : null;
+      const single_source = typeof rec.single_source === "boolean" ? rec.single_source : null;
+      const riskFactorsRaw = Array.isArray(rec.risk_factors) ? rec.risk_factors : [];
+      const risk_factors = riskFactorsRaw.filter((f): f is string => typeof f === "string" && f.length > 0).slice(0, MAX_RISK_FACTORS);
+      if (
+        vendor_name && Number.isFinite(spend_pct) && spend_pct >= 0.0 && spend_pct <= 100.0 &&
+        risk_level && single_source !== null
+      ) {
+        vendors.push({ vendor_name, spend_pct, risk_level, risk_factors, single_source });
+      }
+    }
+    return {
+      ok: true,
+      kind: "assess_vendor_risk",
+      payload: { vendors, total_vendors: totalVendors, high_risk_count: highRiskCount, concentration_risk },
     };
   }
 
