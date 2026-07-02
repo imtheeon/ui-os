@@ -241,6 +241,23 @@ export async function applyAction(
     return { ok: true, recordTable: "budget_comparisons", recordId: data.id as string };
   }
 
+  if (v.kind === "track_inventory") {
+    const { data, error } = await db
+      .from("inventory_snapshots")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        items: v.payload.items,
+        total_items: v.payload.total_items,
+        total_value_cents: v.payload.total_value_cents,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "inventory_snapshots", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

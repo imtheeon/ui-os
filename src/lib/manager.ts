@@ -42,7 +42,7 @@ export async function routePayload(
   if (financial) {
     plan.push("reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "accountant");
   } else {
-    plan.push("data_merger"); // structural analysis; skipped for financial payloads
+    plan.push("inventory_tracker", "data_merger"); // non-financial only
   }
   plan.push("analyst"); // always
 

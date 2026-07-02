@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -350,6 +350,34 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
         comparisons, total_budgeted_cents: totalBudgetedCents, total_actual_cents: totalActualCents,
         total_variance_cents: totalVarianceCents, overall_status,
       },
+    };
+  }
+
+  if (kind === "track_inventory") {
+    const totalItems = typeof p.total_items === "number" ? Math.round(p.total_items) : NaN;
+    if (!Number.isFinite(totalItems) || totalItems < 0) return { ok: false, reason: "bad_total_items" };
+    const totalValueCents = typeof p.total_value_cents === "number" ? Math.round(p.total_value_cents) : NaN;
+    if (!Number.isFinite(totalValueCents) || totalValueCents < 0) return { ok: false, reason: "bad_total_value_cents" };
+    if (!Array.isArray(p.items)) return { ok: false, reason: "items_not_array" };
+    const MAX_ITEMS = 500;
+    const raw = (p.items as unknown[]).slice(0, MAX_ITEMS);
+    const items: { sku: string; name: string; quantity: number; unit_value_cents: number; location: string }[] = [];
+    for (const it of raw) {
+      if (typeof it !== "object" || it === null) continue;
+      const rec = it as Record<string, unknown>;
+      const sku = str(rec.sku);
+      const name = str(rec.name);
+      const quantity = typeof rec.quantity === "number" ? Math.round(rec.quantity) : NaN;
+      const unit_value_cents = typeof rec.unit_value_cents === "number" ? Math.round(rec.unit_value_cents) : NaN;
+      const location = typeof rec.location === "string" ? rec.location.slice(0, MAX_STR) : "";
+      if (sku && name && Number.isFinite(quantity) && quantity >= 0 && Number.isFinite(unit_value_cents) && unit_value_cents >= 0) {
+        items.push({ sku, name, quantity, unit_value_cents, location });
+      }
+    }
+    return {
+      ok: true,
+      kind: "track_inventory",
+      payload: { items, total_items: totalItems, total_value_cents: totalValueCents },
     };
   }
 

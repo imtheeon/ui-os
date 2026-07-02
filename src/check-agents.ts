@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -609,6 +609,45 @@ async function main() {
   ok("approveAction writes agent_accuracy for budget_analyst",
     baAccRows?.length === 1 && baAccRows[0].agent_role === "budget_analyst" && baAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgBa);
+
+  console.log("== inventory tracker ==");
+  ok("track_inventory accepts good", validateProposal("track_inventory", {
+    total_items: 100, total_value_cents: 99900,
+    items: [{ sku: "SKU-001", name: "Stub Widget", quantity: 100, unit_value_cents: 999, location: "Warehouse A" }],
+  }).ok);
+  ok("track_inventory filters out negative quantity", (() => {
+    const r = validateProposal("track_inventory", {
+      total_items: 0, total_value_cents: 0,
+      items: [{ sku: "SKU-002", name: "Bad Item", quantity: -5, unit_value_cents: 100, location: "" }],
+    });
+    return r.ok && (r.payload.items as unknown[]).length === 0;
+  })());
+  ok("track_inventory filters out missing sku", (() => {
+    const r = validateProposal("track_inventory", {
+      total_items: 0, total_value_cents: 0,
+      items: [{ name: "No SKU Item", quantity: 10, unit_value_cents: 100, location: "" }],
+    });
+    return r.ok && (r.payload.items as unknown[]).length === 0;
+  })());
+  ok("inventory_tracker → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("inventory_tracker") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentIt } = await import("./lib/run-agent");
+  const { stubBrain: sbIt } = await import("./lib/agent-brain");
+  const { approveAction: approveIt, listPending: listIt } = await import("./lib/actions-service");
+  const orgIt = await makeOrg("pro");
+  const payloadIt = await makePayload(orgIt);
+  const rIt = await runAgentIt({ orgId: orgIt, payloadId: payloadIt, role: "inventory_tracker" }, { db, brain: sbIt });
+  ok("inventory_tracker run produced a snapshot", rIt.ok && rIt.proposalCount === 1);
+  const pendIt = await listIt(orgIt, { db });
+  const apprIt = await approveIt(orgIt, pendIt[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes inventory_snapshots", apprIt.ok && apprIt.recordTable === "inventory_snapshots", JSON.stringify(apprIt));
+  const { data: itRows } = await db.from("inventory_snapshots").select("org_id,total_items").eq("org_id", orgIt);
+  ok("inventory snapshot record org-stamped", itRows?.length === 1 && itRows[0].org_id === orgIt);
+  const { data: itAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgIt);
+  ok("approveAction writes agent_accuracy for inventory_tracker",
+    itAccRows?.length === 1 && itAccRows[0].agent_role === "inventory_tracker" && itAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgIt);
 
   console.log("== org context ==");
   {
