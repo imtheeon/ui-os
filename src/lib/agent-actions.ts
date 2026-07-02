@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -280,6 +280,34 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "categorize_tax_items",
       payload: { assignments, total_deductible_cents: totalDeductibleCents, total_non_deductible_cents: totalNonDeductibleCents },
+    };
+  }
+
+  if (kind === "flag_duplicates") {
+    const duplicateCount = typeof p.duplicate_count === "number" ? Math.round(p.duplicate_count) : NaN;
+    if (!Number.isFinite(duplicateCount) || duplicateCount < 0) return { ok: false, reason: "bad_duplicate_count" };
+    if (!Array.isArray(p.duplicates)) return { ok: false, reason: "duplicates_not_array" };
+    const DUPLICATE_TYPES = ["exact", "near_exact", "fuzzy"];
+    const MAX_DUPLICATES = 100;
+    const raw = (p.duplicates as unknown[]).slice(0, MAX_DUPLICATES);
+    const duplicates: { row_references: string[]; similarity_score: number; duplicate_type: string; key_columns: string[] }[] = [];
+    for (const d of raw) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const rowRefsRaw = Array.isArray(rec.row_references) ? rec.row_references : [];
+      const row_references = rowRefsRaw.filter((r): r is string => typeof r === "string" && r.length > 0);
+      const similarity_score = typeof rec.similarity_score === "number" ? rec.similarity_score : NaN;
+      const duplicate_type = typeof rec.duplicate_type === "string" && DUPLICATE_TYPES.includes(rec.duplicate_type) ? rec.duplicate_type : null;
+      const keyColsRaw = Array.isArray(rec.key_columns) ? rec.key_columns : [];
+      const key_columns = keyColsRaw.filter((c): c is string => typeof c === "string" && c.length > 0);
+      if (row_references.length >= 2 && Number.isFinite(similarity_score) && similarity_score >= 0.0 && similarity_score <= 1.0 && duplicate_type) {
+        duplicates.push({ row_references, similarity_score, duplicate_type, key_columns });
+      }
+    }
+    return {
+      ok: true,
+      kind: "flag_duplicates",
+      payload: { duplicates, duplicate_count: duplicateCount },
     };
   }
 

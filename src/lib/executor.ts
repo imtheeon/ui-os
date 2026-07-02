@@ -206,6 +206,22 @@ export async function applyAction(
     return { ok: true, recordTable: "tax_categorization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "flag_duplicates") {
+    const { data, error } = await db
+      .from("duplicate_flags")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        duplicates: v.payload.duplicates,
+        duplicate_count: v.payload.duplicate_count,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "duplicate_flags", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
