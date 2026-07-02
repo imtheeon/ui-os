@@ -319,6 +319,9 @@ async function main() {
   ok("approve writes cleaned_data_runs", apprDc.ok && apprDc.recordTable === "cleaned_data_runs", JSON.stringify(apprDc));
   const { data: dcRows } = await db.from("cleaned_data_runs").select("org_id,rows_affected").eq("org_id", orgDc);
   ok("cleaned data record org-stamped", dcRows?.length === 1 && dcRows[0].org_id === orgDc);
+  const { data: dcAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgDc);
+  ok("approveAction writes agent_accuracy for data_cleaner (role check constraint includes it)",
+    dcAccRows?.length === 1 && dcAccRows[0].agent_role === "data_cleaner" && dcAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgDc);
 
   console.log("== org context ==");
