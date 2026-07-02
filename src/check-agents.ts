@@ -15,6 +15,7 @@ import { dirname, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { validateProposal } from "./lib/agent-actions";
 import { applyAction } from "./lib/executor";
+import { getOrgContext } from "./lib/org-context";
 import type { AgentBrain } from "./lib/agent-brain";
 import type { UiEvent } from "./lib/queue";
 
@@ -106,7 +107,7 @@ async function main() {
 
   console.log("== model tiers ==");
   const { modelForRole } = await import("./lib/agent-brain");
-  ok("accountant → haiku model", modelForRole("accountant") === "claude-haiku-4-5");
+  ok("accountant → haiku model", modelForRole("accountant") === "claude-haiku-4-5-20251001");
   ok("analyst → sonnet model", modelForRole("analyst") === "claude-sonnet-4-6");
 
   console.log("== brain (stub) ==");
@@ -249,7 +250,7 @@ async function main() {
   console.log("== anomaly detector ==");
   ok("flag_anomaly accepts good", validateProposal("flag_anomaly", { description: "Outlier value 9e9", severity: "high", row_reference: "row 7" }).ok);
   ok("flag_anomaly rejects bad severity", !validateProposal("flag_anomaly", { description: "x", severity: "critical", row_reference: "row 1" }).ok);
-  ok("anomaly_detector → haiku model", (await import("./lib/agent-brain")).modelForRole("anomaly_detector") === "claude-haiku-4-5");
+  ok("anomaly_detector → haiku model", (await import("./lib/agent-brain")).modelForRole("anomaly_detector") === "claude-haiku-4-5-20251001");
 
   const { runAgent: runAgentAn } = await import("./lib/run-agent");
   const { stubBrain: sbAn } = await import("./lib/agent-brain");
@@ -276,7 +277,7 @@ async function main() {
     scheme: "product_line", assignments: [],
   }).ok);
   ok("categorizer → haiku model",
-    (await import("./lib/agent-brain")).modelForRole("categorizer") === "claude-haiku-4-5");
+    (await import("./lib/agent-brain")).modelForRole("categorizer") === "claude-haiku-4-5-20251001");
 
   const { runAgent: runAgentCat } = await import("./lib/run-agent");
   const { stubBrain: sbCat } = await import("./lib/agent-brain");
@@ -291,6 +292,161 @@ async function main() {
   const { data: catRows } = await db.from("categorization_runs").select("org_id,scheme").eq("org_id", orgCat);
   ok("categorization record org-stamped", catRows?.length === 1 && catRows[0].org_id === orgCat);
   await db.from("organizations").delete().eq("id", orgCat);
+
+  console.log("== org context ==");
+  {
+    const freshOrg = await db
+      .from("organizations").insert({ name: "ctx-test", subscription_tier: "pro" })
+      .select("id").single();
+    const orgId = freshOrg.data!.id as string;
+
+    const { contextBlock } = await getOrgContext(orgId, { db });
+    ok("getOrgContext returns undefined when org has no data", contextBlock === undefined);
+
+    await db.from("org_memory").insert({
+      org_id: orgId, memory_type: "vendor_category",
+      memory_key: "scheme:test",
+      memory_value: { scheme: "test", top_categories: ["a", "b"] },
+      confidence_score: 0.7, times_confirmed: 3, source_agent: "categorizer",
+    });
+    const { contextBlock: cb2 } = await getOrgContext(orgId, { db });
+    ok("getOrgContext contextBlock includes memory entry",
+      typeof cb2 === "string" && cb2.includes("scheme:test"));
+
+    await db.from("organizations").delete().eq("id", orgId);
+  }
+
+  // Task 3: runAgent succeeds with org memory context (no crash, context injected)
+  {
+    const { runAgent: runAgentCtx } = await import("./lib/run-agent");
+    const { stubBrain: sbCtx } = await import("./lib/agent-brain");
+    const orgCtx = await makeOrg("pro");
+    const payCtx = await makePayload(orgCtx);
+    await db.from("org_memory").insert({
+      org_id: orgCtx, memory_type: "spend_baseline", memory_key: "ledger:debit",
+      memory_value: { description: "past entry", amount_cents: 500, direction: "debit" },
+      confidence_score: 0.4, times_confirmed: 2, source_agent: "accountant",
+    });
+    const rCtx = await runAgentCtx({ orgId: orgCtx, payloadId: payCtx, role: "analyst" }, { db, brain: sbCtx });
+    ok("runAgent succeeds when org has memory context", rCtx.ok === true);
+    await db.from("organizations").delete().eq("id", orgCtx);
+  }
+
+  console.log("== memory extractor ==");
+  {
+    const { extractMemory } = await import("./lib/memory-extractor");
+
+    const ledgerExtract = extractMemory(
+      { id: "id1", kind: "record_ledger_entry",
+        action_payload: { description: "Office supplies", amount_cents: 1299, direction: "debit" } },
+      "accountant"
+    );
+    ok("extractMemory ledger → spend_baseline",
+      ledgerExtract.length === 1 &&
+      ledgerExtract[0].memory_type === "spend_baseline" &&
+      ledgerExtract[0].memory_key === "ledger:debit");
+
+    const catExtract = extractMemory(
+      { id: "id2", kind: "categorize_items",
+        action_payload: { scheme: "vendor", assignments: [
+          { row_reference: "r1", category: "Office" },
+          { row_reference: "r2", category: "Travel" },
+          { row_reference: "r3", category: "Office" },
+        ] } },
+      "categorizer"
+    );
+    ok("extractMemory categorize → vendor_category with deduped top_categories",
+      catExtract.length === 1 &&
+      catExtract[0].memory_type === "vendor_category" &&
+      catExtract[0].memory_key === "scheme:vendor" &&
+      JSON.stringify((catExtract[0].memory_value as { top_categories: string[] }).top_categories) ===
+        JSON.stringify(["Office", "Travel"]));
+
+    const reportExtract = extractMemory(
+      { id: "id3", kind: "store_report", action_payload: { title: "Q", body: "B" } },
+      "analyst"
+    );
+    ok("extractMemory store_report → empty", reportExtract.length === 0);
+  }
+
+  console.log("== approval policy ==");
+  {
+    const { shouldAutoApprove } = await import("./lib/approval-policy");
+    ok("shouldAutoApprove false below threshold",
+      !shouldAutoApprove({ kind: "record_ledger_entry" }, { confidence_score: 0.8, times_confirmed: 15 }));
+    ok("shouldAutoApprove true at threshold",
+      shouldAutoApprove({ kind: "record_ledger_entry" }, { confidence_score: 0.9, times_confirmed: 10 }));
+  }
+
+  console.log("== memory upsert (approve gate) ==");
+  {
+    const { approveAction } = await import("./lib/actions-service");
+    const { stubBrain: sbMem } = await import("./lib/agent-brain");
+    const { runAgent: runMem } = await import("./lib/run-agent");
+
+    const orgMem = await makeOrg("pro");
+    const payMem = await makePayload(orgMem);
+    await runMem({ orgId: orgMem, payloadId: payMem, role: "accountant" }, { db, brain: sbMem });
+    const { data: pendMem } = await db.from("proposed_actions").select("id").eq("org_id", orgMem).eq("status", "pending");
+    const memActionId = pendMem?.[0]?.id as string;
+    await approveAction(orgMem, memActionId, randomUUID(), { db });
+    const { data: memRow } = await db.from("org_memory").select("memory_type,confidence_score").eq("org_id", orgMem).maybeSingle();
+    ok("approveAction writes org_memory entry",
+      memRow?.memory_type === "spend_baseline" && (memRow.confidence_score as number) >= 0.6);
+    const { data: accRow } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgMem).maybeSingle();
+    ok("approveAction writes agent_accuracy entry",
+      accRow?.agent_role === "accountant" && (accRow.approved_count as number) >= 1);
+    await db.from("organizations").delete().eq("id", orgMem);
+  }
+
+  console.log("== auto-approval ==");
+  {
+    const { runAgent: runAA } = await import("./lib/run-agent");
+    const { stubBrain: sbAA } = await import("./lib/agent-brain");
+
+    // Seed an org with memory at threshold → auto-approval should fire
+    const orgAA = await makeOrg("pro");
+    const payAA = await makePayload(orgAA);
+    // Insert a spend_baseline memory entry at the auto-approve threshold
+    await db.from("org_memory").insert({
+      org_id: orgAA, memory_type: "spend_baseline", memory_key: "ledger:debit",
+      memory_value: { description: "Stub entry", amount_cents: 1000, direction: "debit" },
+      confidence_score: 0.9, times_confirmed: 10, source_agent: "accountant",
+    });
+    const rAA = await runAA({ orgId: orgAA, payloadId: payAA, role: "accountant" }, { db, brain: sbAA });
+    ok("runAgent auto-approval: run succeeded", rAA.ok === true);
+    // The proposal should have been auto-applied (status = applied, not pending)
+    const { data: propsAA } = await db.from("proposed_actions").select("status").eq("org_id", orgAA);
+    ok("auto-approved proposal is applied (not pending)", propsAA?.length === 1 && propsAA[0].status === "applied");
+    // A ledger entry should exist
+    const { data: ledgerAA } = await db.from("ledger_entries").select("id").eq("org_id", orgAA);
+    ok("auto-approval wrote ledger entry", (ledgerAA?.length ?? 0) >= 1);
+    // Audit log should contain approval.auto_approved
+    const { data: auditAA } = await db.from("system_audit_logs")
+      .select("action").eq("org_id", orgAA).eq("action", "approval.auto_approved");
+    ok("auto-approval wrote audit log entry", (auditAA?.length ?? 0) >= 1);
+
+    // Below threshold → stays pending
+    const orgBT = await makeOrg("pro");
+    const payBT = await makePayload(orgBT);
+    await db.from("org_memory").insert({
+      org_id: orgBT, memory_type: "spend_baseline", memory_key: "ledger:debit",
+      memory_value: { description: "Stub entry", amount_cents: 1000, direction: "debit" },
+      confidence_score: 0.8, times_confirmed: 10, source_agent: "accountant",
+    });
+    await runAA({ orgId: orgBT, payloadId: payBT, role: "accountant" }, { db, brain: sbAA });
+    const { data: propsBT } = await db.from("proposed_actions").select("status").eq("org_id", orgBT);
+    ok("below-threshold proposal stays pending", propsBT?.length === 1 && propsBT[0].status === "pending");
+
+    // No memory → stays pending (cold start)
+    const orgNM = await makeOrg("pro");
+    const payNM = await makePayload(orgNM);
+    await runAA({ orgId: orgNM, payloadId: payNM, role: "accountant" }, { db, brain: sbAA });
+    const { data: propsNM } = await db.from("proposed_actions").select("status").eq("org_id", orgNM);
+    ok("no-memory proposal stays pending", propsNM?.length === 1 && propsNM[0].status === "pending");
+
+    for (const o of [orgAA, orgBT, orgNM]) await db.from("organizations").delete().eq("id", o);
+  }
 
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
