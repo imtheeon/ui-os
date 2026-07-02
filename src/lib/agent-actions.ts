@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -122,6 +122,46 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "merge_datasets",
       payload: { merge_strategy, join_columns, related_payload_hint, estimated_merged_rows },
+    };
+  }
+
+  if (kind === "normalize_units") {
+    const UNIT_TYPES = ["currency", "weight", "volume", "length", "percentage", "mixed", "other"];
+    const unit_type = typeof p.unit_type === "string" && UNIT_TYPES.includes(p.unit_type) ? p.unit_type : null;
+    if (!unit_type) return { ok: false, reason: "bad_unit_type" };
+    const target_unit = str(p.target_unit);
+    if (!target_unit) return { ok: false, reason: "missing_target_unit" };
+    const valuesAffected = typeof p.values_affected === "number" ? Math.round(p.values_affected) : NaN;
+    if (!Number.isFinite(valuesAffected) || valuesAffected < 0) {
+      return { ok: false, reason: "bad_values_affected" };
+    }
+    if (!Array.isArray(p.normalizations)) return { ok: false, reason: "normalizations_not_array" };
+    const MAX_NORMALIZATIONS = 200;
+    const raw = (p.normalizations as unknown[]).slice(0, MAX_NORMALIZATIONS);
+    const normalizations: {
+      row_reference: string; column: string; original_value: string;
+      normalized_value: string; unit_type: string; target_unit: string;
+    }[] = [];
+    for (const n of raw) {
+      if (typeof n !== "object" || n === null) continue;
+      const rec = n as Record<string, unknown>;
+      const row_reference = str(rec.row_reference);
+      const column = str(rec.column);
+      const original_value = str(rec.original_value);
+      const normalized_value = str(rec.normalized_value);
+      const nUnitType = str(rec.unit_type);
+      const nTargetUnit = str(rec.target_unit);
+      if (row_reference && column && original_value && normalized_value && nUnitType && nTargetUnit) {
+        normalizations.push({
+          row_reference, column, original_value, normalized_value,
+          unit_type: nUnitType, target_unit: nTargetUnit,
+        });
+      }
+    }
+    return {
+      ok: true,
+      kind: "normalize_units",
+      payload: { normalizations, unit_type, target_unit, values_affected: valuesAffected },
     };
   }
 

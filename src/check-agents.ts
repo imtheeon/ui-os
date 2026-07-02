@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "accountant", "analyst"]));
-  ok("five agent/run events enqueued", enq.length === 5 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "accountant", "analyst"]));
+  ok("six agent/run events enqueued", enq.length === 6 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+accountant+analyst", captured.length === 5);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+accountant+analyst", captured.length === 6);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 5 proposals (anomaly + categorization + cleanup + ledger + report)", chainProps?.length === 5);
+  ok("chain produced 6 proposals (anomaly + categorization + cleanup + normalization + ledger + report)", chainProps?.length === 6);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -353,6 +353,37 @@ async function main() {
   ok("approveAction writes agent_accuracy for data_merger",
     dmAccRows?.length === 1 && dmAccRows[0].agent_role === "data_merger" && dmAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgDm);
+
+  console.log("== unit normalizer ==");
+  ok("normalize_units accepts good", validateProposal("normalize_units", {
+    unit_type: "currency", target_unit: "USD", values_affected: 1,
+    normalizations: [{ row_reference: "row 1", column: "amount", original_value: "€10", normalized_value: "10.85", unit_type: "currency", target_unit: "USD" }],
+  }).ok);
+  ok("normalize_units rejects bad unit_type", !validateProposal("normalize_units", {
+    unit_type: "kelvin", target_unit: "USD", values_affected: 1, normalizations: [],
+  }).ok);
+  ok("normalize_units rejects empty target_unit", !validateProposal("normalize_units", {
+    unit_type: "currency", target_unit: "", values_affected: 1, normalizations: [],
+  }).ok);
+  ok("unit_normalizer → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("unit_normalizer") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentUn } = await import("./lib/run-agent");
+  const { stubBrain: sbUn } = await import("./lib/agent-brain");
+  const { approveAction: approveUn, listPending: listUn } = await import("./lib/actions-service");
+  const orgUn = await makeOrg("pro");
+  const payloadUn = await makePayload(orgUn);
+  const rUn = await runAgentUn({ orgId: orgUn, payloadId: payloadUn, role: "unit_normalizer" }, { db, brain: sbUn });
+  ok("unit_normalizer run produced a normalization proposal", rUn.ok && rUn.proposalCount === 1);
+  const pendUn = await listUn(orgUn, { db });
+  const apprUn = await approveUn(orgUn, pendUn[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes normalization_runs", apprUn.ok && apprUn.recordTable === "normalization_runs", JSON.stringify(apprUn));
+  const { data: unRows } = await db.from("normalization_runs").select("org_id,unit_type,target_unit").eq("org_id", orgUn);
+  ok("normalization record org-stamped", unRows?.length === 1 && unRows[0].org_id === orgUn);
+  const { data: unAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgUn);
+  ok("approveAction writes agent_accuracy for unit_normalizer",
+    unAccRows?.length === 1 && unAccRows[0].agent_role === "unit_normalizer" && unAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgUn);
 
   console.log("== org context ==");
   {
