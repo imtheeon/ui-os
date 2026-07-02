@@ -222,6 +222,25 @@ export async function applyAction(
     return { ok: true, recordTable: "duplicate_flags", recordId: data.id as string };
   }
 
+  if (v.kind === "compare_budget_actual") {
+    const { data, error } = await db
+      .from("budget_comparisons")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        comparisons: v.payload.comparisons,
+        total_budgeted_cents: v.payload.total_budgeted_cents,
+        total_actual_cents: v.payload.total_actual_cents,
+        total_variance_cents: v.payload.total_variance_cents,
+        overall_status: v.payload.overall_status,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "budget_comparisons", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
