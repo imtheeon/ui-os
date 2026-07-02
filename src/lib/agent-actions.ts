@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -512,6 +512,42 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "detect_trends",
       payload: { trends, trend_count: trendCount, overall_direction },
+    };
+  }
+
+  if (kind === "compare_periods") {
+    const MAX_LABEL_LEN = 200;
+    const period_a_label = typeof p.period_a_label === "string" && p.period_a_label.length > 0
+      ? p.period_a_label.slice(0, MAX_LABEL_LEN) : null;
+    if (!period_a_label) return { ok: false, reason: "missing_period_a_label" };
+    const period_b_label = typeof p.period_b_label === "string" && p.period_b_label.length > 0
+      ? p.period_b_label.slice(0, MAX_LABEL_LEN) : null;
+    if (!period_b_label) return { ok: false, reason: "missing_period_b_label" };
+    const overallChangePct = typeof p.overall_change_pct === "number" ? p.overall_change_pct : NaN;
+    if (!Number.isFinite(overallChangePct)) return { ok: false, reason: "bad_overall_change_pct" };
+    const summary = str(p.summary);
+    if (!summary) return { ok: false, reason: "missing_summary" };
+    if (!Array.isArray(p.comparisons)) return { ok: false, reason: "comparisons_not_array" };
+    const CHANGE_DIRECTIONS = ["up", "down", "flat"];
+    const MAX_COMPARISONS = 100;
+    const raw = (p.comparisons as unknown[]).slice(0, MAX_COMPARISONS);
+    const comparisons: { metric: string; period_a_value: number; period_b_value: number; change_pct: number; change_direction: string }[] = [];
+    for (const c of raw) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const metric = str(rec.metric);
+      const period_a_value = typeof rec.period_a_value === "number" ? rec.period_a_value : NaN;
+      const period_b_value = typeof rec.period_b_value === "number" ? rec.period_b_value : NaN;
+      const change_pct = typeof rec.change_pct === "number" ? rec.change_pct : NaN;
+      const change_direction = typeof rec.change_direction === "string" && CHANGE_DIRECTIONS.includes(rec.change_direction) ? rec.change_direction : null;
+      if (metric && Number.isFinite(period_a_value) && Number.isFinite(period_b_value) && Number.isFinite(change_pct) && change_direction) {
+        comparisons.push({ metric, period_a_value, period_b_value, change_pct, change_direction });
+      }
+    }
+    return {
+      ok: true,
+      kind: "compare_periods",
+      payload: { comparisons, period_a_label, period_b_label, overall_change_pct: overallChangePct, summary },
     };
   }
 
