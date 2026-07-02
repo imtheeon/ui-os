@@ -44,6 +44,7 @@ export async function routePayload(
   } else {
     plan.push("inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "trend_detector", "period_comparator", "data_merger"); // non-financial only
   }
+  plan.push("report_generator"); // always, before exec_summarizer
   plan.push("exec_summarizer"); // always, last before analyst
   plan.push("analyst"); // always
 
