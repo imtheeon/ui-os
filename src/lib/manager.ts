@@ -38,7 +38,12 @@ export async function routePayload(
 
   const columns = ((row.extracted_json as { columns?: string[] } | null)?.columns) ?? [];
   const plan: LLMRole[] = ["anomaly_detector", "categorizer", "data_cleaner"];
-  if (looksFinancial(columns)) plan.push("accountant");
+  const financial = looksFinancial(columns);
+  if (financial) {
+    plan.push("accountant");
+  } else {
+    plan.push("data_merger"); // structural analysis; skipped for financial payloads
+  }
   plan.push("analyst"); // always
 
   for (const role of plan) {

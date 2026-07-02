@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -323,6 +323,36 @@ async function main() {
   ok("approveAction writes agent_accuracy for data_cleaner (role check constraint includes it)",
     dcAccRows?.length === 1 && dcAccRows[0].agent_role === "data_cleaner" && dcAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgDc);
+
+  console.log("== data merger ==");
+  ok("merge_datasets accepts good", validateProposal("merge_datasets", {
+    merge_strategy: "left_join", join_columns: ["id"], related_payload_hint: "customer master table",
+  }).ok);
+  ok("merge_datasets rejects missing merge_strategy", !validateProposal("merge_datasets", {
+    join_columns: ["id"], related_payload_hint: "customer master table",
+  }).ok);
+  ok("merge_datasets rejects empty join_columns", !validateProposal("merge_datasets", {
+    merge_strategy: "union", join_columns: [], related_payload_hint: "customer master table",
+  }).ok);
+  ok("data_merger → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("data_merger") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentDm } = await import("./lib/run-agent");
+  const { stubBrain: sbDm } = await import("./lib/agent-brain");
+  const { approveAction: approveDm, listPending: listDm } = await import("./lib/actions-service");
+  const orgDm = await makeOrg("pro");
+  const payloadDm = await makePayload(orgDm);
+  const rDm = await runAgentDm({ orgId: orgDm, payloadId: payloadDm, role: "data_merger" }, { db, brain: sbDm });
+  ok("data_merger run produced a merge proposal", rDm.ok && rDm.proposalCount === 1);
+  const pendDm = await listDm(orgDm, { db });
+  const apprDm = await approveDm(orgDm, pendDm[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes merged_dataset_runs", apprDm.ok && apprDm.recordTable === "merged_dataset_runs", JSON.stringify(apprDm));
+  const { data: dmRows } = await db.from("merged_dataset_runs").select("org_id,merge_strategy").eq("org_id", orgDm);
+  ok("merged dataset record org-stamped", dmRows?.length === 1 && dmRows[0].org_id === orgDm);
+  const { data: dmAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgDm);
+  ok("approveAction writes agent_accuracy for data_merger",
+    dmAccRows?.length === 1 && dmAccRows[0].agent_role === "data_merger" && dmAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgDm);
 
   console.log("== org context ==");
   {
