@@ -98,6 +98,24 @@ export async function applyAction(
     return { ok: true, recordTable: "cleaned_data_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "merge_datasets") {
+    const { data, error } = await db
+      .from("merged_dataset_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        merge_strategy: v.payload.merge_strategy,
+        join_columns: v.payload.join_columns,
+        related_payload_hint: v.payload.related_payload_hint,
+        estimated_merged_rows: v.payload.estimated_merged_rows ?? null,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "merged_dataset_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

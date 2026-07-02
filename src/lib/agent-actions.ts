@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -94,6 +94,35 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       }
     }
     return { ok: true, kind: "clean_data", payload: { issues, rows_affected: rowsAffected } };
+  }
+
+  if (kind === "merge_datasets") {
+    const merge_strategy = str(p.merge_strategy);
+    if (!merge_strategy) return { ok: false, reason: "missing_merge_strategy" };
+    if (!Array.isArray(p.join_columns) || p.join_columns.length === 0) {
+      return { ok: false, reason: "missing_join_columns" };
+    }
+    const MAX_JOIN_COLUMNS = 20;
+    const rawCols = (p.join_columns as unknown[]).slice(0, MAX_JOIN_COLUMNS);
+    const join_columns: string[] = [];
+    for (const c of rawCols) {
+      const s = str(c);
+      if (s) join_columns.push(s);
+    }
+    if (join_columns.length === 0) return { ok: false, reason: "missing_join_columns" };
+    const related_payload_hint = str(p.related_payload_hint);
+    if (!related_payload_hint) return { ok: false, reason: "missing_related_payload_hint" };
+    let estimated_merged_rows: number | null = null;
+    if (p.estimated_merged_rows !== undefined && p.estimated_merged_rows !== null) {
+      const n = typeof p.estimated_merged_rows === "number" ? Math.round(p.estimated_merged_rows) : NaN;
+      if (!Number.isFinite(n) || n < 0) return { ok: false, reason: "bad_estimated_merged_rows" };
+      estimated_merged_rows = n;
+    }
+    return {
+      ok: true,
+      kind: "merge_datasets",
+      payload: { merge_strategy, join_columns, related_payload_hint, estimated_merged_rows },
+    };
   }
 
   // store_report
