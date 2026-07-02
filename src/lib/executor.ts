@@ -310,6 +310,23 @@ export async function applyAction(
     return { ok: true, recordTable: "purchase_order_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "detect_trends") {
+    const { data, error } = await db
+      .from("trend_detections")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        trends: v.payload.trends,
+        trend_count: v.payload.trend_count,
+        overall_direction: v.payload.overall_direction,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "trend_detections", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
