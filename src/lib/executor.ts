@@ -436,6 +436,24 @@ export async function applyAction(
     return { ok: true, recordTable: "compliance_flags", recordId: data.id as string };
   }
 
+  if (v.kind === "assess_vendor_risk") {
+    const { data, error } = await db
+      .from("vendor_risk_assessments")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        vendors: v.payload.vendors,
+        total_vendors: v.payload.total_vendors,
+        high_risk_count: v.payload.high_risk_count,
+        concentration_risk: v.payload.concentration_risk,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "vendor_risk_assessments", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
