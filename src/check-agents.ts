@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "accountant", "analyst"]));
-  ok("four agent/run events enqueued", enq.length === 4 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "accountant", "analyst"]));
+  ok("five agent/run events enqueued", enq.length === 5 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+accountant+analyst", captured.length === 4);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+accountant+analyst", captured.length === 5);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 4 proposals (anomaly + categorization + ledger + report)", chainProps?.length === 4);
+  ok("chain produced 5 proposals (anomaly + categorization + cleanup + ledger + report)", chainProps?.length === 5);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -292,6 +292,34 @@ async function main() {
   const { data: catRows } = await db.from("categorization_runs").select("org_id,scheme").eq("org_id", orgCat);
   ok("categorization record org-stamped", catRows?.length === 1 && catRows[0].org_id === orgCat);
   await db.from("organizations").delete().eq("id", orgCat);
+
+  console.log("== data cleaner ==");
+  ok("clean_data accepts good", validateProposal("clean_data", {
+    issues: [{ row_reference: "row 1", column: "amount", issue_type: "extra_whitespace", original_value: " 10 ", suggested_value: "10" }],
+    rows_affected: 1,
+  }).ok);
+  ok("clean_data rejects missing issues", !validateProposal("clean_data", {
+    rows_affected: 1,
+  }).ok);
+  ok("clean_data rejects bad rows_affected", !validateProposal("clean_data", {
+    issues: [], rows_affected: -1,
+  }).ok);
+  ok("data_cleaner → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("data_cleaner") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentDc } = await import("./lib/run-agent");
+  const { stubBrain: sbDc } = await import("./lib/agent-brain");
+  const { approveAction: approveDc, listPending: listDc } = await import("./lib/actions-service");
+  const orgDc = await makeOrg("pro");
+  const payloadDc = await makePayload(orgDc);
+  const rDc = await runAgentDc({ orgId: orgDc, payloadId: payloadDc, role: "data_cleaner" }, { db, brain: sbDc });
+  ok("data_cleaner run produced a cleanup proposal", rDc.ok && rDc.proposalCount === 1);
+  const pendDc = await listDc(orgDc, { db });
+  const apprDc = await approveDc(orgDc, pendDc[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes cleaned_data_runs", apprDc.ok && apprDc.recordTable === "cleaned_data_runs", JSON.stringify(apprDc));
+  const { data: dcRows } = await db.from("cleaned_data_runs").select("org_id,rows_affected").eq("org_id", orgDc);
+  ok("cleaned data record org-stamped", dcRows?.length === 1 && dcRows[0].org_id === orgDc);
+  await db.from("organizations").delete().eq("id", orgDc);
 
   console.log("== org context ==");
   {

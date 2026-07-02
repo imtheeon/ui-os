@@ -82,6 +82,22 @@ export async function applyAction(
     return { ok: true, recordTable: "categorization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "clean_data") {
+    const { data, error } = await db
+      .from("cleaned_data_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        issues_found: v.payload.issues,
+        rows_affected: v.payload.rows_affected,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "cleaned_data_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

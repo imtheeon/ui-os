@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -68,6 +68,32 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       if (rr && cat) assignments.push({ row_reference: rr, category: cat });
     }
     return { ok: true, kind: "categorize_items", payload: { scheme, assignments } };
+  }
+
+  if (kind === "clean_data") {
+    if (!Array.isArray(p.issues)) return { ok: false, reason: "issues_not_array" };
+    const rowsAffected = typeof p.rows_affected === "number" ? Math.round(p.rows_affected) : NaN;
+    if (!Number.isFinite(rowsAffected) || rowsAffected < 0) {
+      return { ok: false, reason: "bad_rows_affected" };
+    }
+    const MAX_ISSUES = 100;
+    const raw = (p.issues as unknown[]).slice(0, MAX_ISSUES);
+    const issues: { row_reference: string; column: string; issue_type: string; original_value: string; suggested_value: string }[] = [];
+    for (const i of raw) {
+      if (typeof i !== "object" || i === null) continue;
+      const rec = i as Record<string, unknown>;
+      const row_reference = str(rec.row_reference);
+      const column = str(rec.column);
+      const issue_type = str(rec.issue_type);
+      const suggested_value = str(rec.suggested_value);
+      if (row_reference && column && issue_type && suggested_value) {
+        issues.push({
+          row_reference, column, issue_type, suggested_value,
+          original_value: str(rec.original_value) ?? "",
+        });
+      }
+    }
+    return { ok: true, kind: "clean_data", payload: { issues, rows_affected: rowsAffected } };
   }
 
   // store_report
