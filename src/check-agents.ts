@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, trend_detector, period_comparator, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "trend_detector", "period_comparator", "accountant", "analyst"]));
-  ok("fourteen agent/run events enqueued", enq.length === 14 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, trend_detector, period_comparator, accountant, exec_summarizer, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "trend_detector", "period_comparator", "accountant", "exec_summarizer", "analyst"]));
+  ok("fifteen agent/run events enqueued", enq.length === 15 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, trend_detector, period_comparator, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "trend_detector", "period_comparator", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, trend_detector, period_comparator, data_merger, exec_summarizer, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "trend_detector", "period_comparator", "data_merger", "exec_summarizer", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+trend_detector+period_comparator+accountant+analyst", captured.length === 14);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+trend_detector+period_comparator+accountant+exec_summarizer+analyst", captured.length === 15);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 14 proposals (anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + trend + period comparison + ledger + report)", chainProps?.length === 14);
+  ok("chain produced 15 proposals (anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + trend + period comparison + exec summary + ledger + report)", chainProps?.length === 15);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -834,6 +834,36 @@ async function main() {
   ok("approveAction writes agent_accuracy for period_comparator",
     pcAccRows?.length === 1 && pcAccRows[0].agent_role === "period_comparator" && pcAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgPc);
+
+  console.log("== exec summarizer ==");
+  ok("generate_exec_summary accepts good", validateProposal("generate_exec_summary", {
+    headline: "Dataset processed.", key_findings: ["finding 1"], recommended_actions: ["action 1"], risk_flags: [], confidence: "medium",
+  }).ok);
+  ok("generate_exec_summary rejects empty headline", !validateProposal("generate_exec_summary", {
+    headline: "", key_findings: [], recommended_actions: [], risk_flags: [], confidence: "low",
+  }).ok);
+  ok("generate_exec_summary rejects bad confidence", !validateProposal("generate_exec_summary", {
+    headline: "x", key_findings: [], recommended_actions: [], risk_flags: [], confidence: "certain",
+  }).ok);
+  ok("exec_summarizer → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("exec_summarizer") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentEs } = await import("./lib/run-agent");
+  const { stubBrain: sbEs } = await import("./lib/agent-brain");
+  const { approveAction: approveEs, listPending: listEs } = await import("./lib/actions-service");
+  const orgEs = await makeOrg("pro");
+  const payloadEs = await makePayload(orgEs);
+  const rEs = await runAgentEs({ orgId: orgEs, payloadId: payloadEs, role: "exec_summarizer" }, { db, brain: sbEs });
+  ok("exec_summarizer run produced a summary", rEs.ok && rEs.proposalCount === 1);
+  const pendEs = await listEs(orgEs, { db });
+  const apprEs = await approveEs(orgEs, pendEs[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes exec_summaries", apprEs.ok && apprEs.recordTable === "exec_summaries", JSON.stringify(apprEs));
+  const { data: esRows } = await db.from("exec_summaries").select("org_id,confidence").eq("org_id", orgEs);
+  ok("exec summary record org-stamped", esRows?.length === 1 && esRows[0].org_id === orgEs);
+  const { data: esAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgEs);
+  ok("approveAction writes agent_accuracy for exec_summarizer",
+    esAccRows?.length === 1 && esAccRows[0].agent_role === "exec_summarizer" && esAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgEs);
 
   console.log("== org context ==");
   {
