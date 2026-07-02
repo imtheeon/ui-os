@@ -37,7 +37,7 @@ export async function routePayload(
   if (!row || row.status !== "completed") return { ok: false, code: "NOT_ELIGIBLE" };
 
   const columns = ((row.extracted_json as { columns?: string[] } | null)?.columns) ?? [];
-  const plan: LLMRole[] = ["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector"];
+  const plan: LLMRole[] = ["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector"];
   const financial = looksFinancial(columns);
   if (financial) {
     plan.push("reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "vendor_risk", "trend_detector", "period_comparator", "accountant", "forecaster");

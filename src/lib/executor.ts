@@ -507,6 +507,24 @@ export async function applyAction(
     return { ok: true, recordTable: "multi_period_analyses", recordId: data.id as string };
   }
 
+  if (v.kind === "summarize_audit_trail") {
+    const { data, error } = await db
+      .from("audit_summaries")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        events_summarized: v.payload.events_summarized,
+        summary_paragraphs: v.payload.summary_paragraphs,
+        key_actions: v.payload.key_actions,
+        anomalies_noted: v.payload.anomalies_noted,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "audit_summaries", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

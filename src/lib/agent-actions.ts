@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -824,6 +824,19 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_multi_period",
       payload: { periods_detected: periodsDetected, period_labels, cross_period_insights, dominant_pattern },
+    };
+  }
+
+  if (kind === "summarize_audit_trail") {
+    const eventsSummarized = typeof p.events_summarized === "number" ? Math.round(p.events_summarized) : NaN;
+    if (!Number.isFinite(eventsSummarized) || eventsSummarized < 0) return { ok: false, reason: "bad_events_summarized" };
+    const summary_paragraphs = strArray(p.summary_paragraphs, 5, 1000);
+    const key_actions = strArray(p.key_actions, 20, 300);
+    const anomalies_noted = strArray(p.anomalies_noted, 10, 300);
+    return {
+      ok: true,
+      kind: "summarize_audit_trail",
+      payload: { events_summarized: eventsSummarized, summary_paragraphs, key_actions, anomalies_noted },
     };
   }
 
