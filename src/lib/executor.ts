@@ -472,6 +472,23 @@ export async function applyAction(
     return { ok: true, recordTable: "onboarding_guidance_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "request_clarification") {
+    const { data, error } = await db
+      .from("clarification_requests")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        questions: v.payload.questions,
+        context: v.payload.context,
+        urgency: v.payload.urgency,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "clarification_requests", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
