@@ -134,6 +134,23 @@ export async function applyAction(
     return { ok: true, recordTable: "normalization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "reconcile_records") {
+    const { data, error } = await db
+      .from("reconciliation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        matched_count: v.payload.matched_count,
+        unmatched_count: v.payload.unmatched_count,
+        match_details: v.payload.match_details,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "reconciliation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -162,6 +162,34 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "normalize_units",
       payload: { normalizations, unit_type, target_unit, values_affected: valuesAffected },
+    };
+  }
+
+  if (kind === "reconcile_records") {
+    const matchedCount = typeof p.matched_count === "number" ? Math.round(p.matched_count) : NaN;
+    if (!Number.isFinite(matchedCount) || matchedCount < 0) return { ok: false, reason: "bad_matched_count" };
+    const unmatchedCount = typeof p.unmatched_count === "number" ? Math.round(p.unmatched_count) : NaN;
+    if (!Number.isFinite(unmatchedCount) || unmatchedCount < 0) return { ok: false, reason: "bad_unmatched_count" };
+    if (!Array.isArray(p.match_details)) return { ok: false, reason: "match_details_not_array" };
+    const MATCH_STATUSES = ["matched", "unmatched", "partial"];
+    const MAX_MATCH_DETAILS = 500;
+    const raw = (p.match_details as unknown[]).slice(0, MAX_MATCH_DETAILS);
+    const match_details: { row_reference: string; match_status: string; matched_value: string; confidence: number }[] = [];
+    for (const m of raw) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const row_reference = str(rec.row_reference);
+      const match_status = typeof rec.match_status === "string" && MATCH_STATUSES.includes(rec.match_status) ? rec.match_status : null;
+      const matched_value = str(rec.matched_value);
+      const confidence = typeof rec.confidence === "number" ? rec.confidence : NaN;
+      if (row_reference && match_status && matched_value && Number.isFinite(confidence) && confidence >= 0.0 && confidence <= 1.0) {
+        match_details.push({ row_reference, match_status, matched_value, confidence });
+      }
+    }
+    return {
+      ok: true,
+      kind: "reconcile_records",
+      payload: { match_details, matched_count: matchedCount, unmatched_count: unmatchedCount },
     };
   }
 
