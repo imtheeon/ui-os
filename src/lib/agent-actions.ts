@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -674,6 +674,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "assess_data_quality",
       payload: { issues, quality_score: qualityScore, overall_grade },
+    };
+  }
+
+  if (kind === "flag_compliance_issues") {
+    const pii_detected = typeof p.pii_detected === "boolean" ? p.pii_detected : null;
+    if (pii_detected === null) return { ok: false, reason: "bad_pii_detected" };
+    const RISK_LEVELS_COMP = ["low", "medium", "high", "critical"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS_COMP.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+    if (!Array.isArray(p.flags)) return { ok: false, reason: "flags_not_array" };
+    const COMPLIANCE_ISSUE_TYPES = ["pii_detected", "sensitive_data", "regulatory_concern", "data_retention", "other"];
+    const SEVERITIES_COMP = ["low", "medium", "high"];
+    const MAX_COMPLIANCE_FLAGS = 100;
+    const raw = (p.flags as unknown[]).slice(0, MAX_COMPLIANCE_FLAGS);
+    const flags: { column: string; row_reference: string; issue_type: string; description: string; severity: string }[] = [];
+    for (const f of raw) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const column = str(rec.column);
+      const row_reference = str(rec.row_reference);
+      const issue_type = typeof rec.issue_type === "string" && COMPLIANCE_ISSUE_TYPES.includes(rec.issue_type) ? rec.issue_type : null;
+      const description = str(rec.description);
+      const severity = typeof rec.severity === "string" && SEVERITIES_COMP.includes(rec.severity) ? rec.severity : null;
+      if (column && row_reference && issue_type && description && severity) {
+        flags.push({ column, row_reference, issue_type, description, severity });
+      }
+    }
+    return {
+      ok: true,
+      kind: "flag_compliance_issues",
+      payload: { flags, pii_detected, risk_level },
     };
   }
 
