@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, invoice_matcher, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "invoice_matcher", "accountant", "analyst"]));
-  ok("eight agent/run events enqueued", enq.length === 8 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, invoice_matcher, cash_flow_agent, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "invoice_matcher", "cash_flow_agent", "accountant", "analyst"]));
+  ok("nine agent/run events enqueued", enq.length === 9 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+invoice_matcher+accountant+analyst", captured.length === 8);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+invoice_matcher+cash_flow_agent+accountant+analyst", captured.length === 9);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 8 proposals (anomaly + categorization + cleanup + normalization + reconciliation + invoice match + ledger + report)", chainProps?.length === 8);
+  ok("chain produced 9 proposals (anomaly + categorization + cleanup + normalization + reconciliation + invoice match + cash flow + ledger + report)", chainProps?.length === 9);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -462,6 +462,39 @@ async function main() {
   ok("approveAction writes agent_accuracy for invoice_matcher",
     imAccRows?.length === 1 && imAccRows[0].agent_role === "invoice_matcher" && imAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgIm);
+
+  console.log("== cash flow agent ==");
+  ok("project_cash_flow accepts good", validateProposal("project_cash_flow", {
+    projection_period: "30_days", inflow_cents: 500000, outflow_cents: 300000,
+    net_cents: 200000, runway_days: 90, risk_level: "low", summary: "Positive cash flow.",
+  }).ok);
+  ok("project_cash_flow rejects bad risk_level", !validateProposal("project_cash_flow", {
+    projection_period: "30_days", inflow_cents: 500000, outflow_cents: 300000,
+    net_cents: 200000, risk_level: "catastrophic", summary: "x",
+  }).ok);
+  ok("project_cash_flow rejects bad projection_period", !validateProposal("project_cash_flow", {
+    projection_period: "5_years", inflow_cents: 500000, outflow_cents: 300000,
+    net_cents: 200000, risk_level: "low", summary: "x",
+  }).ok);
+  ok("cash_flow_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("cash_flow_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentCf } = await import("./lib/run-agent");
+  const { stubBrain: sbCf } = await import("./lib/agent-brain");
+  const { approveAction: approveCf, listPending: listCf } = await import("./lib/actions-service");
+  const orgCf = await makeOrg("pro");
+  const payloadCf = await makePayload(orgCf);
+  const rCf = await runAgentCf({ orgId: orgCf, payloadId: payloadCf, role: "cash_flow_agent" }, { db, brain: sbCf });
+  ok("cash_flow_agent run produced a projection", rCf.ok && rCf.proposalCount === 1);
+  const pendCf = await listCf(orgCf, { db });
+  const apprCf = await approveCf(orgCf, pendCf[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes cash_flow_projections", apprCf.ok && apprCf.recordTable === "cash_flow_projections", JSON.stringify(apprCf));
+  const { data: cfRows } = await db.from("cash_flow_projections").select("org_id,risk_level").eq("org_id", orgCf);
+  ok("cash flow record org-stamped", cfRows?.length === 1 && cfRows[0].org_id === orgCf);
+  const { data: cfAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgCf);
+  ok("approveAction writes agent_accuracy for cash_flow_agent",
+    cfAccRows?.length === 1 && cfAccRows[0].agent_role === "cash_flow_agent" && cfAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgCf);
 
   console.log("== org context ==");
   {
