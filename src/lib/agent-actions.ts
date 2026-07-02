@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -764,6 +764,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_onboarding_guidance",
       payload: { data_type_detected, guidance_steps, next_upload_suggestion, confidence },
+    };
+  }
+
+  if (kind === "request_clarification") {
+    const MAX_CONTEXT_LEN = 1000;
+    const context = typeof p.context === "string" && p.context.length > 0 ? p.context.slice(0, MAX_CONTEXT_LEN) : null;
+    if (!context) return { ok: false, reason: "missing_context" };
+    const URGENCIES = ["low", "medium", "high"];
+    const urgency = typeof p.urgency === "string" && URGENCIES.includes(p.urgency) ? p.urgency : null;
+    if (!urgency) return { ok: false, reason: "bad_urgency" };
+    if (!Array.isArray(p.questions) || p.questions.length === 0) return { ok: false, reason: "missing_questions" };
+    const MAX_QUESTIONS = 5;
+    const MAX_Q_LEN = 500;
+    const MAX_OPTIONS = 5;
+    const raw = (p.questions as unknown[]).slice(0, MAX_QUESTIONS);
+    const questions: { question: string; reason: string; options: string[] }[] = [];
+    for (const q of raw) {
+      if (typeof q !== "object" || q === null) continue;
+      const rec = q as Record<string, unknown>;
+      const question = typeof rec.question === "string" && rec.question.length > 0 ? rec.question.slice(0, MAX_Q_LEN) : null;
+      const qReason = typeof rec.reason === "string" && rec.reason.length > 0 ? rec.reason.slice(0, MAX_Q_LEN) : null;
+      const options = strArray(rec.options, MAX_OPTIONS, MAX_Q_LEN);
+      if (question && qReason) {
+        questions.push({ question, reason: qReason, options });
+      }
+    }
+    if (questions.length === 0) return { ok: false, reason: "missing_questions" };
+    return {
+      ok: true,
+      kind: "request_clarification",
+      payload: { questions, context, urgency },
     };
   }
 
