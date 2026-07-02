@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -612,6 +612,36 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_forecast",
       payload: { forecasts, horizon, methodology, confidence, assumptions },
+    };
+  }
+
+  if (kind === "generate_report") {
+    const REPORT_TYPES = ["financial", "operational", "inventory", "compliance", "general"];
+    const report_type = typeof p.report_type === "string" && REPORT_TYPES.includes(p.report_type) ? p.report_type : null;
+    if (!report_type) return { ok: false, reason: "bad_report_type" };
+    const MAX_TITLE_LEN = 300;
+    const reportTitle = typeof p.title === "string" && p.title.length > 0 ? p.title.slice(0, MAX_TITLE_LEN) : null;
+    if (!reportTitle) return { ok: false, reason: "missing_title" };
+    const wordCount = typeof p.word_count === "number" ? Math.round(p.word_count) : NaN;
+    if (!Number.isFinite(wordCount) || wordCount < 0) return { ok: false, reason: "bad_word_count" };
+    if (!Array.isArray(p.sections)) return { ok: false, reason: "sections_not_array" };
+    const MAX_SECTIONS = 10;
+    const MAX_CONTENT_LEN = 2000;
+    const raw = (p.sections as unknown[]).slice(0, MAX_SECTIONS);
+    const sections: { heading: string; content: string }[] = [];
+    for (const s of raw) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const heading = str(rec.heading);
+      const content = typeof rec.content === "string" && rec.content.length > 0 ? rec.content.slice(0, MAX_CONTENT_LEN) : null;
+      if (heading && content) {
+        sections.push({ heading, content });
+      }
+    }
+    return {
+      ok: true,
+      kind: "generate_report",
+      payload: { report_type, title: reportTitle, sections, word_count: wordCount },
     };
   }
 
