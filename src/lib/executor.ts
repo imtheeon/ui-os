@@ -168,6 +168,27 @@ export async function applyAction(
     return { ok: true, recordTable: "invoice_matches", recordId: data.id as string };
   }
 
+  if (v.kind === "project_cash_flow") {
+    const { data, error } = await db
+      .from("cash_flow_projections")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        projection_period: v.payload.projection_period,
+        inflow_cents: v.payload.inflow_cents,
+        outflow_cents: v.payload.outflow_cents,
+        net_cents: v.payload.net_cents,
+        runway_days: v.payload.runway_days ?? null,
+        risk_level: v.payload.risk_level,
+        summary: v.payload.summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "cash_flow_projections", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

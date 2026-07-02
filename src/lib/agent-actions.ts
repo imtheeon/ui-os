@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -219,6 +219,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "match_invoices",
       payload: { matches, total_matched: totalMatched, total_discrepancy_cents: totalDiscrepancyCents },
+    };
+  }
+
+  if (kind === "project_cash_flow") {
+    const PERIODS = ["30_days", "90_days", "12_months", "unknown"];
+    const projection_period = typeof p.projection_period === "string" && PERIODS.includes(p.projection_period) ? p.projection_period : null;
+    if (!projection_period) return { ok: false, reason: "bad_projection_period" };
+    const RISK_LEVELS = ["low", "medium", "high", "critical"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+    const inflowCents = typeof p.inflow_cents === "number" ? Math.round(p.inflow_cents) : NaN;
+    if (!Number.isFinite(inflowCents) || inflowCents < 0) return { ok: false, reason: "bad_inflow_cents" };
+    const outflowCents = typeof p.outflow_cents === "number" ? Math.round(p.outflow_cents) : NaN;
+    if (!Number.isFinite(outflowCents) || outflowCents < 0) return { ok: false, reason: "bad_outflow_cents" };
+    const netCents = typeof p.net_cents === "number" ? Math.round(p.net_cents) : NaN;
+    if (!Number.isFinite(netCents)) return { ok: false, reason: "bad_net_cents" };
+    let runway_days: number | null = null;
+    if (p.runway_days !== undefined && p.runway_days !== null) {
+      const n = typeof p.runway_days === "number" ? Math.round(p.runway_days) : NaN;
+      if (!Number.isFinite(n) || n < 0) return { ok: false, reason: "bad_runway_days" };
+      runway_days = n;
+    }
+    const summary = str(p.summary);
+    if (!summary) return { ok: false, reason: "missing_summary" };
+    return {
+      ok: true,
+      kind: "project_cash_flow",
+      payload: {
+        projection_period, risk_level, inflow_cents: inflowCents, outflow_cents: outflowCents,
+        net_cents: netCents, runway_days, summary,
+      },
     };
   }
 

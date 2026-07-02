@@ -40,7 +40,7 @@ export async function routePayload(
   const plan: LLMRole[] = ["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer"];
   const financial = looksFinancial(columns);
   if (financial) {
-    plan.push("reconciler", "invoice_matcher", "accountant");
+    plan.push("reconciler", "invoice_matcher", "cash_flow_agent", "accountant");
   } else {
     plan.push("data_merger"); // structural analysis; skipped for financial payloads
   }
