@@ -365,6 +365,25 @@ export async function applyAction(
     return { ok: true, recordTable: "exec_summaries", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_forecast") {
+    const { data, error } = await db
+      .from("forecast_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        forecasts: v.payload.forecasts,
+        horizon: v.payload.horizon,
+        methodology: v.payload.methodology,
+        confidence: v.payload.confidence,
+        assumptions: v.payload.assumptions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "forecast_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

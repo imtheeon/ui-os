@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -574,6 +574,44 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_exec_summary",
       payload: { headline, key_findings, recommended_actions, risk_flags, confidence },
+    };
+  }
+
+  if (kind === "generate_forecast") {
+    const HORIZONS = ["30_days", "90_days", "6_months", "12_months", "unknown"];
+    const horizon = typeof p.horizon === "string" && HORIZONS.includes(p.horizon) ? p.horizon : null;
+    if (!horizon) return { ok: false, reason: "bad_horizon" };
+    const MAX_METHODOLOGY_LEN = 500;
+    const methodology = typeof p.methodology === "string" && p.methodology.length > 0
+      ? p.methodology.slice(0, MAX_METHODOLOGY_LEN) : null;
+    if (!methodology) return { ok: false, reason: "missing_methodology" };
+    const CONFIDENCE_LEVELS = ["low", "medium", "high"];
+    const confidence = typeof p.confidence === "string" && CONFIDENCE_LEVELS.includes(p.confidence) ? p.confidence : null;
+    if (!confidence) return { ok: false, reason: "bad_confidence" };
+    const MAX_ASSUMPTIONS_LEN = 1000;
+    const assumptions = typeof p.assumptions === "string" && p.assumptions.length > 0
+      ? p.assumptions.slice(0, MAX_ASSUMPTIONS_LEN) : null;
+    if (!assumptions) return { ok: false, reason: "missing_assumptions" };
+    if (!Array.isArray(p.forecasts)) return { ok: false, reason: "forecasts_not_array" };
+    const MAX_FORECASTS = 50;
+    const raw = (p.forecasts as unknown[]).slice(0, MAX_FORECASTS);
+    const forecasts: { metric: string; current_value: number; projected_value: number; change_pct: number; basis: string }[] = [];
+    for (const f of raw) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const metric = str(rec.metric);
+      const current_value = typeof rec.current_value === "number" ? rec.current_value : NaN;
+      const projected_value = typeof rec.projected_value === "number" ? rec.projected_value : NaN;
+      const change_pct = typeof rec.change_pct === "number" ? rec.change_pct : NaN;
+      const basis = str(rec.basis);
+      if (metric && Number.isFinite(current_value) && Number.isFinite(projected_value) && Number.isFinite(change_pct) && basis) {
+        forecasts.push({ metric, current_value, projected_value, change_pct, basis });
+      }
+    }
+    return {
+      ok: true,
+      kind: "generate_forecast",
+      payload: { forecasts, horizon, methodology, confidence, assumptions },
     };
   }
 
