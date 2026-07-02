@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "accountant", "analyst"]));
-  ok("six agent/run events enqueued", enq.length === 6 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, reconciler, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "reconciler", "accountant", "analyst"]));
+  ok("seven agent/run events enqueued", enq.length === 7 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+accountant+analyst", captured.length === 6);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+reconciler+accountant+analyst", captured.length === 7);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 6 proposals (anomaly + categorization + cleanup + normalization + ledger + report)", chainProps?.length === 6);
+  ok("chain produced 7 proposals (anomaly + categorization + cleanup + normalization + reconciliation + ledger + report)", chainProps?.length === 7);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -384,6 +384,45 @@ async function main() {
   ok("approveAction writes agent_accuracy for unit_normalizer",
     unAccRows?.length === 1 && unAccRows[0].agent_role === "unit_normalizer" && unAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgUn);
+
+  console.log("== reconciler ==");
+  ok("reconcile_records accepts good", validateProposal("reconcile_records", {
+    matched_count: 1, unmatched_count: 0,
+    match_details: [{ row_reference: "row 1", match_status: "matched", matched_value: "100.00", confidence: 0.95 }],
+  }).ok);
+  ok("reconcile_records filters out bad match_status", (() => {
+    const r = validateProposal("reconcile_records", {
+      matched_count: 0, unmatched_count: 0,
+      match_details: [{ row_reference: "row 1", match_status: "verified", matched_value: "100.00", confidence: 0.9 }],
+    });
+    return r.ok && (r.payload.match_details as unknown[]).length === 0;
+  })());
+  ok("reconcile_records filters out confidence out of range", (() => {
+    const r = validateProposal("reconcile_records", {
+      matched_count: 0, unmatched_count: 0,
+      match_details: [{ row_reference: "row 1", match_status: "matched", matched_value: "100.00", confidence: 1.5 }],
+    });
+    return r.ok && (r.payload.match_details as unknown[]).length === 0;
+  })());
+  ok("reconciler → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("reconciler") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentRc } = await import("./lib/run-agent");
+  const { stubBrain: sbRc } = await import("./lib/agent-brain");
+  const { approveAction: approveRc, listPending: listRc } = await import("./lib/actions-service");
+  const orgRc = await makeOrg("pro");
+  const payloadRc = await makePayload(orgRc);
+  const rRc = await runAgentRc({ orgId: orgRc, payloadId: payloadRc, role: "reconciler" }, { db, brain: sbRc });
+  ok("reconciler run produced a reconciliation proposal", rRc.ok && rRc.proposalCount === 1);
+  const pendRc = await listRc(orgRc, { db });
+  const apprRc = await approveRc(orgRc, pendRc[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes reconciliation_runs", apprRc.ok && apprRc.recordTable === "reconciliation_runs", JSON.stringify(apprRc));
+  const { data: rcRows } = await db.from("reconciliation_runs").select("org_id,matched_count").eq("org_id", orgRc);
+  ok("reconciliation record org-stamped", rcRows?.length === 1 && rcRows[0].org_id === orgRc);
+  const { data: rcAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgRc);
+  ok("approveAction writes agent_accuracy for reconciler",
+    rcAccRows?.length === 1 && rcAccRows[0].agent_role === "reconciler" && rcAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgRc);
 
   console.log("== org context ==");
   {
