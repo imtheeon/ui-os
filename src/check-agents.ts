@@ -107,7 +107,7 @@ async function main() {
 
   console.log("== model tiers ==");
   const { modelForRole } = await import("./lib/agent-brain");
-  ok("accountant → haiku model", modelForRole("accountant") === "claude-haiku-4-5");
+  ok("accountant → haiku model", modelForRole("accountant") === "claude-haiku-4-5-20251001");
   ok("analyst → sonnet model", modelForRole("analyst") === "claude-sonnet-4-6");
 
   console.log("== brain (stub) ==");
@@ -250,7 +250,7 @@ async function main() {
   console.log("== anomaly detector ==");
   ok("flag_anomaly accepts good", validateProposal("flag_anomaly", { description: "Outlier value 9e9", severity: "high", row_reference: "row 7" }).ok);
   ok("flag_anomaly rejects bad severity", !validateProposal("flag_anomaly", { description: "x", severity: "critical", row_reference: "row 1" }).ok);
-  ok("anomaly_detector → haiku model", (await import("./lib/agent-brain")).modelForRole("anomaly_detector") === "claude-haiku-4-5");
+  ok("anomaly_detector → haiku model", (await import("./lib/agent-brain")).modelForRole("anomaly_detector") === "claude-haiku-4-5-20251001");
 
   const { runAgent: runAgentAn } = await import("./lib/run-agent");
   const { stubBrain: sbAn } = await import("./lib/agent-brain");
@@ -277,7 +277,7 @@ async function main() {
     scheme: "product_line", assignments: [],
   }).ok);
   ok("categorizer → haiku model",
-    (await import("./lib/agent-brain")).modelForRole("categorizer") === "claude-haiku-4-5");
+    (await import("./lib/agent-brain")).modelForRole("categorizer") === "claude-haiku-4-5-20251001");
 
   const { runAgent: runAgentCat } = await import("./lib/run-agent");
   const { stubBrain: sbCat } = await import("./lib/agent-brain");

@@ -42,7 +42,7 @@ export interface AgentBrain {
 
 /** ONE place a tier maps to a concrete model id. Swap a tier here = every role on that tier moves together. */
 const TIER_MODEL = {
-  haiku:  "claude-haiku-4-5",   // simple classification
+  haiku:  "claude-haiku-4-5-20251001",   // simple classification
   sonnet: "claude-sonnet-4-6",  // moderate reasoning
   opus:   "claude-opus-4-8",    // complex judgment (reserved; no role yet)
 } as const;
