@@ -419,6 +419,23 @@ export async function applyAction(
     return { ok: true, recordTable: "data_quality_assessments", recordId: data.id as string };
   }
 
+  if (v.kind === "flag_compliance_issues") {
+    const { data, error } = await db
+      .from("compliance_flags")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        flags: v.payload.flags,
+        pii_detected: v.payload.pii_detected,
+        risk_level: v.payload.risk_level,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "compliance_flags", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
