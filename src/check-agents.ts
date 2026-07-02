@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -687,6 +687,42 @@ async function main() {
   ok("approveAction writes agent_accuracy for reorder_flagger",
     rfAccRows?.length === 1 && rfAccRows[0].agent_role === "reorder_flagger" && rfAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgRf);
+
+  console.log("== supplier analyst ==");
+  ok("analyze_suppliers accepts good", validateProposal("analyze_suppliers", {
+    total_suppliers: 1, concentration_risk: "high",
+    suppliers: [{ supplier_name: "Stub Supplier Co", total_spend_cents: 500000, order_count: 10, on_time_rate: 0.95, risk_level: "low", notes: "reliable" }],
+  }).ok);
+  ok("analyze_suppliers rejects bad concentration_risk", !validateProposal("analyze_suppliers", {
+    total_suppliers: 1, concentration_risk: "extreme",
+    suppliers: [],
+  }).ok);
+  ok("analyze_suppliers filters out on_time_rate out of range", (() => {
+    const r = validateProposal("analyze_suppliers", {
+      total_suppliers: 0, concentration_risk: "low",
+      suppliers: [{ supplier_name: "Bad Co", total_spend_cents: 1000, order_count: 1, on_time_rate: 1.5, risk_level: "medium", notes: "" }],
+    });
+    return r.ok && (r.payload.suppliers as unknown[]).length === 0;
+  })());
+  ok("supplier_analyst → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("supplier_analyst") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentSa } = await import("./lib/run-agent");
+  const { stubBrain: sbSa } = await import("./lib/agent-brain");
+  const { approveAction: approveSa, listPending: listSa } = await import("./lib/actions-service");
+  const orgSa = await makeOrg("pro");
+  const payloadSa = await makePayload(orgSa);
+  const rSa = await runAgentSa({ orgId: orgSa, payloadId: payloadSa, role: "supplier_analyst" }, { db, brain: sbSa });
+  ok("supplier_analyst run produced an analysis", rSa.ok && rSa.proposalCount === 1);
+  const pendSa = await listSa(orgSa, { db });
+  const apprSa = await approveSa(orgSa, pendSa[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes supplier_analyses", apprSa.ok && apprSa.recordTable === "supplier_analyses", JSON.stringify(apprSa));
+  const { data: saRows } = await db.from("supplier_analyses").select("org_id,concentration_risk").eq("org_id", orgSa);
+  ok("supplier analysis record org-stamped", saRows?.length === 1 && saRows[0].org_id === orgSa);
+  const { data: saAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgSa);
+  ok("approveAction writes agent_accuracy for supplier_analyst",
+    saAccRows?.length === 1 && saAccRows[0].agent_role === "supplier_analyst" && saAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgSa);
 
   console.log("== org context ==");
   {
