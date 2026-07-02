@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -250,6 +250,36 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
         projection_period, risk_level, inflow_cents: inflowCents, outflow_cents: outflowCents,
         net_cents: netCents, runway_days, summary,
       },
+    };
+  }
+
+  if (kind === "categorize_tax_items") {
+    const totalDeductibleCents = typeof p.total_deductible_cents === "number" ? Math.round(p.total_deductible_cents) : NaN;
+    if (!Number.isFinite(totalDeductibleCents) || totalDeductibleCents < 0) return { ok: false, reason: "bad_total_deductible_cents" };
+    const totalNonDeductibleCents = typeof p.total_non_deductible_cents === "number" ? Math.round(p.total_non_deductible_cents) : NaN;
+    if (!Number.isFinite(totalNonDeductibleCents) || totalNonDeductibleCents < 0) return { ok: false, reason: "bad_total_non_deductible_cents" };
+    if (!Array.isArray(p.assignments)) return { ok: false, reason: "assignments_not_array" };
+    const MAX_TAX_ASSIGNMENTS = 200;
+    const MAX_TAX_CATEGORY_LEN = 100;
+    const raw = (p.assignments as unknown[]).slice(0, MAX_TAX_ASSIGNMENTS);
+    const assignments: { row_reference: string; description: string; amount_cents: number; tax_category: string; deductible: boolean }[] = [];
+    for (const a of raw) {
+      if (typeof a !== "object" || a === null) continue;
+      const rec = a as Record<string, unknown>;
+      const row_reference = str(rec.row_reference);
+      const description = str(rec.description);
+      const amount_cents = typeof rec.amount_cents === "number" ? Math.round(rec.amount_cents) : NaN;
+      const tax_category = typeof rec.tax_category === "string" && rec.tax_category.length > 0
+        ? rec.tax_category.slice(0, MAX_TAX_CATEGORY_LEN) : null;
+      const deductible = typeof rec.deductible === "boolean" ? rec.deductible : null;
+      if (row_reference && description && Number.isFinite(amount_cents) && amount_cents >= 0 && tax_category && deductible !== null) {
+        assignments.push({ row_reference, description, amount_cents, tax_category, deductible });
+      }
+    }
+    return {
+      ok: true,
+      kind: "categorize_tax_items",
+      payload: { assignments, total_deductible_cents: totalDeductibleCents, total_non_deductible_cents: totalNonDeductibleCents },
     };
   }
 
