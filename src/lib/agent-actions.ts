@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -481,6 +481,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "process_purchase_orders",
       payload: { purchase_orders, total_orders: totalOrders, total_value_cents: totalValueCents, pending_count: pendingCount },
+    };
+  }
+
+  if (kind === "detect_trends") {
+    const OVERALL_DIRECTIONS = ["up", "down", "flat", "volatile", "mixed"];
+    const overall_direction = typeof p.overall_direction === "string" && OVERALL_DIRECTIONS.includes(p.overall_direction) ? p.overall_direction : null;
+    if (!overall_direction) return { ok: false, reason: "bad_overall_direction" };
+    const trendCount = typeof p.trend_count === "number" ? Math.round(p.trend_count) : NaN;
+    if (!Number.isFinite(trendCount) || trendCount < 0) return { ok: false, reason: "bad_trend_count" };
+    if (!Array.isArray(p.trends)) return { ok: false, reason: "trends_not_array" };
+    const DIRECTIONS = ["up", "down", "flat", "volatile"];
+    const MAGNITUDES = ["low", "medium", "high"];
+    const MAX_TRENDS = 50;
+    const raw = (p.trends as unknown[]).slice(0, MAX_TRENDS);
+    const trends: { column: string; direction: string; magnitude: string; description: string; data_points: number }[] = [];
+    for (const t of raw) {
+      if (typeof t !== "object" || t === null) continue;
+      const rec = t as Record<string, unknown>;
+      const column = str(rec.column);
+      const direction = typeof rec.direction === "string" && DIRECTIONS.includes(rec.direction) ? rec.direction : null;
+      const magnitude = typeof rec.magnitude === "string" && MAGNITUDES.includes(rec.magnitude) ? rec.magnitude : null;
+      const description = str(rec.description);
+      const data_points = typeof rec.data_points === "number" ? Math.round(rec.data_points) : NaN;
+      if (column && direction && magnitude && description && Number.isFinite(data_points) && data_points >= 0) {
+        trends.push({ column, direction, magnitude, description, data_points });
+      }
+    }
+    return {
+      ok: true,
+      kind: "detect_trends",
+      payload: { trends, trend_count: trendCount, overall_direction },
     };
   }
 
