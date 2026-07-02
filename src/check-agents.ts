@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, trend_detector, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "trend_detector", "accountant", "analyst"]));
-  ok("thirteen agent/run events enqueued", enq.length === 13 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, trend_detector, period_comparator, accountant, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "trend_detector", "period_comparator", "accountant", "analyst"]));
+  ok("fourteen agent/run events enqueued", enq.length === 14 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, trend_detector, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "trend_detector", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, trend_detector, period_comparator, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "trend_detector", "period_comparator", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+trend_detector+accountant+analyst", captured.length === 13);
+  ok("manager enqueued anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+trend_detector+period_comparator+accountant+analyst", captured.length === 14);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 13 proposals (anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + trend + ledger + report)", chainProps?.length === 13);
+  ok("chain produced 14 proposals (anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + trend + period comparison + ledger + report)", chainProps?.length === 14);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -798,6 +798,42 @@ async function main() {
   ok("approveAction writes agent_accuracy for trend_detector",
     tdAccRows?.length === 1 && tdAccRows[0].agent_role === "trend_detector" && tdAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgTd);
+
+  console.log("== period comparator ==");
+  ok("compare_periods accepts good", validateProposal("compare_periods", {
+    period_a_label: "Period A", period_b_label: "Period B", overall_change_pct: 20.0, summary: "Revenue increased 20%.",
+    comparisons: [{ metric: "Revenue", period_a_value: 100000, period_b_value: 120000, change_pct: 20.0, change_direction: "up" }],
+  }).ok);
+  ok("compare_periods rejects empty period_a_label", !validateProposal("compare_periods", {
+    period_a_label: "", period_b_label: "Period B", overall_change_pct: 0, summary: "x",
+    comparisons: [],
+  }).ok);
+  ok("compare_periods filters out bad change_direction", (() => {
+    const r = validateProposal("compare_periods", {
+      period_a_label: "A", period_b_label: "B", overall_change_pct: 0, summary: "x",
+      comparisons: [{ metric: "Cost", period_a_value: 100, period_b_value: 100, change_pct: 0, change_direction: "sideways" }],
+    });
+    return r.ok && (r.payload.comparisons as unknown[]).length === 0;
+  })());
+  ok("period_comparator → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("period_comparator") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentPc } = await import("./lib/run-agent");
+  const { stubBrain: sbPc } = await import("./lib/agent-brain");
+  const { approveAction: approvePc, listPending: listPc } = await import("./lib/actions-service");
+  const orgPc = await makeOrg("pro");
+  const payloadPc = await makePayload(orgPc);
+  const rPc = await runAgentPc({ orgId: orgPc, payloadId: payloadPc, role: "period_comparator" }, { db, brain: sbPc });
+  ok("period_comparator run produced a comparison", rPc.ok && rPc.proposalCount === 1);
+  const pendPc = await listPc(orgPc, { db });
+  const apprPc = await approvePc(orgPc, pendPc[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes period_comparisons", apprPc.ok && apprPc.recordTable === "period_comparisons", JSON.stringify(apprPc));
+  const { data: pcRows } = await db.from("period_comparisons").select("org_id,period_a_label").eq("org_id", orgPc);
+  ok("period comparison record org-stamped", pcRows?.length === 1 && pcRows[0].org_id === orgPc);
+  const { data: pcAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgPc);
+  ok("approveAction writes agent_accuracy for period_comparator",
+    pcAccRows?.length === 1 && pcAccRows[0].agent_role === "period_comparator" && pcAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgPc);
 
   console.log("== org context ==");
   {

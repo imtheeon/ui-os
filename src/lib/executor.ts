@@ -327,6 +327,25 @@ export async function applyAction(
     return { ok: true, recordTable: "trend_detections", recordId: data.id as string };
   }
 
+  if (v.kind === "compare_periods") {
+    const { data, error } = await db
+      .from("period_comparisons")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        comparisons: v.payload.comparisons,
+        period_a_label: v.payload.period_a_label,
+        period_b_label: v.payload.period_b_label,
+        overall_change_pct: v.payload.overall_change_pct,
+        summary: v.payload.summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "period_comparisons", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
