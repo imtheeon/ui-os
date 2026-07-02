@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -795,6 +795,35 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "request_clarification",
       payload: { questions, context, urgency },
+    };
+  }
+
+  if (kind === "analyze_multi_period") {
+    const periodsDetected = typeof p.periods_detected === "number" ? Math.round(p.periods_detected) : NaN;
+    if (!Number.isFinite(periodsDetected) || periodsDetected < 0) return { ok: false, reason: "bad_periods_detected" };
+    const DOMINANT_PATTERNS = ["growth", "decline", "seasonal", "volatile", "stable", "insufficient_data"];
+    const dominant_pattern = typeof p.dominant_pattern === "string" && DOMINANT_PATTERNS.includes(p.dominant_pattern) ? p.dominant_pattern : null;
+    if (!dominant_pattern) return { ok: false, reason: "bad_dominant_pattern" };
+    const period_labels = strArray(p.period_labels, 24, MAX_STR);
+    if (!Array.isArray(p.cross_period_insights)) return { ok: false, reason: "cross_period_insights_not_array" };
+    const SIGNIFICANCES = ["low", "medium", "high"];
+    const MAX_INSIGHTS = 20;
+    const raw = (p.cross_period_insights as unknown[]).slice(0, MAX_INSIGHTS);
+    const cross_period_insights: { insight: string; affected_periods: string[]; significance: string }[] = [];
+    for (const i of raw) {
+      if (typeof i !== "object" || i === null) continue;
+      const rec = i as Record<string, unknown>;
+      const insight = str(rec.insight);
+      const affected_periods = strArray(rec.affected_periods, 24, MAX_STR);
+      const significance = typeof rec.significance === "string" && SIGNIFICANCES.includes(rec.significance) ? rec.significance : null;
+      if (insight && significance) {
+        cross_period_insights.push({ insight, affected_periods, significance });
+      }
+    }
+    return {
+      ok: true,
+      kind: "analyze_multi_period",
+      payload: { periods_detected: periodsDetected, period_labels, cross_period_insights, dominant_pattern },
     };
   }
 
