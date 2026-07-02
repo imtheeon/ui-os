@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -378,6 +378,40 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "track_inventory",
       payload: { items, total_items: totalItems, total_value_cents: totalValueCents },
+    };
+  }
+
+  if (kind === "flag_reorders") {
+    const criticalCount = typeof p.critical_count === "number" ? Math.round(p.critical_count) : NaN;
+    if (!Number.isFinite(criticalCount) || criticalCount < 0) return { ok: false, reason: "bad_critical_count" };
+    const warningCount = typeof p.warning_count === "number" ? Math.round(p.warning_count) : NaN;
+    if (!Number.isFinite(warningCount) || warningCount < 0) return { ok: false, reason: "bad_warning_count" };
+    if (!Array.isArray(p.flags)) return { ok: false, reason: "flags_not_array" };
+    const URGENCIES = ["critical", "warning", "ok"];
+    const MAX_FLAGS = 200;
+    const raw = (p.flags as unknown[]).slice(0, MAX_FLAGS);
+    const flags: { sku: string; name: string; current_quantity: number; reorder_point: number; urgency: string; suggested_reorder_qty: number }[] = [];
+    for (const f of raw) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const sku = str(rec.sku);
+      const name = str(rec.name);
+      const current_quantity = typeof rec.current_quantity === "number" ? Math.round(rec.current_quantity) : NaN;
+      const reorder_point = typeof rec.reorder_point === "number" ? Math.round(rec.reorder_point) : NaN;
+      const urgency = typeof rec.urgency === "string" && URGENCIES.includes(rec.urgency) ? rec.urgency : null;
+      const suggested_reorder_qty = typeof rec.suggested_reorder_qty === "number" ? Math.round(rec.suggested_reorder_qty) : NaN;
+      if (
+        sku && name && Number.isFinite(current_quantity) && current_quantity >= 0 &&
+        Number.isFinite(reorder_point) && reorder_point >= 0 && urgency &&
+        Number.isFinite(suggested_reorder_qty) && suggested_reorder_qty >= 0
+      ) {
+        flags.push({ sku, name, current_quantity, reorder_point, urgency, suggested_reorder_qty });
+      }
+    }
+    return {
+      ok: true,
+      kind: "flag_reorders",
+      payload: { flags, critical_count: criticalCount, warning_count: warningCount },
     };
   }
 

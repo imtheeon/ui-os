@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "data_merger", "analyst"]));
+  ok("non-financial routes to [anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, data_merger, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "data_merger", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -648,6 +648,45 @@ async function main() {
   ok("approveAction writes agent_accuracy for inventory_tracker",
     itAccRows?.length === 1 && itAccRows[0].agent_role === "inventory_tracker" && itAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgIt);
+
+  console.log("== reorder flagger ==");
+  ok("flag_reorders accepts good", validateProposal("flag_reorders", {
+    critical_count: 0, warning_count: 1,
+    flags: [{ sku: "SKU-001", name: "Stub Widget", current_quantity: 5, reorder_point: 20, urgency: "warning", suggested_reorder_qty: 100 }],
+  }).ok);
+  ok("flag_reorders filters out bad urgency", (() => {
+    const r = validateProposal("flag_reorders", {
+      critical_count: 0, warning_count: 0,
+      flags: [{ sku: "SKU-002", name: "x", current_quantity: 5, reorder_point: 20, urgency: "urgent", suggested_reorder_qty: 50 }],
+    });
+    return r.ok && (r.payload.flags as unknown[]).length === 0;
+  })());
+  ok("flag_reorders filters out negative current_quantity", (() => {
+    const r = validateProposal("flag_reorders", {
+      critical_count: 0, warning_count: 0,
+      flags: [{ sku: "SKU-003", name: "x", current_quantity: -1, reorder_point: 20, urgency: "critical", suggested_reorder_qty: 50 }],
+    });
+    return r.ok && (r.payload.flags as unknown[]).length === 0;
+  })());
+  ok("reorder_flagger → haiku model",
+    (await import("./lib/agent-brain")).modelForRole("reorder_flagger") === "claude-haiku-4-5-20251001");
+
+  const { runAgent: runAgentRf } = await import("./lib/run-agent");
+  const { stubBrain: sbRf } = await import("./lib/agent-brain");
+  const { approveAction: approveRf, listPending: listRf } = await import("./lib/actions-service");
+  const orgRf = await makeOrg("pro");
+  const payloadRf = await makePayload(orgRf);
+  const rRf = await runAgentRf({ orgId: orgRf, payloadId: payloadRf, role: "reorder_flagger" }, { db, brain: sbRf });
+  ok("reorder_flagger run produced a flag", rRf.ok && rRf.proposalCount === 1);
+  const pendRf = await listRf(orgRf, { db });
+  const apprRf = await approveRf(orgRf, pendRf[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes reorder_flags", apprRf.ok && apprRf.recordTable === "reorder_flags", JSON.stringify(apprRf));
+  const { data: rfRows } = await db.from("reorder_flags").select("org_id,warning_count").eq("org_id", orgRf);
+  ok("reorder flag record org-stamped", rfRows?.length === 1 && rfRows[0].org_id === orgRf);
+  const { data: rfAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgRf);
+  ok("approveAction writes agent_accuracy for reorder_flagger",
+    rfAccRows?.length === 1 && rfAccRows[0].agent_role === "reorder_flagger" && rfAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgRf);
 
   console.log("== org context ==");
   {
