@@ -489,6 +489,24 @@ export async function applyAction(
     return { ok: true, recordTable: "clarification_requests", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_multi_period") {
+    const { data, error } = await db
+      .from("multi_period_analyses")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        periods_detected: v.payload.periods_detected,
+        period_labels: v.payload.period_labels,
+        cross_period_insights: v.payload.cross_period_insights,
+        dominant_pattern: v.payload.dominant_pattern,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "multi_period_analyses", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
