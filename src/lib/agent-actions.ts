@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1759,6 +1759,43 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
         current_assets, current_liabilities, working_capital, current_ratio, quick_ratio,
         days_inventory_outstanding, days_sales_outstanding, days_payable_outstanding,
         cash_conversion_cycle_days, status, recommendations,
+      },
+    };
+  }
+
+  if (kind === "calculate_break_even") {
+    const STATUSES = ["above_break_even", "below_break_even", "at_break_even", "insufficient_data"];
+    const status = typeof p.status === "string" && STATUSES.includes(p.status) ? p.status : null;
+    if (!status) return { ok: false, reason: "bad_status" };
+
+    const fixed_costs = numOrNull(p.fixed_costs, 0);
+    if (fixed_costs === NUM_INVALID) return { ok: false, reason: "bad_fixed_costs" };
+    const variable_cost_per_unit = numOrNull(p.variable_cost_per_unit, 0);
+    if (variable_cost_per_unit === NUM_INVALID) return { ok: false, reason: "bad_variable_cost_per_unit" };
+    const price_per_unit = numOrNull(p.price_per_unit, 0);
+    if (price_per_unit === NUM_INVALID) return { ok: false, reason: "bad_price_per_unit" };
+    const break_even_units = numOrNull(p.break_even_units, 0);
+    if (break_even_units === NUM_INVALID) return { ok: false, reason: "bad_break_even_units" };
+    const break_even_revenue = numOrNull(p.break_even_revenue, 0);
+    if (break_even_revenue === NUM_INVALID) return { ok: false, reason: "bad_break_even_revenue" };
+    const current_units_or_revenue = numOrNull(p.current_units_or_revenue, 0);
+    if (current_units_or_revenue === NUM_INVALID) return { ok: false, reason: "bad_current_units_or_revenue" };
+    const margin_of_safety = numOrNull(p.margin_of_safety, 0);
+    if (margin_of_safety === NUM_INVALID) return { ok: false, reason: "bad_margin_of_safety" };
+    const margin_of_safety_percentage = numOrNull(p.margin_of_safety_percentage, 0);
+    if (margin_of_safety_percentage === NUM_INVALID) return { ok: false, reason: "bad_margin_of_safety_percentage" };
+    const contribution_margin_per_unit = numOrNull(p.contribution_margin_per_unit, 0);
+    if (contribution_margin_per_unit === NUM_INVALID) return { ok: false, reason: "bad_contribution_margin_per_unit" };
+    const contribution_margin_ratio = numOrNull(p.contribution_margin_ratio, 0, 1);
+    if (contribution_margin_ratio === NUM_INVALID) return { ok: false, reason: "bad_contribution_margin_ratio" };
+
+    return {
+      ok: true,
+      kind: "calculate_break_even",
+      payload: {
+        fixed_costs, variable_cost_per_unit, price_per_unit, break_even_units, break_even_revenue,
+        current_units_or_revenue, margin_of_safety, margin_of_safety_percentage,
+        contribution_margin_per_unit, contribution_margin_ratio, status,
       },
     };
   }
