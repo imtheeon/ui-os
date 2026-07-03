@@ -914,6 +914,27 @@ export async function applyAction(
     return { ok: true, recordTable: "ar_aging_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_accounts_payable") {
+    const { data, error } = await db
+      .from("ap_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_payables: v.payload.total_payables,
+        due_this_week: v.payload.due_this_week,
+        due_this_month: v.payload.due_this_month,
+        overdue_amount: v.payload.overdue_amount,
+        vendors: v.payload.vendors,
+        early_payment_opportunities: v.payload.early_payment_opportunities,
+        cash_required_30_days: v.payload.cash_required_30_days,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "ap_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

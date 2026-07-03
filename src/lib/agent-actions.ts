@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1559,6 +1559,44 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_ar_aging",
       payload: { buckets, total_ar, overdue_amount, overdue_percentage, collection_priority, risk_level },
+    };
+  }
+
+  if (kind === "analyze_accounts_payable") {
+    const total_payables = typeof p.total_payables === "number" && Number.isFinite(p.total_payables) && p.total_payables >= 0 ? p.total_payables : null;
+    if (total_payables === null) return { ok: false, reason: "bad_total_payables" };
+    const due_this_week = typeof p.due_this_week === "number" && Number.isFinite(p.due_this_week) && p.due_this_week >= 0 ? p.due_this_week : null;
+    if (due_this_week === null) return { ok: false, reason: "bad_due_this_week" };
+    const due_this_month = typeof p.due_this_month === "number" && Number.isFinite(p.due_this_month) && p.due_this_month >= 0 ? p.due_this_month : null;
+    if (due_this_month === null) return { ok: false, reason: "bad_due_this_month" };
+    const overdue_amount = typeof p.overdue_amount === "number" && Number.isFinite(p.overdue_amount) && p.overdue_amount >= 0 ? p.overdue_amount : null;
+    if (overdue_amount === null) return { ok: false, reason: "bad_overdue_amount" };
+    const cash_required_30_days = typeof p.cash_required_30_days === "number" && Number.isFinite(p.cash_required_30_days) && p.cash_required_30_days >= 0 ? p.cash_required_30_days : null;
+    if (cash_required_30_days === null) return { ok: false, reason: "bad_cash_required_30_days" };
+    if (!Array.isArray(p.vendors)) return { ok: false, reason: "vendors_not_array" };
+
+    const STATUSES = ["current", "due_soon", "overdue"];
+    const MAX_VENDORS = 20;
+    const raw = (p.vendors as unknown[]).slice(0, MAX_VENDORS);
+    const vendors: { vendor_name: string; amount_owed: number; due_date: string; status: string }[] = [];
+    for (const v of raw) {
+      if (typeof v !== "object" || v === null) continue;
+      const rec = v as Record<string, unknown>;
+      const vendor_name = str(rec.vendor_name);
+      const amount_owed = typeof rec.amount_owed === "number" && Number.isFinite(rec.amount_owed) && rec.amount_owed >= 0 ? rec.amount_owed : null;
+      const due_date = typeof rec.due_date === "string" ? rec.due_date.slice(0, MAX_STR) : null;
+      const status = typeof rec.status === "string" && STATUSES.includes(rec.status) ? rec.status : null;
+      if (vendor_name && amount_owed !== null && due_date !== null && status) {
+        vendors.push({ vendor_name, amount_owed, due_date, status });
+      }
+    }
+
+    const early_payment_opportunities = strArray(p.early_payment_opportunities, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_accounts_payable",
+      payload: { total_payables, due_this_week, due_this_month, overdue_amount, vendors, early_payment_opportunities, cash_required_30_days },
     };
   }
 
