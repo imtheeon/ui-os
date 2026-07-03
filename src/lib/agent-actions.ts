@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1222,6 +1222,58 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "prepare_meeting",
       payload: { meeting_type, agenda_items, talking_points, questions_to_ask, likely_client_questions },
+    };
+  }
+
+  if (kind === "build_board_deck") {
+    const MAX_THREAD = 1000;
+    const narrative_thread = typeof p.narrative_thread === "string" && p.narrative_thread.length > 0 ? p.narrative_thread.slice(0, MAX_THREAD) : null;
+    if (!narrative_thread) return { ok: false, reason: "missing_narrative_thread" };
+    if (!Array.isArray(p.slides)) return { ok: false, reason: "slides_not_array" };
+    if (!Array.isArray(p.key_metrics)) return { ok: false, reason: "key_metrics_not_array" };
+
+    const CONTENT_TYPES = ["title_slide", "metrics", "chart_suggestion", "narrative", "next_steps", "appendix"];
+    const MAX_SLIDES = 20;
+    const MAX_BULLETS = 5;
+    const MAX_BULLET_LEN = 200;
+    const MAX_NOTES = 500;
+    const rawSlides = (p.slides as unknown[]).slice(0, MAX_SLIDES);
+    const slides: { slide_number: number; title: string; content_type: string; bullet_points: string[]; speaker_notes: string }[] = [];
+    for (const s of rawSlides) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const slide_number = typeof rec.slide_number === "number" ? Math.round(rec.slide_number) : NaN;
+      const slideTitle = str(rec.title);
+      const content_type = typeof rec.content_type === "string" && CONTENT_TYPES.includes(rec.content_type) ? rec.content_type : null;
+      const speaker_notes = typeof rec.speaker_notes === "string" ? rec.speaker_notes.slice(0, MAX_NOTES) : null;
+      if (
+        Number.isFinite(slide_number) && slide_number >= 1 && slide_number <= 20 &&
+        slideTitle && content_type && speaker_notes !== null
+      ) {
+        const bullet_points = strArray(rec.bullet_points, MAX_BULLETS, MAX_BULLET_LEN);
+        slides.push({ slide_number, title: slideTitle, content_type, bullet_points, speaker_notes });
+      }
+    }
+
+    const TRENDS = ["up", "down", "flat", "unknown"];
+    const MAX_METRICS = 10;
+    const rawMetrics = (p.key_metrics as unknown[]).slice(0, MAX_METRICS);
+    const key_metrics: { metric: string; value: string; trend: string }[] = [];
+    for (const m of rawMetrics) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const metric = str(rec.metric);
+      const value = str(rec.value);
+      const trend = typeof rec.trend === "string" && TRENDS.includes(rec.trend) ? rec.trend : null;
+      if (metric && value && trend) {
+        key_metrics.push({ metric, value, trend });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "build_board_deck",
+      payload: { slides, key_metrics, narrative_thread },
     };
   }
 

@@ -743,6 +743,23 @@ export async function applyAction(
     return { ok: true, recordTable: "meeting_prep_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "build_board_deck") {
+    const { data, error } = await db
+      .from("board_deck_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        slides: v.payload.slides,
+        key_metrics: v.payload.key_metrics,
+        narrative_thread: v.payload.narrative_thread,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "board_deck_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
