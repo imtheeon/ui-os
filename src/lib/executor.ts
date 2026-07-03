@@ -615,6 +615,25 @@ export async function applyAction(
     return { ok: true, recordTable: "health_score_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "draft_email") {
+    const { data, error } = await db
+      .from("email_drafts")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        subject: v.payload.subject,
+        body: v.payload.body,
+        recipient_type: v.payload.recipient_type,
+        tone: v.payload.tone,
+        key_points: v.payload.key_points,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "email_drafts", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

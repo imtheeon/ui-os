@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1011,6 +1011,27 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_health_score",
       payload: { overall_score: overallScore, grade, dimensions, summary },
+    };
+  }
+
+  if (kind === "draft_email") {
+    const MAX_SUBJECT = 200;
+    const MAX_BODY = 5000;
+    const subject = typeof p.subject === "string" && p.subject.length > 0 ? p.subject.slice(0, MAX_SUBJECT) : null;
+    if (!subject) return { ok: false, reason: "missing_subject" };
+    const body = typeof p.body === "string" && p.body.length > 0 ? p.body.slice(0, MAX_BODY) : null;
+    if (!body) return { ok: false, reason: "missing_body" };
+    const RECIPIENT_TYPES = ["client", "internal", "vendor", "board", "general"];
+    const recipient_type = typeof p.recipient_type === "string" && RECIPIENT_TYPES.includes(p.recipient_type) ? p.recipient_type : null;
+    if (!recipient_type) return { ok: false, reason: "bad_recipient_type" };
+    const TONES = ["formal", "professional", "friendly", "urgent"];
+    const tone = typeof p.tone === "string" && TONES.includes(p.tone) ? p.tone : null;
+    if (!tone) return { ok: false, reason: "bad_tone" };
+    const key_points = strArray(p.key_points, 10, 300);
+    return {
+      ok: true,
+      kind: "draft_email",
+      payload: { subject, body, recipient_type, tone, key_points },
     };
   }
 
