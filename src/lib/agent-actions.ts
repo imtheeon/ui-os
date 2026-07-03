@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2976,6 +2976,59 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "classify_transactions",
       payload: { classified_transactions, category_summary, total_transactions, total_amount, classification_accuracy, uncategorized_count },
+    };
+  }
+
+  if (kind === "check_expense_policy") {
+    const VIOLATION_TYPES = ["over_limit", "missing_receipt", "unapproved_vendor", "wrong_category", "duplicate", "out_of_policy", "requires_approval"];
+    const SEVERITIES6 = ["critical", "high", "medium", "low"];
+    const rawViolations = Array.isArray(p.violations) ? (p.violations as unknown[]).slice(0, 200) : [];
+    const violations: { expense_ref: string; submitter: string | null; amount: number; category: string; violation_type: string; policy_limit: number | null; excess_amount: number | null; severity: string }[] = [];
+    for (const v of rawViolations) {
+      if (typeof v !== "object" || v === null) continue;
+      const rec = v as Record<string, unknown>;
+      const expense_ref = str(rec.expense_ref);
+      const amount = typeof rec.amount === "number" && Number.isFinite(rec.amount) && rec.amount >= 0 ? rec.amount : null;
+      const category = str(rec.category);
+      const violation_type = typeof rec.violation_type === "string" && VIOLATION_TYPES.includes(rec.violation_type) ? rec.violation_type : null;
+      const severity = typeof rec.severity === "string" && SEVERITIES6.includes(rec.severity) ? rec.severity : null;
+      const policy_limit = numOrNull(rec.policy_limit);
+      const excess_amount = numOrNull(rec.excess_amount, 0);
+      if (expense_ref && amount !== null && category && violation_type && severity && policy_limit !== NUM_INVALID && excess_amount !== NUM_INVALID) {
+        const submitter = typeof rec.submitter === "string" && rec.submitter.length > 0 ? rec.submitter.slice(0, 200) : null;
+        violations.push({ expense_ref, submitter, amount, category, violation_type, policy_limit, excess_amount, severity });
+      }
+    }
+
+    const violation_count = typeof p.violation_count === "number" && Number.isInteger(p.violation_count) && p.violation_count >= 0 ? p.violation_count : null;
+    if (violation_count === null) return { ok: false, reason: "bad_violation_count" };
+
+    const total_policy_exception_amount = typeof p.total_policy_exception_amount === "number" && Number.isFinite(p.total_policy_exception_amount) && p.total_policy_exception_amount >= 0 ? p.total_policy_exception_amount : null;
+    if (total_policy_exception_amount === null) return { ok: false, reason: "bad_total_policy_exception_amount" };
+
+    const compliance_rate = typeof p.compliance_rate === "number" && Number.isFinite(p.compliance_rate) && p.compliance_rate >= 0 && p.compliance_rate <= 100 ? p.compliance_rate : null;
+    if (compliance_rate === null) return { ok: false, reason: "bad_compliance_rate" };
+
+    const rawSummary3 = Array.isArray(p.policy_summary) ? (p.policy_summary as unknown[]).slice(0, 20) : [];
+    const policy_summary: { category: string; total_spent: number; budget_or_limit: number | null; utilization: number | null }[] = [];
+    for (const s of rawSummary3) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const category = str(rec.category);
+      const total_spent = typeof rec.total_spent === "number" && Number.isFinite(rec.total_spent) && rec.total_spent >= 0 ? rec.total_spent : null;
+      const budget_or_limit = numOrNull(rec.budget_or_limit);
+      const utilization = numOrNull(rec.utilization);
+      if (category && total_spent !== null && budget_or_limit !== NUM_INVALID && utilization !== NUM_INVALID) {
+        policy_summary.push({ category, total_spent, budget_or_limit, utilization });
+      }
+    }
+
+    const escalations = strArray(p.escalations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "check_expense_policy",
+      payload: { violations, violation_count, total_policy_exception_amount, compliance_rate, policy_summary, escalations },
     };
   }
 
