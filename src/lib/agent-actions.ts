@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2923,6 +2923,59 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "assess_data_privacy",
       payload: { pii_fields, sensitive_financial_fields, risk_level, compliance_concerns, masking_recommendations },
+    };
+  }
+
+  if (kind === "classify_transactions") {
+    const CATEGORIES2 = ["revenue", "cogs", "payroll", "rent", "utilities", "software", "marketing", "travel", "professional_services", "tax", "capex", "loan", "transfer", "refund", "other"];
+    const CONFIDENCES3 = ["high", "medium", "low"];
+    const rawTx = Array.isArray(p.classified_transactions) ? (p.classified_transactions as unknown[]).slice(0, 500) : [];
+    const classified_transactions: { transaction_ref: string; description: string; amount: number; date: string; category: string; subcategory: string | null; confidence: string }[] = [];
+    for (const t of rawTx) {
+      if (typeof t !== "object" || t === null) continue;
+      const rec = t as Record<string, unknown>;
+      const transaction_ref = str(rec.transaction_ref);
+      const description = str(rec.description);
+      const amount = typeof rec.amount === "number" && Number.isFinite(rec.amount) ? rec.amount : null;
+      const date = str(rec.date);
+      const category = typeof rec.category === "string" && CATEGORIES2.includes(rec.category) ? rec.category : null;
+      const confidence = typeof rec.confidence === "string" && CONFIDENCES3.includes(rec.confidence) ? rec.confidence : null;
+      if (transaction_ref && description && amount !== null && date && category && confidence) {
+        const subcategory = typeof rec.subcategory === "string" && rec.subcategory.length > 0 ? rec.subcategory.slice(0, 200) : null;
+        classified_transactions.push({ transaction_ref, description, amount, date, category, subcategory, confidence });
+      }
+    }
+
+    const rawSummary2 = Array.isArray(p.category_summary) ? (p.category_summary as unknown[]).slice(0, 30) : [];
+    const category_summary: { category: string; transaction_count: number; total_amount: number; percentage_of_total: number }[] = [];
+    for (const c of rawSummary2) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const category = str(rec.category);
+      const transaction_count = typeof rec.transaction_count === "number" && Number.isInteger(rec.transaction_count) && rec.transaction_count >= 0 ? rec.transaction_count : null;
+      const total_amount = typeof rec.total_amount === "number" && Number.isFinite(rec.total_amount) ? rec.total_amount : null;
+      const percentage_of_total = typeof rec.percentage_of_total === "number" && Number.isFinite(rec.percentage_of_total) && rec.percentage_of_total >= 0 && rec.percentage_of_total <= 100 ? rec.percentage_of_total : null;
+      if (category && transaction_count !== null && total_amount !== null && percentage_of_total !== null) {
+        category_summary.push({ category, transaction_count, total_amount, percentage_of_total });
+      }
+    }
+
+    const total_transactions = typeof p.total_transactions === "number" && Number.isInteger(p.total_transactions) && p.total_transactions >= 0 ? p.total_transactions : null;
+    if (total_transactions === null) return { ok: false, reason: "bad_total_transactions" };
+    const total_amount = typeof p.total_amount === "number" && Number.isFinite(p.total_amount) ? p.total_amount : null;
+    if (total_amount === null) return { ok: false, reason: "bad_total_amount" };
+
+    const ACCURACIES = ["high", "medium", "low"];
+    const classification_accuracy = typeof p.classification_accuracy === "string" && ACCURACIES.includes(p.classification_accuracy) ? p.classification_accuracy : null;
+    if (!classification_accuracy) return { ok: false, reason: "bad_classification_accuracy" };
+
+    const uncategorized_count = typeof p.uncategorized_count === "number" && Number.isInteger(p.uncategorized_count) && p.uncategorized_count >= 0 ? p.uncategorized_count : null;
+    if (uncategorized_count === null) return { ok: false, reason: "bad_uncategorized_count" };
+
+    return {
+      ok: true,
+      kind: "classify_transactions",
+      payload: { classified_transactions, category_summary, total_transactions, total_amount, classification_accuracy, uncategorized_count },
     };
   }
 

@@ -1504,6 +1504,26 @@ export async function applyAction(
     return { ok: true, recordTable: "data_privacy_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "classify_transactions") {
+    const { data, error } = await db
+      .from("transaction_classifier_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        classified_transactions: v.payload.classified_transactions,
+        category_summary: v.payload.category_summary,
+        total_transactions: v.payload.total_transactions,
+        total_amount: v.payload.total_amount,
+        classification_accuracy: v.payload.classification_accuracy,
+        uncategorized_count: v.payload.uncategorized_count,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "transaction_classifier_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
