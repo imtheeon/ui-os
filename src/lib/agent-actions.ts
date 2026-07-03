@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1375,6 +1375,44 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "extract_kpi_cards",
       payload: { kpi_cards, total_kpis: totalKpis },
+    };
+  }
+
+  if (kind === "generate_dashboard_spec") {
+    const MAX_TITLE = 200;
+    const dashboard_title = typeof p.dashboard_title === "string" && p.dashboard_title.length > 0 ? p.dashboard_title.slice(0, MAX_TITLE) : null;
+    if (!dashboard_title) return { ok: false, reason: "missing_dashboard_title" };
+    const LAYOUTS = ["financial", "operational", "executive", "mixed"];
+    const layout = typeof p.layout === "string" && LAYOUTS.includes(p.layout) ? p.layout : null;
+    if (!layout) return { ok: false, reason: "bad_layout" };
+    const REFRESHES = ["realtime", "daily", "weekly", "monthly", "on_upload"];
+    const recommended_refresh = typeof p.recommended_refresh === "string" && REFRESHES.includes(p.recommended_refresh) ? p.recommended_refresh : null;
+    if (!recommended_refresh) return { ok: false, reason: "bad_recommended_refresh" };
+    const totalComponents = typeof p.total_components === "number" ? Math.round(p.total_components) : NaN;
+    if (!Number.isFinite(totalComponents) || totalComponents < 0) return { ok: false, reason: "bad_total_components" };
+    if (!Array.isArray(p.sections)) return { ok: false, reason: "sections_not_array" };
+
+    const SECTION_TYPES = ["kpi_row", "chart_section", "table_section", "narrative_section"];
+    const MAX_SECTIONS = 5;
+    const MAX_COMPONENT_IDS = 10;
+    const raw = (p.sections as unknown[]).slice(0, MAX_SECTIONS);
+    const sections: { section_title: string; section_type: string; component_ids: string[]; display_order: number }[] = [];
+    for (const s of raw) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const section_title = str(rec.section_title);
+      const section_type = typeof rec.section_type === "string" && SECTION_TYPES.includes(rec.section_type) ? rec.section_type : null;
+      const display_order = typeof rec.display_order === "number" ? Math.round(rec.display_order) : NaN;
+      if (section_title && section_type && Number.isFinite(display_order) && display_order >= 1 && display_order <= 5) {
+        const component_ids = strArray(rec.component_ids, MAX_COMPONENT_IDS, MAX_STR);
+        sections.push({ section_title, section_type, component_ids, display_order });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "generate_dashboard_spec",
+      payload: { dashboard_title, layout, sections, recommended_refresh, total_components: totalComponents },
     };
   }
 

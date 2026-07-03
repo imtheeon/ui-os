@@ -809,6 +809,25 @@ export async function applyAction(
     return { ok: true, recordTable: "kpi_card_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_dashboard_spec") {
+    const { data, error } = await db
+      .from("dashboard_spec_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        dashboard_title: v.payload.dashboard_title,
+        layout: v.payload.layout,
+        sections: v.payload.sections,
+        recommended_refresh: v.payload.recommended_refresh,
+        total_components: v.payload.total_components,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "dashboard_spec_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
