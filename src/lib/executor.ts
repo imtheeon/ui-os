@@ -668,6 +668,24 @@ export async function applyAction(
     return { ok: true, recordTable: "pattern_extractions", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_alerts") {
+    const { data, error } = await db
+      .from("alert_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        alerts: v.payload.alerts,
+        severity_level: v.payload.severity_level,
+        requires_immediate_action: v.payload.requires_immediate_action,
+        summary: v.payload.summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "alert_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

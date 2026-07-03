@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1093,6 +1093,38 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "extract_patterns",
       payload: { patterns, pattern_count: patternCount, learnable: p.learnable },
+    };
+  }
+
+  if (kind === "generate_alerts") {
+    const SEVERITY_LEVELS = ["none", "info", "warning", "critical", "urgent"];
+    const severity_level = typeof p.severity_level === "string" && SEVERITY_LEVELS.includes(p.severity_level) ? p.severity_level : null;
+    if (!severity_level) return { ok: false, reason: "bad_severity_level" };
+    if (typeof p.requires_immediate_action !== "boolean") return { ok: false, reason: "bad_requires_immediate_action" };
+    const MAX_SUMMARY = 500;
+    const summary = typeof p.summary === "string" && p.summary.length > 0 ? p.summary.slice(0, MAX_SUMMARY) : null;
+    if (!summary) return { ok: false, reason: "missing_summary" };
+    if (!Array.isArray(p.alerts)) return { ok: false, reason: "alerts_not_array" };
+    const ALERT_SEVERITIES = ["info", "warning", "critical", "urgent"];
+    const MAX_ALERTS = 20;
+    const raw = (p.alerts as unknown[]).slice(0, MAX_ALERTS);
+    const alerts: { area: string; condition: string; severity: string; message: string; recommended_action: string }[] = [];
+    for (const a of raw) {
+      if (typeof a !== "object" || a === null) continue;
+      const rec = a as Record<string, unknown>;
+      const area = str(rec.area);
+      const condition = str(rec.condition);
+      const severity = typeof rec.severity === "string" && ALERT_SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      const message = str(rec.message);
+      const recommended_action = str(rec.recommended_action);
+      if (area && condition && severity && message && recommended_action) {
+        alerts.push({ area, condition, severity, message, recommended_action });
+      }
+    }
+    return {
+      ok: true,
+      kind: "generate_alerts",
+      payload: { alerts, severity_level, requires_immediate_action: p.requires_immediate_action, summary },
     };
   }
 
