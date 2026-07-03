@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1308,6 +1308,42 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "recommend_visualizations",
       payload: { recommendations, data_shape, total_recommended: totalRecommended },
+    };
+  }
+
+  if (kind === "generate_chart_configs") {
+    const totalConfigs = typeof p.total_configs === "number" ? Math.round(p.total_configs) : NaN;
+    if (!Number.isFinite(totalConfigs) || totalConfigs < 0) return { ok: false, reason: "bad_total_configs" };
+    if (!Array.isArray(p.configs)) return { ok: false, reason: "configs_not_array" };
+
+    const CHART_TYPES = ["bar", "line", "area", "pie", "donut", "scatter", "heatmap", "table", "metric_card", "waterfall"];
+    const COLOR_SCHEMES = ["blue", "green", "amber", "red", "multi"];
+    const AGGREGATIONS = ["sum", "average", "count", "max", "min", "none"];
+    const MAX_CONFIGS = 10;
+    const MAX_DATA_COLUMNS = 5;
+    const raw = (p.configs as unknown[]).slice(0, MAX_CONFIGS);
+    const configs: { chart_id: string; chart_type: string; title: string; x_axis_label: string; y_axis_label: string; data_columns: string[]; color_scheme: string; aggregation: string; notes: string }[] = [];
+    for (const c of raw) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const chart_id = str(rec.chart_id);
+      const chart_type = typeof rec.chart_type === "string" && CHART_TYPES.includes(rec.chart_type) ? rec.chart_type : null;
+      const configTitle = str(rec.title);
+      const x_axis_label = str(rec.x_axis_label);
+      const y_axis_label = str(rec.y_axis_label);
+      const color_scheme = typeof rec.color_scheme === "string" && COLOR_SCHEMES.includes(rec.color_scheme) ? rec.color_scheme : null;
+      const aggregation = typeof rec.aggregation === "string" && AGGREGATIONS.includes(rec.aggregation) ? rec.aggregation : null;
+      const notes = str(rec.notes);
+      if (chart_id && chart_type && configTitle && x_axis_label && y_axis_label && color_scheme && aggregation && notes) {
+        const data_columns = strArray(rec.data_columns, MAX_DATA_COLUMNS, MAX_STR);
+        configs.push({ chart_id, chart_type, title: configTitle, x_axis_label, y_axis_label, data_columns, color_scheme, aggregation, notes });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "generate_chart_configs",
+      payload: { configs, total_configs: totalConfigs },
     };
   }
 

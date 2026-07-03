@@ -777,6 +777,22 @@ export async function applyAction(
     return { ok: true, recordTable: "viz_recommendation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_chart_configs") {
+    const { data, error } = await db
+      .from("chart_config_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        configs: v.payload.configs,
+        total_configs: v.payload.total_configs,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "chart_config_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
