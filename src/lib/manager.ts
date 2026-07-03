@@ -45,7 +45,8 @@ export async function routePayload(
     plan.push("inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "vendor_risk", "trend_detector", "period_comparator", "data_merger"); // non-financial only
   }
   plan.push("report_generator"); // always, before exec_summarizer
-  plan.push("exec_summarizer"); // always, last before analyst
+  plan.push("exec_summarizer"); // always, before validator
+  plan.push("validator"); // always, last before analyst
   plan.push("analyst"); // always
 
   for (const role of plan) {
