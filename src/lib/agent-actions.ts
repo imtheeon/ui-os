@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2247,6 +2247,50 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "detect_fraud_signals",
       payload: { suspicious_items, risk_level, fraud_patterns, benford_analysis, total_suspicious_amount, recommended_actions },
+    };
+  }
+
+  if (kind === "analyze_concentration_risk") {
+    const RISK_LEVELS4 = ["critical", "high", "medium", "low"];
+    if (!Array.isArray(p.risk_dimensions)) return { ok: false, reason: "risk_dimensions_not_array" };
+    const rawDims = (p.risk_dimensions as unknown[]).slice(0, 10);
+    const risk_dimensions: { dimension: string; top_entities: { name: string; share: number }[]; hhi: number | null; risk_level: string; notes: string }[] = [];
+    for (const d of rawDims) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const dimension = str(rec.dimension);
+      const risk_level = typeof rec.risk_level === "string" && RISK_LEVELS4.includes(rec.risk_level) ? rec.risk_level : null;
+      const notes = str(rec.notes) ?? "";
+      const hhi = numOrNull(rec.hhi, 0, 10000);
+      if (!dimension || !risk_level || hhi === NUM_INVALID) continue;
+      const rawEntities = Array.isArray(rec.top_entities) ? (rec.top_entities as unknown[]).slice(0, 10) : [];
+      const top_entities: { name: string; share: number }[] = [];
+      for (const e of rawEntities) {
+        if (typeof e !== "object" || e === null) continue;
+        const erec = e as Record<string, unknown>;
+        const name = str(erec.name);
+        const share = typeof erec.share === "number" && Number.isFinite(erec.share) && erec.share >= 0 && erec.share <= 100 ? erec.share : null;
+        if (name && share !== null) top_entities.push({ name, share });
+      }
+      risk_dimensions.push({ dimension, top_entities, hhi, risk_level, notes });
+    }
+    if (risk_dimensions.length === 0) return { ok: false, reason: "no_valid_risk_dimensions" };
+
+    const overall_risk_level = typeof p.overall_risk_level === "string" && RISK_LEVELS4.includes(p.overall_risk_level) ? p.overall_risk_level : null;
+    if (!overall_risk_level) return { ok: false, reason: "bad_overall_risk_level" };
+
+    const herfindahl_index = numOrNull(p.herfindahl_index, 0, 10000);
+    if (herfindahl_index === NUM_INVALID) return { ok: false, reason: "bad_herfindahl_index" };
+
+    const top_3_concentration_percentage = numOrNull(p.top_3_concentration_percentage, 0, 100);
+    if (top_3_concentration_percentage === NUM_INVALID) return { ok: false, reason: "bad_top_3_concentration_percentage" };
+
+    const mitigation_recommendations = strArray(p.mitigation_recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_concentration_risk",
+      payload: { risk_dimensions, overall_risk_level, herfindahl_index, top_3_concentration_percentage, mitigation_recommendations },
     };
   }
 
