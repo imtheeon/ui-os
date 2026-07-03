@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1125,6 +1125,36 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_alerts",
       payload: { alerts, severity_level, requires_immediate_action: p.requires_immediate_action, summary },
+    };
+  }
+
+  if (kind === "generate_client_report") {
+    const MAX_TITLE = 200;
+    const MAX_SUMMARY = 1000;
+    const report_title = typeof p.report_title === "string" && p.report_title.length > 0 ? p.report_title.slice(0, MAX_TITLE) : null;
+    if (!report_title) return { ok: false, reason: "missing_report_title" };
+    const executive_summary = typeof p.executive_summary === "string" && p.executive_summary.length > 0 ? p.executive_summary.slice(0, MAX_SUMMARY) : null;
+    if (!executive_summary) return { ok: false, reason: "missing_executive_summary" };
+    if (!Array.isArray(p.sections)) return { ok: false, reason: "sections_not_array" };
+    const MAX_SECTIONS = 10;
+    const MAX_CONTENT = 2000;
+    const rawSections = (p.sections as unknown[]).slice(0, MAX_SECTIONS);
+    const sections: { heading: string; content: string }[] = [];
+    for (const s of rawSections) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const heading = str(rec.heading);
+      const content = typeof rec.content === "string" && rec.content.length > 0 ? rec.content.slice(0, MAX_CONTENT) : null;
+      if (heading && content) {
+        sections.push({ heading, content });
+      }
+    }
+    const key_takeaways = strArray(p.key_takeaways, 10, 300);
+    const next_steps = strArray(p.next_steps, 10, 300);
+    return {
+      ok: true,
+      kind: "generate_client_report",
+      payload: { report_title, executive_summary, sections, key_takeaways, next_steps },
     };
   }
 
