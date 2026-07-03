@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1956,6 +1956,65 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "segment_customers",
       payload: { segments, segmentation_method, total_customers, insights },
+    };
+  }
+
+  if (kind === "analyze_sales_pipeline") {
+    const total_pipeline_value = typeof p.total_pipeline_value === "number" && Number.isFinite(p.total_pipeline_value) && p.total_pipeline_value >= 0 ? p.total_pipeline_value : null;
+    if (total_pipeline_value === null) return { ok: false, reason: "bad_total_pipeline_value" };
+    const weighted_pipeline_value = typeof p.weighted_pipeline_value === "number" && Number.isFinite(p.weighted_pipeline_value) && p.weighted_pipeline_value >= 0 ? p.weighted_pipeline_value : null;
+    if (weighted_pipeline_value === null) return { ok: false, reason: "bad_weighted_pipeline_value" };
+
+    const avg_deal_size = numOrNull(p.avg_deal_size, 0);
+    if (avg_deal_size === NUM_INVALID) return { ok: false, reason: "bad_avg_deal_size" };
+    const avg_sales_cycle_days = numOrNull(p.avg_sales_cycle_days, 0);
+    if (avg_sales_cycle_days === NUM_INVALID) return { ok: false, reason: "bad_avg_sales_cycle_days" };
+    const win_rate = numOrNull(p.win_rate, 0, 100);
+    if (win_rate === NUM_INVALID) return { ok: false, reason: "bad_win_rate" };
+    const forecast_this_period = numOrNull(p.forecast_this_period, 0);
+    if (forecast_this_period === NUM_INVALID) return { ok: false, reason: "bad_forecast_this_period" };
+
+    const MAX_DEALS = 100;
+    const rawDeals = Array.isArray(p.deals) ? (p.deals as unknown[]).slice(0, MAX_DEALS) : [];
+    const deals: { deal_name: string; stage: string; value: number; probability: number; expected_close: string; owner: string }[] = [];
+    for (const d of rawDeals) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const deal_name = str(rec.deal_name);
+      const stage = str(rec.stage);
+      const value = typeof rec.value === "number" && Number.isFinite(rec.value) && rec.value >= 0 ? rec.value : null;
+      const probability = typeof rec.probability === "number" && Number.isFinite(rec.probability) && rec.probability >= 0 && rec.probability <= 100 ? rec.probability : null;
+      const expected_close = str(rec.expected_close);
+      const owner = str(rec.owner);
+      if (deal_name && stage && value !== null && probability !== null && expected_close && owner) {
+        deals.push({ deal_name, stage, value, probability, expected_close, owner });
+      }
+    }
+
+    const MAX_STAGES = 15;
+    const rawStages = Array.isArray(p.stage_summary) ? (p.stage_summary as unknown[]).slice(0, MAX_STAGES) : [];
+    const stage_summary: { stage_name: string; deal_count: number; total_value: number; avg_probability: number }[] = [];
+    for (const s of rawStages) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const stage_name = str(rec.stage_name);
+      const deal_count = typeof rec.deal_count === "number" && Number.isInteger(rec.deal_count) && rec.deal_count >= 0 ? rec.deal_count : null;
+      const total_value = typeof rec.total_value === "number" && Number.isFinite(rec.total_value) && rec.total_value >= 0 ? rec.total_value : null;
+      const avg_probability = typeof rec.avg_probability === "number" && Number.isFinite(rec.avg_probability) && rec.avg_probability >= 0 && rec.avg_probability <= 100 ? rec.avg_probability : null;
+      if (stage_name && deal_count !== null && total_value !== null && avg_probability !== null) {
+        stage_summary.push({ stage_name, deal_count, total_value, avg_probability });
+      }
+    }
+
+    const risks = strArray(p.risks, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_sales_pipeline",
+      payload: {
+        total_pipeline_value, weighted_pipeline_value, deals, stage_summary,
+        avg_deal_size, avg_sales_cycle_days, win_rate, forecast_this_period, risks,
+      },
     };
   }
 
