@@ -1335,6 +1335,28 @@ export async function applyAction(
     return { ok: true, recordTable: "document_classifier_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "detect_schema_evolution") {
+    const { data, error } = await db
+      .from("schema_evolution_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        columns_detected: v.payload.columns_detected,
+        schema_version: v.payload.schema_version,
+        breaking_changes: v.payload.breaking_changes,
+        added_columns: v.payload.added_columns,
+        removed_columns: v.payload.removed_columns,
+        renamed_columns: v.payload.renamed_columns,
+        type_changes: v.payload.type_changes,
+        compatibility: v.payload.compatibility,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "schema_evolution_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2503,6 +2503,65 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "classify_document",
       payload: { document_type, document_subtype, confidence, detected_entities, language, time_period, currency, classification_notes },
+    };
+  }
+
+  if (kind === "detect_schema_evolution") {
+    const INFERRED_TYPES = ["string", "number", "date", "boolean", "mixed", "empty"];
+    const rawCols = Array.isArray(p.columns_detected) ? (p.columns_detected as unknown[]).slice(0, 200) : [];
+    const columns_detected: { column_name: string; inferred_type: string; nullable: boolean; sample_values: string[] }[] = [];
+    for (const c of rawCols) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const inferred_type = typeof rec.inferred_type === "string" && INFERRED_TYPES.includes(rec.inferred_type) ? rec.inferred_type : null;
+      if (column_name && inferred_type && typeof rec.nullable === "boolean") {
+        columns_detected.push({ column_name, inferred_type, nullable: rec.nullable, sample_values: strArray(rec.sample_values, 3, 200) });
+      }
+    }
+
+    const schema_version = str(p.schema_version);
+    if (!schema_version) return { ok: false, reason: "missing_schema_version" };
+
+    const breaking_changes = strArray(p.breaking_changes, 20, MAX_STR);
+    const added_columns = strArray(p.added_columns, 50, 200);
+    const removed_columns = strArray(p.removed_columns, 50, 200);
+
+    const RENAME_CONFS = ["high", "medium", "low"];
+    const rawRenamed = Array.isArray(p.renamed_columns) ? (p.renamed_columns as unknown[]).slice(0, 20) : [];
+    const renamed_columns: { old_name: string; new_name: string; confidence: string }[] = [];
+    for (const r of rawRenamed) {
+      if (typeof r !== "object" || r === null) continue;
+      const rec = r as Record<string, unknown>;
+      const old_name = str(rec.old_name);
+      const new_name = str(rec.new_name);
+      const confidence = typeof rec.confidence === "string" && RENAME_CONFS.includes(rec.confidence) ? rec.confidence : null;
+      if (old_name && new_name && confidence) {
+        renamed_columns.push({ old_name, new_name, confidence });
+      }
+    }
+
+    const rawTypeChanges = Array.isArray(p.type_changes) ? (p.type_changes as unknown[]).slice(0, 20) : [];
+    const type_changes: { column_name: string; old_type: string; new_type: string }[] = [];
+    for (const t of rawTypeChanges) {
+      if (typeof t !== "object" || t === null) continue;
+      const rec = t as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const old_type = str(rec.old_type);
+      const new_type = str(rec.new_type);
+      if (column_name && old_type && new_type) {
+        type_changes.push({ column_name, old_type, new_type });
+      }
+    }
+
+    const COMPATIBILITIES = ["compatible", "minor_changes", "breaking", "new_schema"];
+    const compatibility = typeof p.compatibility === "string" && COMPATIBILITIES.includes(p.compatibility) ? p.compatibility : null;
+    if (!compatibility) return { ok: false, reason: "bad_compatibility" };
+
+    return {
+      ok: true,
+      kind: "detect_schema_evolution",
+      payload: { columns_detected, schema_version, breaking_changes, added_columns, removed_columns, renamed_columns, type_changes, compatibility },
     };
   }
 
