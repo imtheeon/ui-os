@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2423,6 +2423,47 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_liquidity_risk",
       payload: { cash_and_equivalents, total_short_term_obligations, liquidity_coverage_ratio, months_of_runway, cash_flow_forecast, stress_scenarios, risk_level, recommendations },
+    };
+  }
+
+  if (kind === "track_covenants") {
+    const COVENANT_TYPES = ["financial", "operational", "reporting"];
+    const STATUSES = ["compliant", "at_risk", "violated", "waived", "not_tested"];
+    const rawCovenants = Array.isArray(p.covenants) ? (p.covenants as unknown[]).slice(0, 30) : [];
+    const covenants: { covenant_name: string; covenant_type: string; threshold: string; current_value: string; status: string; headroom_percentage: number | null; lender_or_counterparty: string; notes: string }[] = [];
+    for (const c of rawCovenants) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const covenant_name = str(rec.covenant_name);
+      const covenant_type = typeof rec.covenant_type === "string" && COVENANT_TYPES.includes(rec.covenant_type) ? rec.covenant_type : null;
+      const threshold = str(rec.threshold);
+      const current_value = str(rec.current_value);
+      const status = typeof rec.status === "string" && STATUSES.includes(rec.status) ? rec.status : null;
+      const lender_or_counterparty = str(rec.lender_or_counterparty) ?? "";
+      const notes = str(rec.notes) ?? "";
+      const headroom_percentage = numOrNull(rec.headroom_percentage);
+      if (covenant_name && covenant_type && threshold && current_value && status && headroom_percentage !== NUM_INVALID) {
+        covenants.push({ covenant_name, covenant_type, threshold, current_value, status, headroom_percentage, lender_or_counterparty, notes });
+      }
+    }
+
+    const COMPLIANCE = ["compliant", "at_risk", "breach", "unknown"];
+    const overall_compliance = typeof p.overall_compliance === "string" && COMPLIANCE.includes(p.overall_compliance) ? p.overall_compliance : null;
+    if (!overall_compliance) return { ok: false, reason: "bad_overall_compliance" };
+
+    const violations_count = typeof p.violations_count === "number" && Number.isInteger(p.violations_count) && p.violations_count >= 0 ? p.violations_count : null;
+    if (violations_count === null) return { ok: false, reason: "bad_violations_count" };
+    const at_risk_count = typeof p.at_risk_count === "number" && Number.isInteger(p.at_risk_count) && p.at_risk_count >= 0 ? p.at_risk_count : null;
+    if (at_risk_count === null) return { ok: false, reason: "bad_at_risk_count" };
+
+    const next_test_date = typeof p.next_test_date === "string" && p.next_test_date.length > 0 ? p.next_test_date.slice(0, 100) : null;
+
+    const remediation_actions = strArray(p.remediation_actions, 15, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "track_covenants",
+      payload: { covenants, overall_compliance, violations_count, at_risk_count, next_test_date, remediation_actions },
     };
   }
 
