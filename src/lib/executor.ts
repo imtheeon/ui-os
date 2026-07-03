@@ -1214,6 +1214,26 @@ export async function applyAction(
     return { ok: true, recordTable: "marketing_roi_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "detect_fraud_signals") {
+    const { data, error } = await db
+      .from("fraud_detection_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        suspicious_items: v.payload.suspicious_items,
+        risk_level: v.payload.risk_level,
+        fraud_patterns: v.payload.fraud_patterns,
+        benford_analysis: v.payload.benford_analysis,
+        total_suspicious_amount: v.payload.total_suspicious_amount,
+        recommended_actions: v.payload.recommended_actions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "fraud_detection_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
