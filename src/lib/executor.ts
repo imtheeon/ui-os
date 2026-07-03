@@ -1449,6 +1449,23 @@ export async function applyAction(
     return { ok: true, recordTable: "column_profiler_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "build_data_dictionary") {
+    const { data, error } = await db
+      .from("data_dictionary_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        entries: v.payload.entries,
+        total_columns_documented: v.payload.total_columns_documented,
+        undocumented_columns: v.payload.undocumented_columns,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "data_dictionary_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
