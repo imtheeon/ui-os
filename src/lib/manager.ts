@@ -59,6 +59,7 @@ export async function routePayload(
   plan.push("dashboard_spec_agent"); // always, before validator
   plan.push("validator"); // always, last before analyst
   plan.push("analyst"); // always
+  plan.push("action_priority_agent"); // always, final agent before output
 
   for (const role of plan) {
     enqueue({ name: "agent/run", data: { orgId, payloadId, role } });

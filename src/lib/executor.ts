@@ -1413,6 +1413,24 @@ export async function applyAction(
     return { ok: true, recordTable: "conflict_detection_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "prioritize_actions") {
+    const { data, error } = await db
+      .from("action_priority_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        prioritized_actions: v.payload.prioritized_actions,
+        top_3_actions: v.payload.top_3_actions,
+        total_actions_reviewed: v.payload.total_actions_reviewed,
+        decision_rationale: v.payload.decision_rationale,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "action_priority_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
