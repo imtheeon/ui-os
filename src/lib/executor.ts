@@ -894,6 +894,26 @@ export async function applyAction(
     return { ok: true, recordTable: "cohort_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_ar_aging") {
+    const { data, error } = await db
+      .from("ar_aging_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        buckets: v.payload.buckets,
+        total_ar: v.payload.total_ar,
+        overdue_amount: v.payload.overdue_amount,
+        overdue_percentage: v.payload.overdue_percentage,
+        collection_priority: v.payload.collection_priority,
+        risk_level: v.payload.risk_level,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "ar_aging_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
