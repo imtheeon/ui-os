@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2142,6 +2142,53 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_contracts",
       payload: { contracts, total_contract_value, total_annual_value, renewal_risk_summary, upcoming_renewals, red_flags },
+    };
+  }
+
+  if (kind === "analyze_marketing_roi") {
+    const total_spend = typeof p.total_spend === "number" && Number.isFinite(p.total_spend) && p.total_spend >= 0 ? p.total_spend : null;
+    if (total_spend === null) return { ok: false, reason: "bad_total_spend" };
+    const total_revenue_attributed = typeof p.total_revenue_attributed === "number" && Number.isFinite(p.total_revenue_attributed) && p.total_revenue_attributed >= 0 ? p.total_revenue_attributed : null;
+    if (total_revenue_attributed === null) return { ok: false, reason: "bad_total_revenue_attributed" };
+    const overall_roi = typeof p.overall_roi === "number" && Number.isFinite(p.overall_roi) ? p.overall_roi : null;
+    if (overall_roi === null) return { ok: false, reason: "bad_overall_roi" };
+    const best_performing_channel = str(p.best_performing_channel);
+    if (!best_performing_channel) return { ok: false, reason: "missing_best_performing_channel" };
+    const worst_performing_channel = str(p.worst_performing_channel);
+    if (!worst_performing_channel) return { ok: false, reason: "missing_worst_performing_channel" };
+
+    const customer_acquisition_cost = numOrNull(p.customer_acquisition_cost, 0);
+    if (customer_acquisition_cost === NUM_INVALID) return { ok: false, reason: "bad_customer_acquisition_cost" };
+
+    const MAX_CHANNELS = 20;
+    const rawChannels = Array.isArray(p.channels) ? (p.channels as unknown[]).slice(0, MAX_CHANNELS) : [];
+    const channels: { channel_name: string; spend: number; revenue_attributed: number; roi: number; leads_generated: number | null; conversions: number | null; cac: number | null }[] = [];
+    for (const c of rawChannels) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const channel_name = str(rec.channel_name);
+      const spend = typeof rec.spend === "number" && Number.isFinite(rec.spend) && rec.spend >= 0 ? rec.spend : null;
+      const revenue_attributed = typeof rec.revenue_attributed === "number" && Number.isFinite(rec.revenue_attributed) && rec.revenue_attributed >= 0 ? rec.revenue_attributed : null;
+      const roi = typeof rec.roi === "number" && Number.isFinite(rec.roi) ? rec.roi : null;
+      const leads_generated = numOrNull(rec.leads_generated, 0);
+      const conversions = numOrNull(rec.conversions, 0);
+      const cac = numOrNull(rec.cac, 0);
+      if (channel_name && spend !== null && revenue_attributed !== null && roi !== null
+        && leads_generated !== NUM_INVALID && conversions !== NUM_INVALID && cac !== NUM_INVALID) {
+        channels.push({ channel_name, spend, revenue_attributed, roi, leads_generated, conversions, cac });
+      }
+    }
+    if (channels.length === 0) return { ok: false, reason: "no_valid_channels" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_marketing_roi",
+      payload: {
+        channels, total_spend, total_revenue_attributed, overall_roi, customer_acquisition_cost,
+        best_performing_channel, worst_performing_channel, recommendations,
+      },
     };
   }
 
