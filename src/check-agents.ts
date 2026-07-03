@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, vendor_risk, trend_detector, period_comparator, data_merger, report_generator, exec_summarizer, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "vendor_risk", "trend_detector", "period_comparator", "data_merger", "report_generator", "exec_summarizer", "analyst"]));
+  ok("non-financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, vendor_risk, trend_detector, period_comparator, data_merger, report_generator, exec_summarizer, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "vendor_risk", "trend_detector", "period_comparator", "data_merger", "report_generator", "exec_summarizer", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -1206,6 +1206,44 @@ async function main() {
   ok("approveAction writes agent_accuracy for code_reviewer",
     crAccRows?.length === 1 && crAccRows[0].agent_role === "code_reviewer" && crAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgCr);
+
+  console.log("== code tester ==");
+  ok("generate_tests accepts good", validateProposal("generate_tests", {
+    test_cases: [{ name: "t1", description: "d1", test_type: "unit", pseudocode: "assert(1==1)" }],
+    language_detected: "javascript", framework_suggested: "jest", coverage_estimate: 60,
+  }).ok);
+  ok("generate_tests rejects coverage_estimate > 100", !validateProposal("generate_tests", {
+    test_cases: [], language_detected: "javascript", framework_suggested: "jest", coverage_estimate: 150,
+  }).ok);
+  ok("generate_tests filters out test case with bad test_type", (() => {
+    const r = validateProposal("generate_tests", {
+      test_cases: [
+        { name: "t1", description: "d1", test_type: "fuzzing", pseudocode: "x" },
+        { name: "t2", description: "d2", test_type: "unit", pseudocode: "y" },
+      ],
+      language_detected: "python", framework_suggested: "pytest", coverage_estimate: 40,
+    });
+    return r.ok && (r.payload.test_cases as unknown[]).length === 1;
+  })());
+  ok("code_tester → opus model",
+    (await import("./lib/agent-brain")).modelForRole("code_tester") === "claude-opus-4-8");
+
+  const { runAgent: runAgentCt } = await import("./lib/run-agent");
+  const { stubBrain: sbCt } = await import("./lib/agent-brain");
+  const { approveAction: approveCt, listPending: listCt } = await import("./lib/actions-service");
+  const orgCt = await makeOrg("pro");
+  const payloadCt = await makePayload(orgCt);
+  const rCt = await runAgentCt({ orgId: orgCt, payloadId: payloadCt, role: "code_tester" }, { db, brain: sbCt });
+  ok("code_tester run produced tests", rCt.ok && rCt.proposalCount === 1);
+  const pendCt = await listCt(orgCt, { db });
+  const apprCt = await approveCt(orgCt, pendCt[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes test_generation_runs", apprCt.ok && apprCt.recordTable === "test_generation_runs", JSON.stringify(apprCt));
+  const { data: ctRows } = await db.from("test_generation_runs").select("org_id,coverage_estimate").eq("org_id", orgCt);
+  ok("test generation record org-stamped", ctRows?.length === 1 && ctRows[0].org_id === orgCt);
+  const { data: ctAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgCt);
+  ok("approveAction writes agent_accuracy for code_tester",
+    ctAccRows?.length === 1 && ctAccRows[0].agent_role === "code_tester" && ctAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgCt);
 
   console.log("== org context ==");
   {

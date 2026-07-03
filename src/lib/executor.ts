@@ -543,6 +543,24 @@ export async function applyAction(
     return { ok: true, recordTable: "code_review_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_tests") {
+    const { data, error } = await db
+      .from("test_generation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        test_cases: v.payload.test_cases,
+        language_detected: v.payload.language_detected,
+        framework_suggested: v.payload.framework_suggested,
+        coverage_estimate: v.payload.coverage_estimate,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "test_generation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
