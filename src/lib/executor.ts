@@ -651,6 +651,23 @@ export async function applyAction(
     return { ok: true, recordTable: "recommendation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "extract_patterns") {
+    const { data, error } = await db
+      .from("pattern_extractions")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        patterns: v.payload.patterns,
+        pattern_count: v.payload.pattern_count,
+        learnable: v.payload.learnable,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "pattern_extractions", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
