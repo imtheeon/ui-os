@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1522,6 +1522,43 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_cohorts",
       payload: { cohorts, cohort_type, avg_retention_m1, avg_retention_m3, trend, notes },
+    };
+  }
+
+  if (kind === "analyze_ar_aging") {
+    const RISK_LEVELS = ["low", "medium", "high", "critical"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+    const total_ar = typeof p.total_ar === "number" && Number.isFinite(p.total_ar) && p.total_ar >= 0 ? p.total_ar : null;
+    if (total_ar === null) return { ok: false, reason: "bad_total_ar" };
+    const overdue_amount = typeof p.overdue_amount === "number" && Number.isFinite(p.overdue_amount) && p.overdue_amount >= 0 ? p.overdue_amount : null;
+    if (overdue_amount === null) return { ok: false, reason: "bad_overdue_amount" };
+    const overdue_percentage = typeof p.overdue_percentage === "number" && Number.isFinite(p.overdue_percentage) && p.overdue_percentage >= 0 && p.overdue_percentage <= 100 ? p.overdue_percentage : null;
+    if (overdue_percentage === null) return { ok: false, reason: "bad_overdue_percentage" };
+    if (!Array.isArray(p.buckets)) return { ok: false, reason: "buckets_not_array" };
+
+    const BUCKETS = ["0-30", "31-60", "61-90", "91-120", "120+"];
+    const MAX_BUCKETS = 5;
+    const raw = (p.buckets as unknown[]).slice(0, MAX_BUCKETS);
+    const buckets: { bucket: string; amount: number; invoice_count: number; percentage: number }[] = [];
+    for (const b of raw) {
+      if (typeof b !== "object" || b === null) continue;
+      const rec = b as Record<string, unknown>;
+      const bucket = typeof rec.bucket === "string" && BUCKETS.includes(rec.bucket) ? rec.bucket : null;
+      const amount = typeof rec.amount === "number" && Number.isFinite(rec.amount) && rec.amount >= 0 ? rec.amount : null;
+      const invoice_count = typeof rec.invoice_count === "number" ? Math.round(rec.invoice_count) : NaN;
+      const percentage = typeof rec.percentage === "number" && Number.isFinite(rec.percentage) && rec.percentage >= 0 && rec.percentage <= 100 ? rec.percentage : null;
+      if (bucket && amount !== null && Number.isFinite(invoice_count) && invoice_count >= 0 && percentage !== null) {
+        buckets.push({ bucket, amount, invoice_count, percentage });
+      }
+    }
+
+    const collection_priority = strArray(p.collection_priority, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_ar_aging",
+      payload: { buckets, total_ar, overdue_amount, overdue_percentage, collection_priority, risk_level },
     };
   }
 
