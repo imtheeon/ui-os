@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1923,6 +1923,39 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_churn_risk",
       payload: { overall_churn_rate, at_risk_customers, risk_factors, predicted_revenue_loss, retention_recommendations, data_period },
+    };
+  }
+
+  if (kind === "segment_customers") {
+    const METHODS = ["rfm", "revenue_tier", "industry", "product_usage", "geography", "size", "custom"];
+    const segmentation_method = typeof p.segmentation_method === "string" && METHODS.includes(p.segmentation_method) ? p.segmentation_method : null;
+    if (!segmentation_method) return { ok: false, reason: "bad_segmentation_method" };
+    const total_customers = typeof p.total_customers === "number" && Number.isInteger(p.total_customers) && p.total_customers >= 0 ? p.total_customers : null;
+    if (total_customers === null) return { ok: false, reason: "bad_total_customers" };
+
+    const MAX_SEGMENTS = 20;
+    const rawSegments = Array.isArray(p.segments) ? (p.segments as unknown[]).slice(0, MAX_SEGMENTS) : [];
+    const segments: { segment_name: string; customer_count: number; percentage_of_total: number; avg_revenue: number; characteristics: string[] }[] = [];
+    for (const s of rawSegments) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const segment_name = str(rec.segment_name);
+      const customer_count = typeof rec.customer_count === "number" && Number.isInteger(rec.customer_count) && rec.customer_count >= 0 ? rec.customer_count : null;
+      const percentage_of_total = typeof rec.percentage_of_total === "number" && Number.isFinite(rec.percentage_of_total) && rec.percentage_of_total >= 0 && rec.percentage_of_total <= 100 ? rec.percentage_of_total : null;
+      const avg_revenue = typeof rec.avg_revenue === "number" && Number.isFinite(rec.avg_revenue) && rec.avg_revenue >= 0 ? rec.avg_revenue : null;
+      if (segment_name && customer_count !== null && percentage_of_total !== null && avg_revenue !== null) {
+        const characteristics = strArray(rec.characteristics, 5, MAX_STR);
+        segments.push({ segment_name, customer_count, percentage_of_total, avg_revenue, characteristics });
+      }
+    }
+    if (segments.length === 0) return { ok: false, reason: "no_valid_segments" };
+
+    const insights = strArray(p.insights, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "segment_customers",
+      payload: { segments, segmentation_method, total_customers, insights },
     };
   }
 
