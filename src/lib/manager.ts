@@ -47,6 +47,7 @@ export async function routePayload(
   plan.push("report_generator"); // always, before exec_summarizer
   plan.push("exec_summarizer"); // always, before alert_agent
   plan.push("insight_synthesis_agent"); // always, after exec_summarizer
+  plan.push("conflict_detection_agent"); // always, after insight_synthesis_agent
   plan.push("alert_agent"); // always, before client_reporter
   plan.push("client_reporter"); // always, before narrator
   plan.push("narrator"); // always, before meeting_prepper

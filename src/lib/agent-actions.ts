@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2660,6 +2660,40 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "synthesize_insights",
       payload: { executive_summary, key_insights, strategic_implications, critical_risks, opportunities, confidence },
+    };
+  }
+
+  if (kind === "detect_conflicts") {
+    const TYPES = ["data_inconsistency", "logic_error", "duplicate", "missing_data", "constraint_violation", "calculation_error"];
+    const SEVERITIES4 = ["critical", "high", "medium", "low"];
+    const rawConflicts = Array.isArray(p.conflicts) ? (p.conflicts as unknown[]).slice(0, 50) : [];
+    const conflicts: { conflict_id: string; type: string; description: string; affected_fields: string[]; severity: string; resolution: string }[] = [];
+    for (const c of rawConflicts) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const conflict_id = str(rec.conflict_id);
+      const type = typeof rec.type === "string" && TYPES.includes(rec.type) ? rec.type : null;
+      const description = str(rec.description);
+      const severity = typeof rec.severity === "string" && SEVERITIES4.includes(rec.severity) ? rec.severity : null;
+      const resolution = str(rec.resolution);
+      if (conflict_id && type && description && severity && resolution) {
+        conflicts.push({ conflict_id, type, description, affected_fields: strArray(rec.affected_fields, 10, 200), severity, resolution });
+      }
+    }
+
+    const conflict_count = typeof p.conflict_count === "number" && Number.isInteger(p.conflict_count) && p.conflict_count >= 0 ? p.conflict_count : null;
+    if (conflict_count === null) return { ok: false, reason: "bad_conflict_count" };
+
+    const SEVERITIES5 = ["critical", "high", "medium", "low", "none"];
+    const severity = typeof p.severity === "string" && SEVERITIES5.includes(p.severity) ? p.severity : null;
+    if (!severity) return { ok: false, reason: "bad_severity" };
+
+    const resolution_suggestions = strArray(p.resolution_suggestions, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "detect_conflicts",
+      payload: { conflicts, conflict_count, severity, resolution_suggestions },
     };
   }
 
