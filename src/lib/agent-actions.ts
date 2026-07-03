@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1155,6 +1155,28 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_client_report",
       payload: { report_title, executive_summary, sections, key_takeaways, next_steps },
+    };
+  }
+
+  if (kind === "generate_narrative") {
+    const MAX_HEADLINE = 200;
+    const MAX_STORY = 3000;
+    const headline = typeof p.headline === "string" && p.headline.length > 0 ? p.headline.slice(0, MAX_HEADLINE) : null;
+    if (!headline) return { ok: false, reason: "missing_headline" };
+    const story = typeof p.story === "string" && p.story.length > 0 ? p.story.slice(0, MAX_STORY) : null;
+    if (!story) return { ok: false, reason: "missing_story" };
+    const TONES = ["optimistic", "neutral", "cautious", "urgent"];
+    const tone = typeof p.tone === "string" && TONES.includes(p.tone) ? p.tone : null;
+    if (!tone) return { ok: false, reason: "bad_tone" };
+    const AUDIENCES = ["client", "internal", "board", "investor"];
+    const audience = typeof p.audience === "string" && AUDIENCES.includes(p.audience) ? p.audience : null;
+    if (!audience) return { ok: false, reason: "bad_audience" };
+    const wordCount = typeof p.word_count === "number" ? Math.round(p.word_count) : NaN;
+    if (!Number.isFinite(wordCount) || wordCount < 0) return { ok: false, reason: "bad_word_count" };
+    return {
+      ok: true,
+      kind: "generate_narrative",
+      payload: { headline, story, tone, audience, word_count: wordCount },
     };
   }
 
