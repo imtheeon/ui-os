@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1032,6 +1032,36 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "draft_email",
       payload: { subject, body, recipient_type, tone, key_points },
+    };
+  }
+
+  if (kind === "generate_recommendations") {
+    const next_upload_type = str(p.next_upload_type);
+    if (!next_upload_type) return { ok: false, reason: "missing_next_upload_type" };
+    const PRIORITIES = ["low", "medium", "high", "urgent"];
+    const priority = typeof p.priority === "string" && PRIORITIES.includes(p.priority) ? p.priority : null;
+    if (!priority) return { ok: false, reason: "bad_priority" };
+    if (!Array.isArray(p.recommendations)) return { ok: false, reason: "recommendations_not_array" };
+    const IMPACTS = ["low", "medium", "high"];
+    const EFFORTS = ["low", "medium", "high"];
+    const MAX_RECS = 10;
+    const raw = (p.recommendations as unknown[]).slice(0, MAX_RECS);
+    const recommendations: { action: string; reason: string; impact: string; effort: string }[] = [];
+    for (const r of raw) {
+      if (typeof r !== "object" || r === null) continue;
+      const rec = r as Record<string, unknown>;
+      const action = str(rec.action);
+      const reason = str(rec.reason);
+      const impact = typeof rec.impact === "string" && IMPACTS.includes(rec.impact) ? rec.impact : null;
+      const effort = typeof rec.effort === "string" && EFFORTS.includes(rec.effort) ? rec.effort : null;
+      if (action && reason && impact && effort) {
+        recommendations.push({ action, reason, impact, effort });
+      }
+    }
+    return {
+      ok: true,
+      kind: "generate_recommendations",
+      payload: { recommendations, next_upload_type, priority },
     };
   }
 
