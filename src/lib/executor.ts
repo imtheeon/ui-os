@@ -998,6 +998,31 @@ export async function applyAction(
     return { ok: true, recordTable: "profitability_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_working_capital") {
+    const { data, error } = await db
+      .from("working_capital_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        current_assets: v.payload.current_assets,
+        current_liabilities: v.payload.current_liabilities,
+        working_capital: v.payload.working_capital,
+        current_ratio: v.payload.current_ratio,
+        quick_ratio: v.payload.quick_ratio,
+        days_inventory_outstanding: v.payload.days_inventory_outstanding,
+        days_sales_outstanding: v.payload.days_sales_outstanding,
+        days_payable_outstanding: v.payload.days_payable_outstanding,
+        cash_conversion_cycle_days: v.payload.cash_conversion_cycle_days,
+        status: v.payload.status,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "working_capital_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
