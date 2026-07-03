@@ -1271,6 +1271,28 @@ export async function applyAction(
     return { ok: true, recordTable: "scenario_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_liquidity_risk") {
+    const { data, error } = await db
+      .from("liquidity_risk_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        cash_and_equivalents: v.payload.cash_and_equivalents,
+        total_short_term_obligations: v.payload.total_short_term_obligations,
+        liquidity_coverage_ratio: v.payload.liquidity_coverage_ratio,
+        months_of_runway: v.payload.months_of_runway,
+        cash_flow_forecast: v.payload.cash_flow_forecast,
+        stress_scenarios: v.payload.stress_scenarios,
+        risk_level: v.payload.risk_level,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "liquidity_risk_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
