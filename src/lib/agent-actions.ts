@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2189,6 +2189,64 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
         channels, total_spend, total_revenue_attributed, overall_roi, customer_acquisition_cost,
         best_performing_channel, worst_performing_channel, recommendations,
       },
+    };
+  }
+
+  if (kind === "detect_fraud_signals") {
+    const SEVERITIES = ["critical", "high", "medium", "low"];
+    const MAX_ITEMS = 100;
+    const rawItems = Array.isArray(p.suspicious_items) ? (p.suspicious_items as unknown[]).slice(0, MAX_ITEMS) : [];
+    const suspicious_items: { item_ref: string; description: string; amount: number | null; flag_reason: string; severity: string }[] = [];
+    for (const it of rawItems) {
+      if (typeof it !== "object" || it === null) continue;
+      const rec = it as Record<string, unknown>;
+      const item_ref = str(rec.item_ref);
+      const description = str(rec.description);
+      const flag_reason = str(rec.flag_reason);
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      const amount = numOrNull(rec.amount);
+      if (item_ref && description && flag_reason && severity && amount !== NUM_INVALID) {
+        suspicious_items.push({ item_ref, description, amount, flag_reason, severity });
+      }
+    }
+
+    const RISK_LEVELS = ["critical", "high", "medium", "low", "clean"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+
+    const fraud_patterns = strArray(p.fraud_patterns, 20, MAX_STR);
+
+    let benford_analysis: { first_digit_distribution: number[]; expected_distribution: number[]; anomaly_detected: boolean; anomaly_description: string } | null = null;
+    if (p.benford_analysis !== undefined && p.benford_analysis !== null) {
+      if (typeof p.benford_analysis !== "object" || Array.isArray(p.benford_analysis)) {
+        return { ok: false, reason: "bad_benford_analysis" };
+      }
+      const b = p.benford_analysis as Record<string, unknown>;
+      const isDist = (v: unknown): v is number[] =>
+        Array.isArray(v) && v.length === 9 && v.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1);
+      if (!isDist(b.first_digit_distribution) || !isDist(b.expected_distribution)) {
+        return { ok: false, reason: "bad_benford_analysis" };
+      }
+      if (typeof b.anomaly_detected !== "boolean") return { ok: false, reason: "bad_benford_analysis" };
+      const anomaly_description = str(b.anomaly_description);
+      if (!anomaly_description) return { ok: false, reason: "bad_benford_analysis" };
+      benford_analysis = {
+        first_digit_distribution: b.first_digit_distribution,
+        expected_distribution: b.expected_distribution,
+        anomaly_detected: b.anomaly_detected,
+        anomaly_description,
+      };
+    }
+
+    const total_suspicious_amount = typeof p.total_suspicious_amount === "number" && Number.isFinite(p.total_suspicious_amount) && p.total_suspicious_amount >= 0 ? p.total_suspicious_amount : null;
+    if (total_suspicious_amount === null) return { ok: false, reason: "bad_total_suspicious_amount" };
+
+    const recommended_actions = strArray(p.recommended_actions, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "detect_fraud_signals",
+      payload: { suspicious_items, risk_level, fraud_patterns, benford_analysis, total_suspicious_amount, recommended_actions },
     };
   }
 
