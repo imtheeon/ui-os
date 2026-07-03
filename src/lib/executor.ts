@@ -1357,6 +1357,24 @@ export async function applyAction(
     return { ok: true, recordTable: "schema_evolution_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "extract_kpis") {
+    const { data, error } = await db
+      .from("kpi_extractor_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        kpis: v.payload.kpis,
+        kpi_count: v.payload.kpi_count,
+        top_kpis: v.payload.top_kpis,
+        data_quality: v.payload.data_quality,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "kpi_extractor_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
