@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2369,6 +2369,60 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "model_scenarios",
       payload: { base_case, scenarios, key_variables, recommendation },
+    };
+  }
+
+  if (kind === "analyze_liquidity_risk") {
+    const cash_and_equivalents = numOrNull(p.cash_and_equivalents, 0);
+    if (cash_and_equivalents === NUM_INVALID) return { ok: false, reason: "bad_cash_and_equivalents" };
+    const total_short_term_obligations = numOrNull(p.total_short_term_obligations, 0);
+    if (total_short_term_obligations === NUM_INVALID) return { ok: false, reason: "bad_total_short_term_obligations" };
+    const liquidity_coverage_ratio = numOrNull(p.liquidity_coverage_ratio, 0);
+    if (liquidity_coverage_ratio === NUM_INVALID) return { ok: false, reason: "bad_liquidity_coverage_ratio" };
+    const months_of_runway = numOrNull(p.months_of_runway, 0);
+    if (months_of_runway === NUM_INVALID) return { ok: false, reason: "bad_months_of_runway" };
+
+    const rawForecast = Array.isArray(p.cash_flow_forecast) ? (p.cash_flow_forecast as unknown[]).slice(0, 24) : [];
+    const cash_flow_forecast: { period: string; projected_inflow: number; projected_outflow: number; net_cash_flow: number; cumulative_cash: number | null }[] = [];
+    for (const f of rawForecast) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const period = str(rec.period);
+      const projected_inflow = typeof rec.projected_inflow === "number" && Number.isFinite(rec.projected_inflow) && rec.projected_inflow >= 0 ? rec.projected_inflow : null;
+      const projected_outflow = typeof rec.projected_outflow === "number" && Number.isFinite(rec.projected_outflow) && rec.projected_outflow >= 0 ? rec.projected_outflow : null;
+      const net_cash_flow = typeof rec.net_cash_flow === "number" && Number.isFinite(rec.net_cash_flow) ? rec.net_cash_flow : null;
+      const cumulative_cash = numOrNull(rec.cumulative_cash);
+      if (period && projected_inflow !== null && projected_outflow !== null && net_cash_flow !== null && cumulative_cash !== NUM_INVALID) {
+        cash_flow_forecast.push({ period, projected_inflow, projected_outflow, net_cash_flow, cumulative_cash });
+      }
+    }
+
+    if (!Array.isArray(p.stress_scenarios)) return { ok: false, reason: "stress_scenarios_not_array" };
+    const rawStress = (p.stress_scenarios as unknown[]).slice(0, 4);
+    const stress_scenarios: { scenario_name: string; assumption: string; projected_cash_impact: number; months_of_runway_remaining: number | null }[] = [];
+    for (const s of rawStress) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const scenario_name = str(rec.scenario_name);
+      const assumption = str(rec.assumption);
+      const projected_cash_impact = typeof rec.projected_cash_impact === "number" && Number.isFinite(rec.projected_cash_impact) ? rec.projected_cash_impact : null;
+      const months_of_runway_remaining = numOrNull(rec.months_of_runway_remaining);
+      if (scenario_name && assumption && projected_cash_impact !== null && months_of_runway_remaining !== NUM_INVALID) {
+        stress_scenarios.push({ scenario_name, assumption, projected_cash_impact, months_of_runway_remaining });
+      }
+    }
+    if (stress_scenarios.length === 0) return { ok: false, reason: "no_valid_stress_scenarios" };
+
+    const RISK_LEVELS5 = ["critical", "high", "medium", "low"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS5.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_liquidity_risk",
+      payload: { cash_and_equivalents, total_short_term_obligations, liquidity_coverage_ratio, months_of_runway, cash_flow_forecast, stress_scenarios, risk_level, recommendations },
     };
   }
 
