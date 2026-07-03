@@ -1070,6 +1070,26 @@ export async function applyAction(
     return { ok: true, recordTable: "cogs_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_revenue_recognition") {
+    const { data, error } = await db
+      .from("revenue_recognition_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        recognized_revenue: v.payload.recognized_revenue,
+        deferred_revenue: v.payload.deferred_revenue,
+        recognition_method: v.payload.recognition_method,
+        contracts: v.payload.contracts,
+        compliance_flags: v.payload.compliance_flags,
+        asc_606_notes: v.payload.asc_606_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "revenue_recognition_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

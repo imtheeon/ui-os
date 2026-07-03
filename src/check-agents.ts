@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "working_capital_agent", "break_even_agent", "cogs_analysis_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
-  ok("fifty agent/run events enqueued", enq.length === 50 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, revenue_recognition_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "working_capital_agent", "break_even_agent", "cogs_analysis_agent", "revenue_recognition_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
+  ok("fiftyone agent/run events enqueued", enq.length === 51 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 50);
+  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+revenue_recognition_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 51);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 50 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + working capital analysis + break even analysis + cogs analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 50);
+  ok("chain produced 51 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + working capital analysis + break even analysis + cogs analysis + revenue recognition analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 51);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -2332,6 +2332,57 @@ async function main() {
   const routeCheckCg = await routeCg({ orgId: orgCg, payloadId: payloadCg }, { db, enqueue: () => {} });
   ok("cogs_analysis_agent routes on the financial route", routeCheckCg.ok && routeCheckCg.plan.includes("cogs_analysis_agent"));
   await db.from("organizations").delete().eq("id", orgCg);
+
+  console.log("== revenue recognition agent ==");
+  ok("analyze_revenue_recognition accepts good", validateProposal("analyze_revenue_recognition", {
+    recognized_revenue: 85000, deferred_revenue: 15000, recognition_method: "over_time",
+    contracts: [{ contract_ref: "C-001", total_value: 100000, recognized: 85000, deferred: 15000, start_date: "2024-01-01", end_date: "2024-12-31" }],
+    compliance_flags: [{ flag: "Bundled elements not separated", severity: "medium" }],
+    asc_606_notes: "Subscription revenue recognized ratably over contract term.",
+  }).ok);
+  ok("analyze_revenue_recognition rejects bad recognition_method", !validateProposal("analyze_revenue_recognition", {
+    recognized_revenue: 85000, deferred_revenue: 15000, recognition_method: "whenever",
+    contracts: [], compliance_flags: [], asc_606_notes: "x",
+  }).ok);
+  ok("analyze_revenue_recognition filters out compliance_flag with bad severity", (() => {
+    const r = validateProposal("analyze_revenue_recognition", {
+      recognized_revenue: 85000, deferred_revenue: 15000, recognition_method: "over_time",
+      contracts: [],
+      compliance_flags: [
+        { flag: "Good flag", severity: "high" },
+        { flag: "Bad flag", severity: "critical" },
+      ],
+      asc_606_notes: "x",
+    });
+    return r.ok && (r.payload.compliance_flags as unknown[]).length === 1;
+  })());
+  ok("analyze_revenue_recognition rejects empty asc_606_notes", !validateProposal("analyze_revenue_recognition", {
+    recognized_revenue: 85000, deferred_revenue: 15000, recognition_method: "over_time",
+    contracts: [], compliance_flags: [], asc_606_notes: "",
+  }).ok);
+  ok("revenue_recognition_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("revenue_recognition_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentRr } = await import("./lib/run-agent");
+  const { stubBrain: sbRr } = await import("./lib/agent-brain");
+  const { approveAction: approveRr, listPending: listRr } = await import("./lib/actions-service");
+  const orgRr = await makeOrg("pro");
+  const payloadRr = await makePayload(orgRr);
+  const rRr = await runAgentRr({ orgId: orgRr, payloadId: payloadRr, role: "revenue_recognition_agent" }, { db, brain: sbRr });
+  ok("revenue_recognition_agent run produced an analysis", rRr.ok && rRr.proposalCount === 1);
+  const pendRr = await listRr(orgRr, { db });
+  ok("stub proposal passes validateProposal", pendRr.length === 1 && pendRr[0].kind === "analyze_revenue_recognition");
+  const apprRr = await approveRr(orgRr, pendRr[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes revenue_recognition_runs", apprRr.ok && apprRr.recordTable === "revenue_recognition_runs", JSON.stringify(apprRr));
+  const { data: rrRows } = await db.from("revenue_recognition_runs").select("org_id,recognition_method").eq("org_id", orgRr);
+  ok("revenue recognition record org-stamped", rrRows?.length === 1 && rrRows[0].org_id === orgRr);
+  const { data: rrAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgRr);
+  ok("approveAction writes agent_accuracy for revenue_recognition_agent",
+    rrAccRows?.length === 1 && rrAccRows[0].agent_role === "revenue_recognition_agent" && rrAccRows[0].approved_count === 1);
+  const { routePayload: routeRr } = await import("./lib/manager");
+  const routeCheckRr = await routeRr({ orgId: orgRr, payloadId: payloadRr }, { db, enqueue: () => {} });
+  ok("revenue_recognition_agent routes on the financial route", routeCheckRr.ok && routeCheckRr.plan.includes("revenue_recognition_agent"));
+  await db.from("organizations").delete().eq("id", orgRr);
 
   console.log("== org context ==");
   {
