@@ -52,7 +52,8 @@ export async function routePayload(
   plan.push("meeting_prepper"); // always, before board_deck_builder
   plan.push("board_deck_builder"); // always, before viz_recommender
   plan.push("viz_recommender"); // always, before chart_config_agent
-  plan.push("chart_config_agent"); // always, before validator
+  plan.push("chart_config_agent"); // always, before kpi_card_agent
+  plan.push("kpi_card_agent"); // always, before validator
   plan.push("validator"); // always, last before analyst
   plan.push("analyst"); // always
 

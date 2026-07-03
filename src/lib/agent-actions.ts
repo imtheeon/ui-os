@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1344,6 +1344,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_chart_configs",
       payload: { configs, total_configs: totalConfigs },
+    };
+  }
+
+  if (kind === "extract_kpi_cards") {
+    const totalKpis = typeof p.total_kpis === "number" ? Math.round(p.total_kpis) : NaN;
+    if (!Number.isFinite(totalKpis) || totalKpis < 0) return { ok: false, reason: "bad_total_kpis" };
+    if (!Array.isArray(p.kpi_cards)) return { ok: false, reason: "kpi_cards_not_array" };
+
+    const TRENDS = ["up", "down", "flat", "unknown"];
+    const CATEGORIES = ["revenue", "cost", "efficiency", "risk", "growth", "other"];
+    const MAX_KPIS = 12;
+    const raw = (p.kpi_cards as unknown[]).slice(0, MAX_KPIS);
+    const kpi_cards: { metric_name: string; value: string; unit: string; trend: string; category: string; is_primary: boolean }[] = [];
+    for (const k of raw) {
+      if (typeof k !== "object" || k === null) continue;
+      const rec = k as Record<string, unknown>;
+      const metric_name = str(rec.metric_name);
+      const value = str(rec.value);
+      const unit = typeof rec.unit === "string" ? rec.unit.slice(0, MAX_STR) : null;
+      const trend = typeof rec.trend === "string" && TRENDS.includes(rec.trend) ? rec.trend : null;
+      const category = typeof rec.category === "string" && CATEGORIES.includes(rec.category) ? rec.category : null;
+      const is_primary = typeof rec.is_primary === "boolean" ? rec.is_primary : null;
+      if (metric_name && value && unit !== null && trend && category && is_primary !== null) {
+        kpi_cards.push({ metric_name, value, unit, trend, category, is_primary });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "extract_kpi_cards",
+      payload: { kpi_cards, total_kpis: totalKpis },
     };
   }
 
