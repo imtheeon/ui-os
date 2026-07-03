@@ -1293,6 +1293,26 @@ export async function applyAction(
     return { ok: true, recordTable: "liquidity_risk_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "track_covenants") {
+    const { data, error } = await db
+      .from("covenant_tracking_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        covenants: v.payload.covenants,
+        overall_compliance: v.payload.overall_compliance,
+        violations_count: v.payload.violations_count,
+        at_risk_count: v.payload.at_risk_count,
+        next_test_date: v.payload.next_test_date,
+        remediation_actions: v.payload.remediation_actions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "covenant_tracking_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
