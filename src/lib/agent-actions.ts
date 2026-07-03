@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -980,6 +980,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "validate_analysis",
       payload: { concerns, data_interpretability, confidence_in_swarm, recommendation },
+    };
+  }
+
+  if (kind === "generate_health_score") {
+    const overallScore = typeof p.overall_score === "number" ? Math.round(p.overall_score) : NaN;
+    if (!Number.isFinite(overallScore) || overallScore < 0 || overallScore > 100) {
+      return { ok: false, reason: "bad_overall_score" };
+    }
+    const GRADES = ["A", "B", "C", "D", "F"];
+    const grade = typeof p.grade === "string" && GRADES.includes(p.grade) ? p.grade : null;
+    if (!grade) return { ok: false, reason: "bad_grade" };
+    const summary = str(p.summary);
+    if (!summary) return { ok: false, reason: "missing_summary" };
+    if (!Array.isArray(p.dimensions)) return { ok: false, reason: "dimensions_not_array" };
+    const MAX_DIMENSIONS = 10;
+    const raw = (p.dimensions as unknown[]).slice(0, MAX_DIMENSIONS);
+    const dimensions: { dimension: string; score: number; notes: string }[] = [];
+    for (const d of raw) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const dimension = str(rec.dimension);
+      const score = typeof rec.score === "number" ? Math.round(rec.score) : NaN;
+      const notes = str(rec.notes);
+      if (dimension && Number.isFinite(score) && score >= 0 && score <= 100 && notes) {
+        dimensions.push({ dimension, score, notes });
+      }
+    }
+    return {
+      ok: true,
+      kind: "generate_health_score",
+      payload: { overall_score: overallScore, grade, dimensions, summary },
     };
   }
 
