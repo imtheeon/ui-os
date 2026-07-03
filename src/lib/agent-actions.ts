@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1177,6 +1177,51 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_narrative",
       payload: { headline, story, tone, audience, word_count: wordCount },
+    };
+  }
+
+  if (kind === "prepare_meeting") {
+    const MEETING_TYPES = ["monthly_review", "quarterly_review", "strategy", "crisis", "onboarding", "general"];
+    const meeting_type = typeof p.meeting_type === "string" && MEETING_TYPES.includes(p.meeting_type) ? p.meeting_type : null;
+    if (!meeting_type) return { ok: false, reason: "bad_meeting_type" };
+    if (!Array.isArray(p.agenda_items)) return { ok: false, reason: "agenda_items_not_array" };
+    if (!Array.isArray(p.likely_client_questions)) return { ok: false, reason: "likely_client_questions_not_array" };
+
+    const PRIORITIES = ["low", "medium", "high"];
+    const MAX_AGENDA = 10;
+    const rawAgenda = (p.agenda_items as unknown[]).slice(0, MAX_AGENDA);
+    const agenda_items: { item: string; duration_minutes: number; priority: string }[] = [];
+    for (const a of rawAgenda) {
+      if (typeof a !== "object" || a === null) continue;
+      const rec = a as Record<string, unknown>;
+      const item = str(rec.item);
+      const duration_minutes = typeof rec.duration_minutes === "number" ? Math.round(rec.duration_minutes) : NaN;
+      const priority = typeof rec.priority === "string" && PRIORITIES.includes(rec.priority) ? rec.priority : null;
+      if (item && priority && Number.isFinite(duration_minutes) && duration_minutes >= 1 && duration_minutes <= 60) {
+        agenda_items.push({ item, duration_minutes, priority });
+      }
+    }
+
+    const talking_points = strArray(p.talking_points, 20, 300);
+    const questions_to_ask = strArray(p.questions_to_ask, 10, 300);
+
+    const MAX_CLIENT_Q = 10;
+    const rawClientQ = (p.likely_client_questions as unknown[]).slice(0, MAX_CLIENT_Q);
+    const likely_client_questions: { question: string; suggested_answer: string }[] = [];
+    for (const q of rawClientQ) {
+      if (typeof q !== "object" || q === null) continue;
+      const rec = q as Record<string, unknown>;
+      const question = str(rec.question);
+      const suggested_answer = str(rec.suggested_answer);
+      if (question && suggested_answer) {
+        likely_client_questions.push({ question, suggested_answer });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "prepare_meeting",
+      payload: { meeting_type, agenda_items, talking_points, questions_to_ask, likely_client_questions },
     };
   }
 
