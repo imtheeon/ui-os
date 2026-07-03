@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2291,6 +2291,84 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_concentration_risk",
       payload: { risk_dimensions, overall_risk_level, herfindahl_index, top_3_concentration_percentage, mitigation_recommendations },
+    };
+  }
+
+  if (kind === "model_scenarios") {
+    if (typeof p.base_case !== "object" || p.base_case === null || Array.isArray(p.base_case)) {
+      return { ok: false, reason: "bad_base_case" };
+    }
+    const bc = p.base_case as Record<string, unknown>;
+    const bcDescription = str(bc.description);
+    if (!bcDescription) return { ok: false, reason: "bad_base_case" };
+    const bcRevenue = numOrNull(bc.revenue);
+    const bcCosts = numOrNull(bc.costs);
+    const bcProfit = numOrNull(bc.profit);
+    if (bcRevenue === NUM_INVALID || bcCosts === NUM_INVALID || bcProfit === NUM_INVALID) {
+      return { ok: false, reason: "bad_base_case" };
+    }
+    const rawBcMetrics = Array.isArray(bc.key_metrics) ? (bc.key_metrics as unknown[]).slice(0, 10) : [];
+    const bcKeyMetrics: { metric: string; value: number }[] = [];
+    for (const m of rawBcMetrics) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const metric = str(rec.metric);
+      const value = typeof rec.value === "number" && Number.isFinite(rec.value) ? rec.value : null;
+      if (metric && value !== null) bcKeyMetrics.push({ metric, value });
+    }
+    const base_case = { description: bcDescription, revenue: bcRevenue, costs: bcCosts, profit: bcProfit, key_metrics: bcKeyMetrics };
+
+    const SCENARIO_TYPES = ["optimistic", "pessimistic", "stress_test", "custom"];
+    if (!Array.isArray(p.scenarios)) return { ok: false, reason: "scenarios_not_array" };
+    const rawScenarios = (p.scenarios as unknown[]).slice(0, 5);
+    const scenarios: { scenario_name: string; type: string; assumptions: string[]; revenue: number | null; costs: number | null; profit: number | null; key_metrics: { metric: string; value: number }[]; probability: number | null; narrative: string }[] = [];
+    for (const s of rawScenarios) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const scenario_name = str(rec.scenario_name);
+      const type = typeof rec.type === "string" && SCENARIO_TYPES.includes(rec.type) ? rec.type : null;
+      const narrative = str(rec.narrative);
+      if (!scenario_name || !type || !narrative) continue;
+      const revenue = numOrNull(rec.revenue);
+      const costs = numOrNull(rec.costs);
+      const profit = numOrNull(rec.profit);
+      const probability = numOrNull(rec.probability, 0, 100);
+      if (revenue === NUM_INVALID || costs === NUM_INVALID || profit === NUM_INVALID || probability === NUM_INVALID) continue;
+      const assumptions = strArray(rec.assumptions, 10, MAX_STR);
+      const rawMetrics = Array.isArray(rec.key_metrics) ? (rec.key_metrics as unknown[]).slice(0, 10) : [];
+      const key_metrics: { metric: string; value: number }[] = [];
+      for (const m of rawMetrics) {
+        if (typeof m !== "object" || m === null) continue;
+        const mrec = m as Record<string, unknown>;
+        const metric = str(mrec.metric);
+        const value = typeof mrec.value === "number" && Number.isFinite(mrec.value) ? mrec.value : null;
+        if (metric && value !== null) key_metrics.push({ metric, value });
+      }
+      scenarios.push({ scenario_name, type, assumptions, revenue, costs, profit, key_metrics, probability, narrative });
+    }
+    if (scenarios.length < 2) return { ok: false, reason: "insufficient_scenarios" };
+
+    const rawKeyVars = Array.isArray(p.key_variables) ? (p.key_variables as unknown[]).slice(0, 15) : [];
+    const SENSITIVITIES = ["high", "medium", "low"];
+    const key_variables: { variable: string; base_value: number | null; sensitivity: string }[] = [];
+    for (const kv of rawKeyVars) {
+      if (typeof kv !== "object" || kv === null) continue;
+      const rec = kv as Record<string, unknown>;
+      const variable = str(rec.variable);
+      const sensitivity = typeof rec.sensitivity === "string" && SENSITIVITIES.includes(rec.sensitivity) ? rec.sensitivity : null;
+      const base_value = numOrNull(rec.base_value);
+      if (variable && sensitivity && base_value !== NUM_INVALID) {
+        key_variables.push({ variable, base_value, sensitivity });
+      }
+    }
+
+    const recommendation = str(p.recommendation);
+    if (!recommendation) return { ok: false, reason: "missing_recommendation" };
+
+    return {
+      ok: true,
+      kind: "model_scenarios",
+      payload: { base_case, scenarios, key_variables, recommendation },
     };
   }
 
