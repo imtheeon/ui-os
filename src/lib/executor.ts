@@ -724,6 +724,25 @@ export async function applyAction(
     return { ok: true, recordTable: "narrative_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "prepare_meeting") {
+    const { data, error } = await db
+      .from("meeting_prep_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        meeting_type: v.payload.meeting_type,
+        agenda_items: v.payload.agenda_items,
+        talking_points: v.payload.talking_points,
+        questions_to_ask: v.payload.questions_to_ask,
+        likely_client_questions: v.payload.likely_client_questions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "meeting_prep_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
