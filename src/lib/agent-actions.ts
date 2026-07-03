@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2014,6 +2014,63 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       payload: {
         total_pipeline_value, weighted_pipeline_value, deals, stage_summary,
         avg_deal_size, avg_sales_cycle_days, win_rate, forecast_this_period, risks,
+      },
+    };
+  }
+
+  if (kind === "analyze_pricing") {
+    const ELASTICITIES = ["elastic", "inelastic", "unit_elastic", "unknown"];
+    const price_elasticity = typeof p.price_elasticity === "string" && ELASTICITIES.includes(p.price_elasticity) ? p.price_elasticity : null;
+    if (!price_elasticity) return { ok: false, reason: "bad_price_elasticity" };
+    const POSITIONS = ["premium", "parity", "discount", "unknown"];
+    const competitive_position = typeof p.competitive_position === "string" && POSITIONS.includes(p.competitive_position) ? p.competitive_position : null;
+    if (!competitive_position) return { ok: false, reason: "bad_competitive_position" };
+    const CONFIDENCES = ["high", "medium", "low"];
+    const confidence = typeof p.confidence === "string" && CONFIDENCES.includes(p.confidence) ? p.confidence : null;
+    if (!confidence) return { ok: false, reason: "bad_confidence" };
+
+    const projected_revenue_impact = numOrNull(p.projected_revenue_impact);
+    if (projected_revenue_impact === NUM_INVALID) return { ok: false, reason: "bad_projected_revenue_impact" };
+
+    const MAX_PRICING = 30;
+    const rawPricing = Array.isArray(p.current_pricing) ? (p.current_pricing as unknown[]).slice(0, MAX_PRICING) : [];
+    const current_pricing: { product_service: string; current_price: number; unit: string; cost: number; margin: number }[] = [];
+    for (const c of rawPricing) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const product_service = str(rec.product_service);
+      const current_price = typeof rec.current_price === "number" && Number.isFinite(rec.current_price) && rec.current_price >= 0 ? rec.current_price : null;
+      const unit = str(rec.unit);
+      const cost = typeof rec.cost === "number" && Number.isFinite(rec.cost) && rec.cost >= 0 ? rec.cost : null;
+      const margin = typeof rec.margin === "number" && Number.isFinite(rec.margin) ? rec.margin : null;
+      if (product_service && current_price !== null && unit && cost !== null && margin !== null) {
+        current_pricing.push({ product_service, current_price, unit, cost, margin });
+      }
+    }
+
+    const MAX_CHANGES = 20;
+    const rawChanges = Array.isArray(p.recommended_changes) ? (p.recommended_changes as unknown[]).slice(0, MAX_CHANGES) : [];
+    const recommended_changes: { product_service: string; current_price: number; recommended_price: number; rationale: string }[] = [];
+    for (const c of rawChanges) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const product_service = str(rec.product_service);
+      const current_price = typeof rec.current_price === "number" && Number.isFinite(rec.current_price) && rec.current_price >= 0 ? rec.current_price : null;
+      const recommended_price = typeof rec.recommended_price === "number" && Number.isFinite(rec.recommended_price) && rec.recommended_price >= 0 ? rec.recommended_price : null;
+      const rationale = str(rec.rationale);
+      if (product_service && current_price !== null && recommended_price !== null && rationale) {
+        recommended_changes.push({ product_service, current_price, recommended_price, rationale });
+      }
+    }
+
+    const optimization_opportunities = strArray(p.optimization_opportunities, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_pricing",
+      payload: {
+        current_pricing, price_elasticity, competitive_position, optimization_opportunities,
+        recommended_changes, projected_revenue_impact, confidence,
       },
     };
   }
