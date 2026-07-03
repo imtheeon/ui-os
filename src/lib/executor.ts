@@ -1172,6 +1172,26 @@ export async function applyAction(
     return { ok: true, recordTable: "pricing_optimization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_contracts") {
+    const { data, error } = await db
+      .from("contract_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        contracts: v.payload.contracts,
+        total_contract_value: v.payload.total_contract_value,
+        total_annual_value: v.payload.total_annual_value,
+        renewal_risk_summary: v.payload.renewal_risk_summary,
+        upcoming_renewals: v.payload.upcoming_renewals,
+        red_flags: v.payload.red_flags,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "contract_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
