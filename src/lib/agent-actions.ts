@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2072,6 +2072,76 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
         current_pricing, price_elasticity, competitive_position, optimization_opportunities,
         recommended_changes, projected_revenue_impact, confidence,
       },
+    };
+  }
+
+  if (kind === "analyze_contracts") {
+    const total_contract_value = typeof p.total_contract_value === "number" && Number.isFinite(p.total_contract_value) && p.total_contract_value >= 0 ? p.total_contract_value : null;
+    if (total_contract_value === null) return { ok: false, reason: "bad_total_contract_value" };
+    const total_annual_value = typeof p.total_annual_value === "number" && Number.isFinite(p.total_annual_value) && p.total_annual_value >= 0 ? p.total_annual_value : null;
+    if (total_annual_value === null) return { ok: false, reason: "bad_total_annual_value" };
+
+    if (typeof p.renewal_risk_summary !== "object" || p.renewal_risk_summary === null || Array.isArray(p.renewal_risk_summary)) {
+      return { ok: false, reason: "bad_renewal_risk_summary" };
+    }
+    const rrsRaw = p.renewal_risk_summary as Record<string, unknown>;
+    const at_risk_count = typeof rrsRaw.at_risk_count === "number" && Number.isInteger(rrsRaw.at_risk_count) && rrsRaw.at_risk_count >= 0 ? rrsRaw.at_risk_count : null;
+    const at_risk_value = typeof rrsRaw.at_risk_value === "number" && Number.isFinite(rrsRaw.at_risk_value) && rrsRaw.at_risk_value >= 0 ? rrsRaw.at_risk_value : null;
+    const renewals_due_90_days = typeof rrsRaw.renewals_due_90_days === "number" && Number.isInteger(rrsRaw.renewals_due_90_days) && rrsRaw.renewals_due_90_days >= 0 ? rrsRaw.renewals_due_90_days : null;
+    if (at_risk_count === null || at_risk_value === null || renewals_due_90_days === null) {
+      return { ok: false, reason: "bad_renewal_risk_summary" };
+    }
+    const renewal_risk_summary = { at_risk_count, at_risk_value, renewals_due_90_days };
+
+    const CONTRACT_TYPES = ["customer", "vendor", "employee", "other"];
+    const CONTRACT_STATUSES = ["active", "expired", "pending", "terminated"];
+    const MAX_CONTRACTS = 50;
+    const rawContracts = Array.isArray(p.contracts) ? (p.contracts as unknown[]).slice(0, MAX_CONTRACTS) : [];
+    const contracts: {
+      contract_id: string; counterparty: string; contract_type: string; total_value: number; annual_value: number;
+      start_date: string; end_date: string; auto_renews: boolean; status: string; days_until_renewal: number | null;
+    }[] = [];
+    for (const c of rawContracts) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const contract_id = str(rec.contract_id);
+      const counterparty = str(rec.counterparty);
+      const contract_type = typeof rec.contract_type === "string" && CONTRACT_TYPES.includes(rec.contract_type) ? rec.contract_type : null;
+      const total_value = typeof rec.total_value === "number" && Number.isFinite(rec.total_value) && rec.total_value >= 0 ? rec.total_value : null;
+      const annual_value = typeof rec.annual_value === "number" && Number.isFinite(rec.annual_value) && rec.annual_value >= 0 ? rec.annual_value : null;
+      const start_date = str(rec.start_date);
+      const end_date = str(rec.end_date);
+      const auto_renews = typeof rec.auto_renews === "boolean" ? rec.auto_renews : null;
+      const status = typeof rec.status === "string" && CONTRACT_STATUSES.includes(rec.status) ? rec.status : null;
+      const days_until_renewal = rec.days_until_renewal === null ? null : (typeof rec.days_until_renewal === "number" && Number.isInteger(rec.days_until_renewal) ? rec.days_until_renewal : undefined);
+      if (contract_id && counterparty && contract_type && total_value !== null && annual_value !== null && start_date && end_date && auto_renews !== null && status && days_until_renewal !== undefined) {
+        contracts.push({ contract_id, counterparty, contract_type, total_value, annual_value, start_date, end_date, auto_renews, status, days_until_renewal });
+      }
+    }
+
+    const MAX_RENEWALS = 30;
+    const RISKS = ["high", "medium", "low"];
+    const rawRenewals = Array.isArray(p.upcoming_renewals) ? (p.upcoming_renewals as unknown[]).slice(0, MAX_RENEWALS) : [];
+    const upcoming_renewals: { contract_id: string; counterparty: string; renewal_date: string; annual_value: number; risk: string }[] = [];
+    for (const u of rawRenewals) {
+      if (typeof u !== "object" || u === null) continue;
+      const rec = u as Record<string, unknown>;
+      const contract_id = str(rec.contract_id);
+      const counterparty = str(rec.counterparty);
+      const renewal_date = str(rec.renewal_date);
+      const annual_value = typeof rec.annual_value === "number" && Number.isFinite(rec.annual_value) && rec.annual_value >= 0 ? rec.annual_value : null;
+      const risk = typeof rec.risk === "string" && RISKS.includes(rec.risk) ? rec.risk : null;
+      if (contract_id && counterparty && renewal_date && annual_value !== null && risk) {
+        upcoming_renewals.push({ contract_id, counterparty, renewal_date, annual_value, risk });
+      }
+    }
+
+    const red_flags = strArray(p.red_flags, 15, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_contracts",
+      payload: { contracts, total_contract_value, total_annual_value, renewal_risk_summary, upcoming_renewals, red_flags },
     };
   }
 
