@@ -1375,6 +1375,26 @@ export async function applyAction(
     return { ok: true, recordTable: "kpi_extractor_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "synthesize_insights") {
+    const { data, error } = await db
+      .from("insight_synthesis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        executive_summary: v.payload.executive_summary,
+        key_insights: v.payload.key_insights,
+        strategic_implications: v.payload.strategic_implications,
+        critical_risks: v.payload.critical_risks,
+        opportunities: v.payload.opportunities,
+        confidence: v.payload.confidence,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "insight_synthesis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
