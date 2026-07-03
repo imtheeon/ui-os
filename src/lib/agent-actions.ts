@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1597,6 +1597,45 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_accounts_payable",
       payload: { total_payables, due_this_week, due_this_month, overdue_amount, vendors, early_payment_opportunities, cash_required_30_days },
+    };
+  }
+
+  if (kind === "reconcile_bank") {
+    const STATUSES = ["balanced", "variance_found", "insufficient_data"];
+    const reconciliation_status = typeof p.reconciliation_status === "string" && STATUSES.includes(p.reconciliation_status) ? p.reconciliation_status : null;
+    if (!reconciliation_status) return { ok: false, reason: "bad_reconciliation_status" };
+    const notes = str(p.notes);
+    if (!notes) return { ok: false, reason: "missing_notes" };
+    const total_unmatched = typeof p.total_unmatched === "number" ? Math.round(p.total_unmatched) : NaN;
+    if (!Number.isFinite(total_unmatched) || total_unmatched < 0) return { ok: false, reason: "bad_total_unmatched" };
+
+    const book_balance = numOrNull(p.book_balance);
+    if (book_balance === NUM_INVALID) return { ok: false, reason: "bad_book_balance" };
+    const bank_balance = numOrNull(p.bank_balance);
+    if (bank_balance === NUM_INVALID) return { ok: false, reason: "bad_bank_balance" };
+    const variance = numOrNull(p.variance);
+    if (variance === NUM_INVALID) return { ok: false, reason: "bad_variance" };
+
+    if (!Array.isArray(p.unmatched_items)) return { ok: false, reason: "unmatched_items_not_array" };
+    const ITEM_TYPES = ["deposit_in_transit", "outstanding_check", "bank_charge", "error", "other"];
+    const MAX_ITEMS = 50;
+    const raw = (p.unmatched_items as unknown[]).slice(0, MAX_ITEMS);
+    const unmatched_items: { description: string; amount: number; item_type: string }[] = [];
+    for (const i of raw) {
+      if (typeof i !== "object" || i === null) continue;
+      const rec = i as Record<string, unknown>;
+      const description = str(rec.description);
+      const amount = typeof rec.amount === "number" && Number.isFinite(rec.amount) ? rec.amount : null;
+      const item_type = typeof rec.item_type === "string" && ITEM_TYPES.includes(rec.item_type) ? rec.item_type : null;
+      if (description && amount !== null && item_type) {
+        unmatched_items.push({ description, amount, item_type });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "reconcile_bank",
+      payload: { book_balance, bank_balance, variance, unmatched_items, reconciliation_status, total_unmatched, notes },
     };
   }
 

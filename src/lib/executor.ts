@@ -935,6 +935,27 @@ export async function applyAction(
     return { ok: true, recordTable: "ap_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "reconcile_bank") {
+    const { data, error } = await db
+      .from("bank_recon_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        book_balance: v.payload.book_balance,
+        bank_balance: v.payload.bank_balance,
+        variance: v.payload.variance,
+        unmatched_items: v.payload.unmatched_items,
+        reconciliation_status: v.payload.reconciliation_status,
+        total_unmatched: v.payload.total_unmatched,
+        notes: v.payload.notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "bank_recon_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
