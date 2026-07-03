@@ -1192,6 +1192,28 @@ export async function applyAction(
     return { ok: true, recordTable: "contract_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_marketing_roi") {
+    const { data, error } = await db
+      .from("marketing_roi_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        channels: v.payload.channels,
+        total_spend: v.payload.total_spend,
+        total_revenue_attributed: v.payload.total_revenue_attributed,
+        overall_roi: v.payload.overall_roi,
+        customer_acquisition_cost: v.payload.customer_acquisition_cost,
+        best_performing_channel: v.payload.best_performing_channel,
+        worst_performing_channel: v.payload.worst_performing_channel,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "marketing_roi_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
