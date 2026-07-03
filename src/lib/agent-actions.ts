@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -948,6 +948,38 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_sql",
       payload: { queries_found: queriesFound, issues, optimizations, risk_level },
+    };
+  }
+
+  if (kind === "validate_analysis") {
+    const INTERPRETABILITY = ["clear", "ambiguous", "poor", "insufficient"];
+    const data_interpretability = typeof p.data_interpretability === "string" && INTERPRETABILITY.includes(p.data_interpretability) ? p.data_interpretability : null;
+    if (!data_interpretability) return { ok: false, reason: "bad_data_interpretability" };
+    const CONFIDENCES = ["high", "medium", "low", "very_low"];
+    const confidence_in_swarm = typeof p.confidence_in_swarm === "string" && CONFIDENCES.includes(p.confidence_in_swarm) ? p.confidence_in_swarm : null;
+    if (!confidence_in_swarm) return { ok: false, reason: "bad_confidence_in_swarm" };
+    const RECOMMENDATIONS = ["proceed", "proceed_with_caution", "request_clarification", "reject"];
+    const recommendation = typeof p.recommendation === "string" && RECOMMENDATIONS.includes(p.recommendation) ? p.recommendation : null;
+    if (!recommendation) return { ok: false, reason: "bad_recommendation" };
+    if (!Array.isArray(p.concerns)) return { ok: false, reason: "concerns_not_array" };
+    const SEVERITIES = ["low", "medium", "high"];
+    const MAX_CONCERNS = 20;
+    const raw = (p.concerns as unknown[]).slice(0, MAX_CONCERNS);
+    const concerns: { area: string; concern: string; severity: string }[] = [];
+    for (const c of raw) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const area = str(rec.area);
+      const concern = str(rec.concern);
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      if (area && concern && severity) {
+        concerns.push({ area, concern, severity });
+      }
+    }
+    return {
+      ok: true,
+      kind: "validate_analysis",
+      payload: { concerns, data_interpretability, confidence_in_swarm, recommendation },
     };
   }
 
