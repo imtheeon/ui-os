@@ -1090,6 +1090,26 @@ export async function applyAction(
     return { ok: true, recordTable: "revenue_recognition_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_churn_risk") {
+    const { data, error } = await db
+      .from("churn_risk_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        overall_churn_rate: v.payload.overall_churn_rate,
+        at_risk_customers: v.payload.at_risk_customers,
+        risk_factors: v.payload.risk_factors,
+        predicted_revenue_loss: v.payload.predicted_revenue_loss,
+        retention_recommendations: v.payload.retention_recommendations,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "churn_risk_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

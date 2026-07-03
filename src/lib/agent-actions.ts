@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1887,6 +1887,42 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_revenue_recognition",
       payload: { recognized_revenue, deferred_revenue, recognition_method, contracts, compliance_flags, asc_606_notes },
+    };
+  }
+
+  if (kind === "analyze_churn_risk") {
+    const data_period = str(p.data_period);
+    if (!data_period) return { ok: false, reason: "missing_data_period" };
+
+    const overall_churn_rate = numOrNull(p.overall_churn_rate, 0, 100);
+    if (overall_churn_rate === NUM_INVALID) return { ok: false, reason: "bad_overall_churn_rate" };
+    const predicted_revenue_loss = numOrNull(p.predicted_revenue_loss, 0);
+    if (predicted_revenue_loss === NUM_INVALID) return { ok: false, reason: "bad_predicted_revenue_loss" };
+
+    const MAX_CUSTOMERS = 50;
+    const RISK_LEVELS = ["high", "medium", "low"];
+    const rawCustomers = Array.isArray(p.at_risk_customers) ? (p.at_risk_customers as unknown[]).slice(0, MAX_CUSTOMERS) : [];
+    const at_risk_customers: { customer_id: string; risk_score: number; risk_level: string; last_active: string; revenue_at_risk: number }[] = [];
+    for (const c of rawCustomers) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const customer_id = str(rec.customer_id);
+      const risk_score = typeof rec.risk_score === "number" && Number.isFinite(rec.risk_score) && rec.risk_score >= 0 && rec.risk_score <= 100 ? rec.risk_score : null;
+      const risk_level = typeof rec.risk_level === "string" && RISK_LEVELS.includes(rec.risk_level) ? rec.risk_level : null;
+      const last_active = str(rec.last_active);
+      const revenue_at_risk = typeof rec.revenue_at_risk === "number" && Number.isFinite(rec.revenue_at_risk) && rec.revenue_at_risk >= 0 ? rec.revenue_at_risk : null;
+      if (customer_id && risk_score !== null && risk_level && last_active && revenue_at_risk !== null) {
+        at_risk_customers.push({ customer_id, risk_score, risk_level, last_active, revenue_at_risk });
+      }
+    }
+
+    const risk_factors = strArray(p.risk_factors, 15, MAX_STR);
+    const retention_recommendations = strArray(p.retention_recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_churn_risk",
+      payload: { overall_churn_rate, at_risk_customers, risk_factors, predicted_revenue_loss, retention_recommendations, data_period },
     };
   }
 

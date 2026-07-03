@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, revenue_recognition_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "working_capital_agent", "break_even_agent", "cogs_analysis_agent", "revenue_recognition_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
-  ok("fiftyone agent/run events enqueued", enq.length === 51 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, revenue_recognition_agent, churn_risk_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "working_capital_agent", "break_even_agent", "cogs_analysis_agent", "revenue_recognition_agent", "churn_risk_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
+  ok("fiftytwo agent/run events enqueued", enq.length === 52 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+revenue_recognition_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 51);
+  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+revenue_recognition_agent+churn_risk_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 52);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 51 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + working capital analysis + break even analysis + cogs analysis + revenue recognition analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 51);
+  ok("chain produced 52 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + working capital analysis + break even analysis + cogs analysis + revenue recognition analysis + churn risk analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 52);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -2383,6 +2383,63 @@ async function main() {
   const routeCheckRr = await routeRr({ orgId: orgRr, payloadId: payloadRr }, { db, enqueue: () => {} });
   ok("revenue_recognition_agent routes on the financial route", routeCheckRr.ok && routeCheckRr.plan.includes("revenue_recognition_agent"));
   await db.from("organizations").delete().eq("id", orgRr);
+
+  console.log("== churn risk agent ==");
+  ok("analyze_churn_risk accepts good", validateProposal("analyze_churn_risk", {
+    overall_churn_rate: 8.5, predicted_revenue_loss: 12500,
+    at_risk_customers: [{ customer_id: "C001", risk_score: 85, risk_level: "high", last_active: "2024-01-15", revenue_at_risk: 5000 }],
+    risk_factors: ["Declining login frequency"], retention_recommendations: ["Proactive outreach"],
+    data_period: "Q1 2024",
+  }).ok);
+  ok("analyze_churn_risk filters out customer with risk_score > 100", (() => {
+    const r = validateProposal("analyze_churn_risk", {
+      overall_churn_rate: 8.5, predicted_revenue_loss: 12500,
+      at_risk_customers: [
+        { customer_id: "Good", risk_score: 80, risk_level: "high", last_active: "2024-01-15", revenue_at_risk: 5000 },
+        { customer_id: "Bad", risk_score: 150, risk_level: "high", last_active: "2024-01-15", revenue_at_risk: 5000 },
+      ],
+      risk_factors: [], retention_recommendations: [], data_period: "Q1 2024",
+    });
+    return r.ok && (r.payload.at_risk_customers as unknown[]).length === 1;
+  })());
+  ok("analyze_churn_risk filters out customer with bad risk_level", (() => {
+    const r = validateProposal("analyze_churn_risk", {
+      overall_churn_rate: 8.5, predicted_revenue_loss: 12500,
+      at_risk_customers: [
+        { customer_id: "Good", risk_score: 80, risk_level: "high", last_active: "2024-01-15", revenue_at_risk: 5000 },
+        { customer_id: "Bad", risk_score: 50, risk_level: "critical", last_active: "2024-01-15", revenue_at_risk: 5000 },
+      ],
+      risk_factors: [], retention_recommendations: [], data_period: "Q1 2024",
+    });
+    return r.ok && (r.payload.at_risk_customers as unknown[]).length === 1;
+  })());
+  ok("analyze_churn_risk rejects empty data_period", !validateProposal("analyze_churn_risk", {
+    overall_churn_rate: 8.5, predicted_revenue_loss: 12500,
+    at_risk_customers: [], risk_factors: [], retention_recommendations: [], data_period: "",
+  }).ok);
+  ok("churn_risk_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("churn_risk_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentChu } = await import("./lib/run-agent");
+  const { stubBrain: sbChu } = await import("./lib/agent-brain");
+  const { approveAction: approveChu, listPending: listChu } = await import("./lib/actions-service");
+  const orgChu = await makeOrg("pro");
+  const payloadChu = await makePayload(orgChu);
+  const rChu = await runAgentChu({ orgId: orgChu, payloadId: payloadChu, role: "churn_risk_agent" }, { db, brain: sbChu });
+  ok("churn_risk_agent run produced an analysis", rChu.ok && rChu.proposalCount === 1);
+  const pendChu = await listChu(orgChu, { db });
+  ok("stub proposal passes validateProposal", pendChu.length === 1 && pendChu[0].kind === "analyze_churn_risk");
+  const apprChu = await approveChu(orgChu, pendChu[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes churn_risk_runs", apprChu.ok && apprChu.recordTable === "churn_risk_runs", JSON.stringify(apprChu));
+  const { data: chuRows } = await db.from("churn_risk_runs").select("org_id,data_period").eq("org_id", orgChu);
+  ok("churn risk record org-stamped", chuRows?.length === 1 && chuRows[0].org_id === orgChu);
+  const { data: chuAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgChu);
+  ok("approveAction writes agent_accuracy for churn_risk_agent",
+    chuAccRows?.length === 1 && chuAccRows[0].agent_role === "churn_risk_agent" && chuAccRows[0].approved_count === 1);
+  const { routePayload: routeChu } = await import("./lib/manager");
+  const routeCheckChu = await routeChu({ orgId: orgChu, payloadId: payloadChu }, { db, enqueue: () => {} });
+  ok("churn_risk_agent routes on the financial route", routeCheckChu.ok && routeCheckChu.plan.includes("churn_risk_agent"));
+  await db.from("organizations").delete().eq("id", orgChu);
 
   console.log("== org context ==");
   {
