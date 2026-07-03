@@ -1128,6 +1128,29 @@ export async function applyAction(
     return { ok: true, recordTable: "customer_segmentation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_sales_pipeline") {
+    const { data, error } = await db
+      .from("sales_pipeline_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_pipeline_value: v.payload.total_pipeline_value,
+        weighted_pipeline_value: v.payload.weighted_pipeline_value,
+        deals: v.payload.deals,
+        stage_summary: v.payload.stage_summary,
+        avg_deal_size: v.payload.avg_deal_size,
+        avg_sales_cycle_days: v.payload.avg_sales_cycle_days,
+        win_rate: v.payload.win_rate,
+        forecast_this_period: v.payload.forecast_this_period,
+        risks: v.payload.risks,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "sales_pipeline_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
