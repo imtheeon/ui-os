@@ -1524,6 +1524,26 @@ export async function applyAction(
     return { ok: true, recordTable: "transaction_classifier_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "check_expense_policy") {
+    const { data, error } = await db
+      .from("expense_policy_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        violations: v.payload.violations,
+        violation_count: v.payload.violation_count,
+        total_policy_exception_amount: v.payload.total_policy_exception_amount,
+        compliance_rate: v.payload.compliance_rate,
+        policy_summary: v.payload.policy_summary,
+        escalations: v.payload.escalations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "expense_policy_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
