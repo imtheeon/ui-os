@@ -1151,6 +1151,27 @@ export async function applyAction(
     return { ok: true, recordTable: "sales_pipeline_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_pricing") {
+    const { data, error } = await db
+      .from("pricing_optimization_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        current_pricing: v.payload.current_pricing,
+        price_elasticity: v.payload.price_elasticity,
+        competitive_position: v.payload.competitive_position,
+        optimization_opportunities: v.payload.optimization_opportunities,
+        recommended_changes: v.payload.recommended_changes,
+        projected_revenue_impact: v.payload.projected_revenue_impact,
+        confidence: v.payload.confidence,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "pricing_optimization_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
