@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2865,6 +2865,64 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_missing_data",
       payload: { missing_summary, critical_gaps, imputation_suggestions, overall_completeness, data_usability },
+    };
+  }
+
+  if (kind === "assess_data_privacy") {
+    const PII_TYPES = ["name", "email", "phone", "ssn", "address", "dob", "ip_address", "device_id", "financial_account", "health", "other"];
+    const CONFIDENCES2 = ["high", "medium", "low"];
+    const rawPii = Array.isArray(p.pii_fields) ? (p.pii_fields as unknown[]).slice(0, 50) : [];
+    const pii_fields: { column_name: string; pii_type: string; confidence: string; example_pattern: string }[] = [];
+    for (const f of rawPii) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const pii_type = typeof rec.pii_type === "string" && PII_TYPES.includes(rec.pii_type) ? rec.pii_type : null;
+      const confidence = typeof rec.confidence === "string" && CONFIDENCES2.includes(rec.confidence) ? rec.confidence : null;
+      const example_pattern = str(rec.example_pattern);
+      if (column_name && pii_type && confidence && example_pattern) {
+        pii_fields.push({ column_name, pii_type, confidence, example_pattern });
+      }
+    }
+
+    const rawSensitive = Array.isArray(p.sensitive_financial_fields) ? (p.sensitive_financial_fields as unknown[]).slice(0, 30) : [];
+    const sensitive_financial_fields: { column_name: string; sensitivity_type: string; notes: string }[] = [];
+    for (const s of rawSensitive) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const sensitivity_type = str(rec.sensitivity_type);
+      const notes = str(rec.notes) ?? "";
+      if (column_name && sensitivity_type) {
+        sensitive_financial_fields.push({ column_name, sensitivity_type, notes });
+      }
+    }
+
+    const RISK_LEVELS6 = ["critical", "high", "medium", "low"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS6.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+
+    const compliance_concerns = strArray(p.compliance_concerns, 10, MAX_STR);
+
+    const TECHNIQUES = ["hash", "tokenize", "redact", "generalize", "pseudonymize", "encrypt"];
+    const PRIORITIES2 = ["immediate", "before_sharing", "optional"];
+    const rawMasking = Array.isArray(p.masking_recommendations) ? (p.masking_recommendations as unknown[]).slice(0, 20) : [];
+    const masking_recommendations: { column_name: string; technique: string; priority: string }[] = [];
+    for (const m of rawMasking) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const technique = typeof rec.technique === "string" && TECHNIQUES.includes(rec.technique) ? rec.technique : null;
+      const priority = typeof rec.priority === "string" && PRIORITIES2.includes(rec.priority) ? rec.priority : null;
+      if (column_name && technique && priority) {
+        masking_recommendations.push({ column_name, technique, priority });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "assess_data_privacy",
+      payload: { pii_fields, sensitive_financial_fields, risk_level, compliance_concerns, masking_recommendations },
     };
   }
 

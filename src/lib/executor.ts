@@ -1485,6 +1485,25 @@ export async function applyAction(
     return { ok: true, recordTable: "missing_data_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "assess_data_privacy") {
+    const { data, error } = await db
+      .from("data_privacy_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        pii_fields: v.payload.pii_fields,
+        sensitive_financial_fields: v.payload.sensitive_financial_fields,
+        risk_level: v.payload.risk_level,
+        compliance_concerns: v.payload.compliance_concerns,
+        masking_recommendations: v.payload.masking_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "data_privacy_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
