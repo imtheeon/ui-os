@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -869,6 +869,39 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "review_code",
       payload: { findings, language_detected, overall_risk, total_issues: totalIssues },
+    };
+  }
+
+  if (kind === "generate_tests") {
+    const language_detected = str(p.language_detected);
+    if (!language_detected) return { ok: false, reason: "missing_language_detected" };
+    const framework_suggested = str(p.framework_suggested);
+    if (!framework_suggested) return { ok: false, reason: "missing_framework_suggested" };
+    const coverageEstimate = typeof p.coverage_estimate === "number" ? Math.round(p.coverage_estimate) : NaN;
+    if (!Number.isFinite(coverageEstimate) || coverageEstimate < 0 || coverageEstimate > 100) {
+      return { ok: false, reason: "bad_coverage_estimate" };
+    }
+    if (!Array.isArray(p.test_cases)) return { ok: false, reason: "test_cases_not_array" };
+    const TEST_TYPES = ["unit", "integration", "edge_case", "security"];
+    const MAX_CASES = 20;
+    const MAX_PSEUDOCODE = 2000;
+    const raw = (p.test_cases as unknown[]).slice(0, MAX_CASES);
+    const test_cases: { name: string; description: string; test_type: string; pseudocode: string }[] = [];
+    for (const t of raw) {
+      if (typeof t !== "object" || t === null) continue;
+      const rec = t as Record<string, unknown>;
+      const name = str(rec.name);
+      const description = str(rec.description);
+      const test_type = typeof rec.test_type === "string" && TEST_TYPES.includes(rec.test_type) ? rec.test_type : null;
+      const pseudocode = typeof rec.pseudocode === "string" && rec.pseudocode.length > 0 ? rec.pseudocode.slice(0, MAX_PSEUDOCODE) : null;
+      if (name && description && test_type && pseudocode) {
+        test_cases.push({ name, description, test_type, pseudocode });
+      }
+    }
+    return {
+      ok: true,
+      kind: "generate_tests",
+      payload: { test_cases, language_detected, framework_suggested, coverage_estimate: coverageEstimate },
     };
   }
 
