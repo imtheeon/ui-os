@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
-  ok("fortysix agent/run events enqueued", enq.length === 46 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
+  ok("fortyseven agent/run events enqueued", enq.length === 47 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 46);
+  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 47);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 46 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 46);
+  ok("chain produced 47 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 47);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -2128,6 +2128,56 @@ async function main() {
   const routeCheckRa = await routeRa({ orgId: orgRa, payloadId: payloadRa }, { db, enqueue: () => {} });
   ok("ratio_analysis_agent routes on the financial route", routeCheckRa.ok && routeCheckRa.plan.includes("ratio_analysis_agent"));
   await db.from("organizations").delete().eq("id", orgRa);
+
+  console.log("== profitability agent ==");
+  ok("analyze_profitability accepts good", validateProposal("analyze_profitability", {
+    segments: [{ segment_name: "Product A", revenue: 80000, cost: 45000, gross_profit: 35000, gross_margin: 43.75 }],
+    total_revenue: 80000, total_cost: 45000, total_gross_profit: 35000, overall_margin: 43.75,
+    most_profitable: "Product A", least_profitable: "Product A",
+    recommendations: ["Focus on highest-margin products"],
+  }).ok);
+  ok("analyze_profitability filters out segment with gross_margin > 100", (() => {
+    const r = validateProposal("analyze_profitability", {
+      segments: [
+        { segment_name: "Good", revenue: 1000, cost: 500, gross_profit: 500, gross_margin: 50 },
+        { segment_name: "Bad", revenue: 1000, cost: 500, gross_profit: 500, gross_margin: 150 },
+      ],
+      total_revenue: 2000, total_cost: 1000, total_gross_profit: 1000, overall_margin: 50,
+      most_profitable: "Good", least_profitable: "Bad", recommendations: [],
+    });
+    return r.ok && (r.payload.segments as unknown[]).length === 1;
+  })());
+  ok("analyze_profitability rejects empty most_profitable", !validateProposal("analyze_profitability", {
+    segments: [], total_revenue: 100, total_cost: 50, total_gross_profit: 50, overall_margin: 50,
+    most_profitable: "", least_profitable: "Overall", recommendations: [],
+  }).ok);
+  ok("analyze_profitability rejects negative total_revenue", !validateProposal("analyze_profitability", {
+    segments: [], total_revenue: -100, total_cost: 50, total_gross_profit: -150, overall_margin: -150,
+    most_profitable: "Overall", least_profitable: "Overall", recommendations: [],
+  }).ok);
+  ok("profitability_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("profitability_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentPr } = await import("./lib/run-agent");
+  const { stubBrain: sbPr } = await import("./lib/agent-brain");
+  const { approveAction: approvePr, listPending: listPr } = await import("./lib/actions-service");
+  const orgPr = await makeOrg("pro");
+  const payloadPr = await makePayload(orgPr);
+  const rPr = await runAgentPr({ orgId: orgPr, payloadId: payloadPr, role: "profitability_agent" }, { db, brain: sbPr });
+  ok("profitability_agent run produced an analysis", rPr.ok && rPr.proposalCount === 1);
+  const pendPr = await listPr(orgPr, { db });
+  ok("stub proposal passes validateProposal", pendPr.length === 1 && pendPr[0].kind === "analyze_profitability");
+  const apprPr = await approvePr(orgPr, pendPr[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes profitability_runs", apprPr.ok && apprPr.recordTable === "profitability_runs", JSON.stringify(apprPr));
+  const { data: prRows } = await db.from("profitability_runs").select("org_id,most_profitable").eq("org_id", orgPr);
+  ok("profitability record org-stamped", prRows?.length === 1 && prRows[0].org_id === orgPr);
+  const { data: prAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgPr);
+  ok("approveAction writes agent_accuracy for profitability_agent",
+    prAccRows?.length === 1 && prAccRows[0].agent_role === "profitability_agent" && prAccRows[0].approved_count === 1);
+  const { routePayload: routePr } = await import("./lib/manager");
+  const routeCheckPr = await routePr({ orgId: orgPr, payloadId: payloadPr }, { db, enqueue: () => {} });
+  ok("profitability_agent routes on the financial route", routeCheckPr.ok && routeCheckPr.plan.includes("profitability_agent"));
+  await db.from("organizations").delete().eq("id", orgPr);
 
   console.log("== org context ==");
   {

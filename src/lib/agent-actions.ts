@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1684,6 +1684,45 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_financial_ratios",
       payload: { liquidity_ratios, profitability_ratios, leverage_ratios, efficiency_ratios, overall_health, notes },
+    };
+  }
+
+  if (kind === "analyze_profitability") {
+    const total_revenue = typeof p.total_revenue === "number" && Number.isFinite(p.total_revenue) && p.total_revenue >= 0 ? p.total_revenue : null;
+    if (total_revenue === null) return { ok: false, reason: "bad_total_revenue" };
+    const total_cost = typeof p.total_cost === "number" && Number.isFinite(p.total_cost) && p.total_cost >= 0 ? p.total_cost : null;
+    if (total_cost === null) return { ok: false, reason: "bad_total_cost" };
+    const total_gross_profit = typeof p.total_gross_profit === "number" && Number.isFinite(p.total_gross_profit) ? p.total_gross_profit : null;
+    if (total_gross_profit === null) return { ok: false, reason: "bad_total_gross_profit" };
+    const overall_margin = typeof p.overall_margin === "number" && Number.isFinite(p.overall_margin) ? p.overall_margin : null;
+    if (overall_margin === null) return { ok: false, reason: "bad_overall_margin" };
+    const most_profitable = str(p.most_profitable);
+    if (!most_profitable) return { ok: false, reason: "missing_most_profitable" };
+    const least_profitable = str(p.least_profitable);
+    if (!least_profitable) return { ok: false, reason: "missing_least_profitable" };
+
+    const MAX_SEGMENTS = 20;
+    const rawSegments = Array.isArray(p.segments) ? (p.segments as unknown[]).slice(0, MAX_SEGMENTS) : [];
+    const segments: { segment_name: string; revenue: number; cost: number; gross_profit: number; gross_margin: number }[] = [];
+    for (const s of rawSegments) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const segment_name = str(rec.segment_name);
+      const revenue = typeof rec.revenue === "number" && Number.isFinite(rec.revenue) ? rec.revenue : null;
+      const cost = typeof rec.cost === "number" && Number.isFinite(rec.cost) ? rec.cost : null;
+      const gross_profit = typeof rec.gross_profit === "number" && Number.isFinite(rec.gross_profit) ? rec.gross_profit : null;
+      const gross_margin = typeof rec.gross_margin === "number" && Number.isFinite(rec.gross_margin) && rec.gross_margin >= 0 && rec.gross_margin <= 100 ? rec.gross_margin : null;
+      if (segment_name && revenue !== null && cost !== null && gross_profit !== null && gross_margin !== null) {
+        segments.push({ segment_name, revenue, cost, gross_profit, gross_margin });
+      }
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_profitability",
+      payload: { segments, total_revenue, total_cost, total_gross_profit, overall_margin, most_profitable, least_profitable, recommendations },
     };
   }
 

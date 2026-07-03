@@ -976,6 +976,28 @@ export async function applyAction(
     return { ok: true, recordTable: "ratio_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_profitability") {
+    const { data, error } = await db
+      .from("profitability_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        segments: v.payload.segments,
+        total_revenue: v.payload.total_revenue,
+        total_cost: v.payload.total_cost,
+        total_gross_profit: v.payload.total_gross_profit,
+        overall_margin: v.payload.overall_margin,
+        most_profitable: v.payload.most_profitable,
+        least_profitable: v.payload.least_profitable,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "profitability_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
