@@ -50,7 +50,8 @@ export async function routePayload(
   plan.push("client_reporter"); // always, before narrator
   plan.push("narrator"); // always, before meeting_prepper
   plan.push("meeting_prepper"); // always, before board_deck_builder
-  plan.push("board_deck_builder"); // always, before validator
+  plan.push("board_deck_builder"); // always, before viz_recommender
+  plan.push("viz_recommender"); // always, before validator
   plan.push("validator"); // always, last before analyst
   plan.push("analyst"); // always
 

@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1274,6 +1274,40 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "build_board_deck",
       payload: { slides, key_metrics, narrative_thread },
+    };
+  }
+
+  if (kind === "recommend_visualizations") {
+    const DATA_SHAPES = ["time_series", "categorical", "financial", "mixed", "insufficient"];
+    const data_shape = typeof p.data_shape === "string" && DATA_SHAPES.includes(p.data_shape) ? p.data_shape : null;
+    if (!data_shape) return { ok: false, reason: "bad_data_shape" };
+    const totalRecommended = typeof p.total_recommended === "number" ? Math.round(p.total_recommended) : NaN;
+    if (!Number.isFinite(totalRecommended) || totalRecommended < 0) return { ok: false, reason: "bad_total_recommended" };
+    if (!Array.isArray(p.recommendations)) return { ok: false, reason: "recommendations_not_array" };
+
+    const CHART_TYPES = ["bar", "line", "area", "pie", "donut", "scatter", "heatmap", "table", "metric_card", "waterfall"];
+    const PRIORITIES = ["primary", "secondary", "supplemental"];
+    const MAX_RECS = 10;
+    const raw = (p.recommendations as unknown[]).slice(0, MAX_RECS);
+    const recommendations: { chart_type: string; title: string; x_axis_field: string; y_axis_field: string; reason: string; priority: string }[] = [];
+    for (const r of raw) {
+      if (typeof r !== "object" || r === null) continue;
+      const rec = r as Record<string, unknown>;
+      const chart_type = typeof rec.chart_type === "string" && CHART_TYPES.includes(rec.chart_type) ? rec.chart_type : null;
+      const recTitle = str(rec.title);
+      const x_axis_field = str(rec.x_axis_field);
+      const y_axis_field = str(rec.y_axis_field);
+      const reason = str(rec.reason);
+      const priority = typeof rec.priority === "string" && PRIORITIES.includes(rec.priority) ? rec.priority : null;
+      if (chart_type && recTitle && x_axis_field && y_axis_field && reason && priority) {
+        recommendations.push({ chart_type, title: recTitle, x_axis_field, y_axis_field, reason, priority });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "recommend_visualizations",
+      payload: { recommendations, data_shape, total_recommended: totalRecommended },
     };
   }
 
