@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -25,6 +25,15 @@ function strArray(v: unknown, maxItems: number, maxLen: number): string[] {
     .filter((s): s is string => typeof s === "string" && s.length > 0)
     .slice(0, maxItems)
     .map((s) => s.slice(0, maxLen));
+}
+
+/** Sentinel distinguishing "field present but invalid" from a legitimate null. */
+const NUM_INVALID = Symbol("num_invalid");
+/** A nullable numeric field: null passes through; a present value must be a finite number in range. */
+function numOrNull(v: unknown, min = -Infinity, max = Infinity): number | null | typeof NUM_INVALID {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number" && Number.isFinite(v) && v >= min && v <= max) return v;
+  return NUM_INVALID;
 }
 
 export function validateProposal(kind: string, payload: unknown): Ok | Err {
@@ -1413,6 +1422,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_dashboard_spec",
       payload: { dashboard_title, layout, sections, recommended_refresh, total_components: totalComponents },
+    };
+  }
+
+  if (kind === "calculate_saas_metrics") {
+    const CONFIDENCES = ["high", "medium", "low"];
+    const metrics_confidence = typeof p.metrics_confidence === "string" && CONFIDENCES.includes(p.metrics_confidence) ? p.metrics_confidence : null;
+    if (!metrics_confidence) return { ok: false, reason: "bad_metrics_confidence" };
+    const notes = str(p.notes);
+    if (!notes) return { ok: false, reason: "missing_notes" };
+
+    const mrr = numOrNull(p.mrr);
+    if (mrr === NUM_INVALID) return { ok: false, reason: "bad_mrr" };
+    const arr = numOrNull(p.arr);
+    if (arr === NUM_INVALID) return { ok: false, reason: "bad_arr" };
+    const churn_rate = numOrNull(p.churn_rate, 0, 1);
+    if (churn_rate === NUM_INVALID) return { ok: false, reason: "bad_churn_rate" };
+    const ltv = numOrNull(p.ltv);
+    if (ltv === NUM_INVALID) return { ok: false, reason: "bad_ltv" };
+    const cac = numOrNull(p.cac);
+    if (cac === NUM_INVALID) return { ok: false, reason: "bad_cac" };
+    const ltv_cac_ratio = numOrNull(p.ltv_cac_ratio);
+    if (ltv_cac_ratio === NUM_INVALID) return { ok: false, reason: "bad_ltv_cac_ratio" };
+    const net_revenue_retention = numOrNull(p.net_revenue_retention, 0);
+    if (net_revenue_retention === NUM_INVALID) return { ok: false, reason: "bad_net_revenue_retention" };
+
+    const available_metrics = strArray(p.available_metrics, 20, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "calculate_saas_metrics",
+      payload: { mrr, arr, churn_rate, ltv, cac, ltv_cac_ratio, net_revenue_retention, metrics_confidence, available_metrics, notes },
     };
   }
 
