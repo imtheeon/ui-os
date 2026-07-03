@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -902,6 +902,52 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_tests",
       payload: { test_cases, language_detected, framework_suggested, coverage_estimate: coverageEstimate },
+    };
+  }
+
+  if (kind === "analyze_sql") {
+    const queriesFound = typeof p.queries_found === "number" ? Math.round(p.queries_found) : NaN;
+    if (!Number.isFinite(queriesFound) || queriesFound < 0) return { ok: false, reason: "bad_queries_found" };
+    const RISK_LEVELS = ["none", "low", "medium", "high", "critical"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS.includes(p.risk_level) ? p.risk_level : null;
+    if (!risk_level) return { ok: false, reason: "bad_risk_level" };
+    if (!Array.isArray(p.issues)) return { ok: false, reason: "issues_not_array" };
+    if (!Array.isArray(p.optimizations)) return { ok: false, reason: "optimizations_not_array" };
+
+    const ISSUE_TYPES = ["injection_risk", "performance", "missing_index", "cartesian_join", "n_plus_one", "other"];
+    const SEVERITIES = ["low", "medium", "high", "critical"];
+    const MAX_ISSUES = 50;
+    const rawIssues = (p.issues as unknown[]).slice(0, MAX_ISSUES);
+    const issues: { query_reference: string; issue_type: string; severity: string; description: string }[] = [];
+    for (const i of rawIssues) {
+      if (typeof i !== "object" || i === null) continue;
+      const rec = i as Record<string, unknown>;
+      const query_reference = str(rec.query_reference);
+      const issue_type = typeof rec.issue_type === "string" && ISSUE_TYPES.includes(rec.issue_type) ? rec.issue_type : null;
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      const description = str(rec.description);
+      if (query_reference && issue_type && severity && description) {
+        issues.push({ query_reference, issue_type, severity, description });
+      }
+    }
+
+    const MAX_OPTIMIZATIONS = 20;
+    const rawOpts = (p.optimizations as unknown[]).slice(0, MAX_OPTIMIZATIONS);
+    const optimizations: { query_reference: string; suggestion: string }[] = [];
+    for (const o of rawOpts) {
+      if (typeof o !== "object" || o === null) continue;
+      const rec = o as Record<string, unknown>;
+      const query_reference = str(rec.query_reference);
+      const suggestion = str(rec.suggestion);
+      if (query_reference && suggestion) {
+        optimizations.push({ query_reference, suggestion });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "analyze_sql",
+      payload: { queries_found: queriesFound, issues, optimizations, risk_level },
     };
   }
 
