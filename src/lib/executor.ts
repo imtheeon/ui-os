@@ -1234,6 +1234,25 @@ export async function applyAction(
     return { ok: true, recordTable: "fraud_detection_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_concentration_risk") {
+    const { data, error } = await db
+      .from("concentration_risk_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        risk_dimensions: v.payload.risk_dimensions,
+        overall_risk_level: v.payload.overall_risk_level,
+        herfindahl_index: v.payload.herfindahl_index,
+        top_3_concentration_percentage: v.payload.top_3_concentration_percentage,
+        mitigation_recommendations: v.payload.mitigation_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "concentration_risk_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
