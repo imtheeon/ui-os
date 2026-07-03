@@ -828,6 +828,30 @@ export async function applyAction(
     return { ok: true, recordTable: "dashboard_spec_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_saas_metrics") {
+    const { data, error } = await db
+      .from("saas_metrics_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        mrr: v.payload.mrr,
+        arr: v.payload.arr,
+        churn_rate: v.payload.churn_rate,
+        ltv: v.payload.ltv,
+        cac: v.payload.cac,
+        ltv_cac_ratio: v.payload.ltv_cac_ratio,
+        net_revenue_retention: v.payload.net_revenue_retention,
+        metrics_confidence: v.payload.metrics_confidence,
+        available_metrics: v.payload.available_metrics,
+        notes: v.payload.notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "saas_metrics_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
