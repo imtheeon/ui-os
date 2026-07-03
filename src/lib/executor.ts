@@ -1110,6 +1110,24 @@ export async function applyAction(
     return { ok: true, recordTable: "churn_risk_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "segment_customers") {
+    const { data, error } = await db
+      .from("customer_segmentation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        segments: v.payload.segments,
+        segmentation_method: v.payload.segmentation_method,
+        total_customers: v.payload.total_customers,
+        insights: v.payload.insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "customer_segmentation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
