@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1835,6 +1835,58 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_cogs",
       payload: { total_cogs, total_revenue, gross_profit, gross_margin_percentage, cogs_components, cogs_trend, cost_drivers, optimization_opportunities },
+    };
+  }
+
+  if (kind === "analyze_revenue_recognition") {
+    const recognized_revenue = typeof p.recognized_revenue === "number" && Number.isFinite(p.recognized_revenue) && p.recognized_revenue >= 0 ? p.recognized_revenue : null;
+    if (recognized_revenue === null) return { ok: false, reason: "bad_recognized_revenue" };
+    const deferred_revenue = typeof p.deferred_revenue === "number" && Number.isFinite(p.deferred_revenue) && p.deferred_revenue >= 0 ? p.deferred_revenue : null;
+    if (deferred_revenue === null) return { ok: false, reason: "bad_deferred_revenue" };
+
+    const METHODS = ["point_in_time", "over_time", "mixed", "unknown"];
+    const recognition_method = typeof p.recognition_method === "string" && METHODS.includes(p.recognition_method) ? p.recognition_method : null;
+    if (!recognition_method) return { ok: false, reason: "bad_recognition_method" };
+
+    const asc_606_notesRaw = str(p.asc_606_notes);
+    if (!asc_606_notesRaw) return { ok: false, reason: "missing_asc_606_notes" };
+    const asc_606_notes = asc_606_notesRaw.slice(0, 1000);
+
+    const MAX_CONTRACTS = 30;
+    const rawContracts = Array.isArray(p.contracts) ? (p.contracts as unknown[]).slice(0, MAX_CONTRACTS) : [];
+    const contracts: { contract_ref: string; total_value: number; recognized: number; deferred: number; start_date: string; end_date: string }[] = [];
+    for (const c of rawContracts) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const contract_ref = str(rec.contract_ref);
+      const total_value = typeof rec.total_value === "number" && Number.isFinite(rec.total_value) && rec.total_value >= 0 ? rec.total_value : null;
+      const recognized = typeof rec.recognized === "number" && Number.isFinite(rec.recognized) && rec.recognized >= 0 ? rec.recognized : null;
+      const deferred = typeof rec.deferred === "number" && Number.isFinite(rec.deferred) && rec.deferred >= 0 ? rec.deferred : null;
+      const start_date = str(rec.start_date);
+      const end_date = str(rec.end_date);
+      if (contract_ref && total_value !== null && recognized !== null && deferred !== null && start_date && end_date) {
+        contracts.push({ contract_ref, total_value, recognized, deferred, start_date, end_date });
+      }
+    }
+
+    const MAX_FLAGS = 20;
+    const SEVERITIES = ["low", "medium", "high"];
+    const rawFlags = Array.isArray(p.compliance_flags) ? (p.compliance_flags as unknown[]).slice(0, MAX_FLAGS) : [];
+    const compliance_flags: { flag: string; severity: string }[] = [];
+    for (const f of rawFlags) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const flag = str(rec.flag);
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      if (flag && severity) {
+        compliance_flags.push({ flag, severity });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "analyze_revenue_recognition",
+      payload: { recognized_revenue, deferred_revenue, recognition_method, contracts, compliance_flags, asc_606_notes },
     };
   }
 
