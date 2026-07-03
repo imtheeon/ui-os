@@ -129,6 +129,12 @@ Proceed autonomously through all steps without stopping EXCEPT:
 - typecheck fails after 2 fix attempts — stop and report
 - check:agents fails — stop and report
 - Before any git push — always confirm with user first
+  **Exception — coordinator batch builds:** When running under
+  `scripts/build-coordinator.sh` (i.e. the prompt was fed via
+  `claude --dangerously-skip-permissions --print` from that script),
+  pushes to `main` are **pre-authorized by the repo owner** provided:
+  (a) `npm run typecheck` exits 0, (b) `npm run check:agents` passes,
+  and (c) a secret scan finds no secrets. Do NOT stop to ask — just push.
 - Real architectural decision needed — present options, wait
 
 For everything else: create files, edit code, run tests, fix errors, commit — proceed without asking.
