@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1453,6 +1453,35 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "calculate_saas_metrics",
       payload: { mrr, arr, churn_rate, ltv, cac, ltv_cac_ratio, net_revenue_retention, metrics_confidence, available_metrics, notes },
+    };
+  }
+
+  if (kind === "calculate_burn_rate") {
+    const TRENDS = ["increasing", "decreasing", "stable", "unknown"];
+    const burn_trend = typeof p.burn_trend === "string" && TRENDS.includes(p.burn_trend) ? p.burn_trend : null;
+    if (!burn_trend) return { ok: false, reason: "bad_burn_trend" };
+    const STATUSES = ["healthy", "watch", "critical", "unknown"];
+    const runway_status = typeof p.runway_status === "string" && STATUSES.includes(p.runway_status) ? p.runway_status : null;
+    if (!runway_status) return { ok: false, reason: "bad_runway_status" };
+    const CONFIDENCES = ["high", "medium", "low"];
+    const confidence = typeof p.confidence === "string" && CONFIDENCES.includes(p.confidence) ? p.confidence : null;
+    if (!confidence) return { ok: false, reason: "bad_confidence" };
+
+    const monthly_burn = numOrNull(p.monthly_burn);
+    if (monthly_burn === NUM_INVALID) return { ok: false, reason: "bad_monthly_burn" };
+    const net_burn = numOrNull(p.net_burn);
+    if (net_burn === NUM_INVALID) return { ok: false, reason: "bad_net_burn" };
+    const cash_balance = numOrNull(p.cash_balance);
+    if (cash_balance === NUM_INVALID) return { ok: false, reason: "bad_cash_balance" };
+    const runway_months = numOrNull(p.runway_months, 0);
+    if (runway_months === NUM_INVALID) return { ok: false, reason: "bad_runway_months" };
+
+    const assumptions = strArray(p.assumptions, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "calculate_burn_rate",
+      payload: { monthly_burn, net_burn, cash_balance, runway_months, burn_trend, runway_status, assumptions, confidence },
     };
   }
 
