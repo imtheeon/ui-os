@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
-  ok("fortyone agent/run events enqueued", enq.length === 41 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst"]));
+  ok("fortytwo agent/run events enqueued", enq.length === 42 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 41);
+  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst", captured.length === 42);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 41 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 41);
+  ok("chain produced 42 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report)", chainProps?.length === 42);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -1913,6 +1913,46 @@ async function main() {
   ok("approveAction writes agent_accuracy for burn_rate_agent",
     brAccRows?.length === 1 && brAccRows[0].agent_role === "burn_rate_agent" && brAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgBr);
+
+  console.log("== cohort agent ==");
+  ok("analyze_cohorts accepts good with empty cohorts", validateProposal("analyze_cohorts", {
+    cohorts: [], cohort_type: "unknown", avg_retention_m1: null, avg_retention_m3: null,
+    trend: "insufficient_data", notes: "No cohort structure detected.",
+  }).ok);
+  ok("analyze_cohorts rejects bad cohort_type", !validateProposal("analyze_cohorts", {
+    cohorts: [], cohort_type: "yearly", avg_retention_m1: null, avg_retention_m3: null,
+    trend: "stable", notes: "x",
+  }).ok);
+  ok("analyze_cohorts rejects bad trend", !validateProposal("analyze_cohorts", {
+    cohorts: [], cohort_type: "monthly", avg_retention_m1: null, avg_retention_m3: null,
+    trend: "volatile", notes: "x",
+  }).ok);
+  ok("analyze_cohorts filters out retention_rate > 1.0", (() => {
+    const r = validateProposal("analyze_cohorts", {
+      cohorts: [{ cohort_period: "2024-01", cohort_size: 100, retention_rates: [1.0, 1.5, 0.6], revenue: null }],
+      cohort_type: "monthly", avg_retention_m1: 1.0, avg_retention_m3: 0.6, trend: "stable", notes: "x",
+    });
+    return r.ok && (r.payload.cohorts as { retention_rates: number[] }[])[0].retention_rates.length === 2;
+  })());
+  ok("cohort_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("cohort_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentCh } = await import("./lib/run-agent");
+  const { stubBrain: sbCh } = await import("./lib/agent-brain");
+  const { approveAction: approveCh, listPending: listCh } = await import("./lib/actions-service");
+  const orgCh = await makeOrg("pro");
+  const payloadCh = await makePayload(orgCh);
+  const rCh = await runAgentCh({ orgId: orgCh, payloadId: payloadCh, role: "cohort_agent" }, { db, brain: sbCh });
+  ok("cohort_agent run produced an analysis", rCh.ok && rCh.proposalCount === 1);
+  const pendCh = await listCh(orgCh, { db });
+  const apprCh = await approveCh(orgCh, pendCh[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes cohort_analysis_runs", apprCh.ok && apprCh.recordTable === "cohort_analysis_runs", JSON.stringify(apprCh));
+  const { data: chRows } = await db.from("cohort_analysis_runs").select("org_id,trend").eq("org_id", orgCh);
+  ok("cohort analysis record org-stamped", chRows?.length === 1 && chRows[0].org_id === orgCh);
+  const { data: chAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgCh);
+  ok("approveAction writes agent_accuracy for cohort_agent",
+    chAccRows?.length === 1 && chAccRows[0].agent_role === "cohort_agent" && chAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgCh);
 
   console.log("== org context ==");
   {

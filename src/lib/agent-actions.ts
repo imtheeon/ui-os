@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1482,6 +1482,46 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "calculate_burn_rate",
       payload: { monthly_burn, net_burn, cash_balance, runway_months, burn_trend, runway_status, assumptions, confidence },
+    };
+  }
+
+  if (kind === "analyze_cohorts") {
+    const COHORT_TYPES = ["monthly", "quarterly", "weekly", "unknown"];
+    const cohort_type = typeof p.cohort_type === "string" && COHORT_TYPES.includes(p.cohort_type) ? p.cohort_type : null;
+    if (!cohort_type) return { ok: false, reason: "bad_cohort_type" };
+    const TRENDS = ["improving", "declining", "stable", "insufficient_data"];
+    const trend = typeof p.trend === "string" && TRENDS.includes(p.trend) ? p.trend : null;
+    if (!trend) return { ok: false, reason: "bad_trend" };
+    const notes = str(p.notes);
+    if (!notes) return { ok: false, reason: "missing_notes" };
+    const avg_retention_m1 = numOrNull(p.avg_retention_m1, 0, 1);
+    if (avg_retention_m1 === NUM_INVALID) return { ok: false, reason: "bad_avg_retention_m1" };
+    const avg_retention_m3 = numOrNull(p.avg_retention_m3, 0, 1);
+    if (avg_retention_m3 === NUM_INVALID) return { ok: false, reason: "bad_avg_retention_m3" };
+    if (!Array.isArray(p.cohorts)) return { ok: false, reason: "cohorts_not_array" };
+
+    const MAX_COHORTS = 24;
+    const MAX_RATES = 24;
+    const raw = (p.cohorts as unknown[]).slice(0, MAX_COHORTS);
+    const cohorts: { cohort_period: string; cohort_size: number; retention_rates: number[]; revenue: number | null }[] = [];
+    for (const c of raw) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const cohort_period = str(rec.cohort_period);
+      const cohort_size = typeof rec.cohort_size === "number" ? Math.round(rec.cohort_size) : NaN;
+      const revenue = numOrNull(rec.revenue);
+      if (cohort_period && Number.isFinite(cohort_size) && cohort_size >= 0 && revenue !== NUM_INVALID && Array.isArray(rec.retention_rates)) {
+        const retention_rates = (rec.retention_rates as unknown[])
+          .filter((r): r is number => typeof r === "number" && Number.isFinite(r) && r >= 0 && r <= 1)
+          .slice(0, MAX_RATES);
+        cohorts.push({ cohort_period, cohort_size, retention_rates, revenue });
+      }
+    }
+
+    return {
+      ok: true,
+      kind: "analyze_cohorts",
+      payload: { cohorts, cohort_type, avg_retention_m1, avg_retention_m3, trend, notes },
     };
   }
 

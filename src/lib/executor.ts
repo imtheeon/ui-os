@@ -874,6 +874,26 @@ export async function applyAction(
     return { ok: true, recordTable: "burn_rate_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_cohorts") {
+    const { data, error } = await db
+      .from("cohort_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        cohorts: v.payload.cohorts,
+        cohort_type: v.payload.cohort_type,
+        avg_retention_m1: v.payload.avg_retention_m1,
+        avg_retention_m3: v.payload.avg_retention_m3,
+        trend: v.payload.trend,
+        notes: v.payload.notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "cohort_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
