@@ -852,6 +852,28 @@ export async function applyAction(
     return { ok: true, recordTable: "saas_metrics_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_burn_rate") {
+    const { data, error } = await db
+      .from("burn_rate_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        monthly_burn: v.payload.monthly_burn,
+        net_burn: v.payload.net_burn,
+        cash_balance: v.payload.cash_balance,
+        runway_months: v.payload.runway_months,
+        burn_trend: v.payload.burn_trend,
+        runway_status: v.payload.runway_status,
+        assumptions: v.payload.assumptions,
+        confidence: v.payload.confidence,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "burn_rate_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
