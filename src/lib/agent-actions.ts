@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2464,6 +2464,45 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "track_covenants",
       payload: { covenants, overall_compliance, violations_count, at_risk_count, next_test_date, remediation_actions },
+    };
+  }
+
+  if (kind === "classify_document") {
+    const DOC_TYPES = ["financial_statement", "invoice", "contract", "expense_report", "payroll", "bank_statement", "budget", "forecast", "hr_data", "sales_data", "operational_data", "unknown"];
+    const document_type = typeof p.document_type === "string" && DOC_TYPES.includes(p.document_type) ? p.document_type : null;
+    if (!document_type) return { ok: false, reason: "bad_document_type" };
+
+    const document_subtype = typeof p.document_subtype === "string" && p.document_subtype.length > 0 ? p.document_subtype.slice(0, 100) : null;
+    if (!document_subtype) return { ok: false, reason: "missing_document_subtype" };
+
+    const CONFIDENCES = ["high", "medium", "low"];
+    const confidence = typeof p.confidence === "string" && CONFIDENCES.includes(p.confidence) ? p.confidence : null;
+    if (!confidence) return { ok: false, reason: "bad_confidence" };
+
+    if (typeof p.detected_entities !== "object" || p.detected_entities === null || Array.isArray(p.detected_entities)) {
+      return { ok: false, reason: "bad_detected_entities" };
+    }
+    const de = p.detected_entities as Record<string, unknown>;
+    const companies = strArray(de.companies, 20, 200);
+    const dates = strArray(de.dates, 20, 50);
+    const currencies = strArray(de.currencies, 10, 10);
+    const rawAmounts = Array.isArray(de.amounts) ? (de.amounts as unknown[]).slice(0, 50) : [];
+    const amounts = rawAmounts.filter((n): n is number => typeof n === "number" && Number.isFinite(n));
+    const detected_entities = { companies, dates, currencies, amounts };
+
+    const language = str(p.language);
+    if (!language) return { ok: false, reason: "missing_language" };
+
+    const time_period = typeof p.time_period === "string" && p.time_period.length > 0 ? p.time_period.slice(0, 100) : null;
+    const currency = typeof p.currency === "string" && p.currency.length > 0 ? p.currency.slice(0, 10) : null;
+
+    const classification_notes = typeof p.classification_notes === "string" && p.classification_notes.length > 0 ? p.classification_notes.slice(0, 500) : null;
+    if (!classification_notes) return { ok: false, reason: "missing_classification_notes" };
+
+    return {
+      ok: true,
+      kind: "classify_document",
+      payload: { document_type, document_subtype, confidence, detected_entities, language, time_period, currency, classification_notes },
     };
   }
 
