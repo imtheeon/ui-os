@@ -1313,6 +1313,28 @@ export async function applyAction(
     return { ok: true, recordTable: "covenant_tracking_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "classify_document") {
+    const { data, error } = await db
+      .from("document_classifier_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        document_type: v.payload.document_type,
+        document_subtype: v.payload.document_subtype,
+        confidence: v.payload.confidence,
+        detected_entities: v.payload.detected_entities,
+        language: v.payload.language,
+        time_period: v.payload.time_period,
+        currency: v.payload.currency,
+        classification_notes: v.payload.classification_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "document_classifier_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
