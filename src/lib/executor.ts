@@ -793,6 +793,22 @@ export async function applyAction(
     return { ok: true, recordTable: "chart_config_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "extract_kpi_cards") {
+    const { data, error } = await db
+      .from("kpi_card_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        kpi_cards: v.payload.kpi_cards,
+        total_kpis: v.payload.total_kpis,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "kpi_card_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
