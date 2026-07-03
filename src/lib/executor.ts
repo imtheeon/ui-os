@@ -1431,6 +1431,24 @@ export async function applyAction(
     return { ok: true, recordTable: "action_priority_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "profile_columns") {
+    const { data, error } = await db
+      .from("column_profiler_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        column_profiles: v.payload.column_profiles,
+        total_rows: v.payload.total_rows,
+        total_columns: v.payload.total_columns,
+        overall_completeness: v.payload.overall_completeness,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "column_profiler_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
