@@ -49,7 +49,8 @@ export async function routePayload(
   plan.push("alert_agent"); // always, before client_reporter
   plan.push("client_reporter"); // always, before narrator
   plan.push("narrator"); // always, before meeting_prepper
-  plan.push("meeting_prepper"); // always, before validator
+  plan.push("meeting_prepper"); // always, before board_deck_builder
+  plan.push("board_deck_builder"); // always, before validator
   plan.push("validator"); // always, last before analyst
   plan.push("analyst"); // always
 
