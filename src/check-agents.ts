@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "validator", "analyst"]));
-  ok("thirtyone agent/run events enqueued", enq.length === 31 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, report_generator, exec_summarizer, alert_agent, client_reporter, validator, analyst]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "validator", "analyst"]));
+  ok("thirtytwo agent/run events enqueued", enq.length === 32 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, exec_summarizer, alert_agent, validator, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "data_merger", "report_generator", "exec_summarizer", "alert_agent", "validator", "analyst"]));
+  ok("non-financial routes to [data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, exec_summarizer, alert_agent, client_reporter, validator, analyst]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "data_merger", "report_generator", "exec_summarizer", "alert_agent", "client_reporter", "validator", "analyst"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+validator+analyst", captured.length === 31);
+  ok("manager enqueued data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+report_generator+exec_summarizer+alert_agent+client_reporter+validator+analyst", captured.length === 32);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 31 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + validation + ledger + analyst report)", chainProps?.length === 31);
+  ok("chain produced 32 proposals (data quality + compliance + onboarding + clarification + multi period + audit summary + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + forecast + report + exec summary + alerts + client report + validation + ledger + analyst report)", chainProps?.length === 32);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -1500,6 +1500,46 @@ async function main() {
   ok("approveAction writes agent_accuracy for alert_agent",
     alAccRows?.length === 1 && alAccRows[0].agent_role === "alert_agent" && alAccRows[0].approved_count === 1);
   await db.from("organizations").delete().eq("id", orgAl);
+
+  console.log("== client reporter ==");
+  ok("generate_client_report accepts good", validateProposal("generate_client_report", {
+    report_title: "Monthly Report", executive_summary: "Key findings summarized.",
+    sections: [{ heading: "Overview", content: "Business data processed." }],
+    key_takeaways: ["Data quality is acceptable"], next_steps: ["Review flagged items"],
+  }).ok);
+  ok("generate_client_report rejects empty report_title", !validateProposal("generate_client_report", {
+    report_title: "", executive_summary: "x", sections: [], key_takeaways: [], next_steps: [],
+  }).ok);
+  ok("generate_client_report filters out section missing heading", (() => {
+    const r = validateProposal("generate_client_report", {
+      report_title: "R", executive_summary: "S",
+      sections: [
+        { content: "no heading" },
+        { heading: "Overview", content: "has heading" },
+      ],
+      key_takeaways: [], next_steps: [],
+    });
+    return r.ok && (r.payload.sections as unknown[]).length === 1;
+  })());
+  ok("client_reporter → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("client_reporter") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentCrp } = await import("./lib/run-agent");
+  const { stubBrain: sbCrp } = await import("./lib/agent-brain");
+  const { approveAction: approveCrp, listPending: listCrp } = await import("./lib/actions-service");
+  const orgCrp = await makeOrg("pro");
+  const payloadCrp = await makePayload(orgCrp);
+  const rCrp = await runAgentCrp({ orgId: orgCrp, payloadId: payloadCrp, role: "client_reporter" }, { db, brain: sbCrp });
+  ok("client_reporter run produced a report", rCrp.ok && rCrp.proposalCount === 1);
+  const pendCrp = await listCrp(orgCrp, { db });
+  const apprCrp = await approveCrp(orgCrp, pendCrp[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes client_report_runs", apprCrp.ok && apprCrp.recordTable === "client_report_runs", JSON.stringify(apprCrp));
+  const { data: crpRows } = await db.from("client_report_runs").select("org_id,report_title").eq("org_id", orgCrp);
+  ok("client report record org-stamped", crpRows?.length === 1 && crpRows[0].org_id === orgCrp);
+  const { data: crpAccRows } = await db.from("agent_accuracy").select("agent_role,approved_count").eq("org_id", orgCrp);
+  ok("approveAction writes agent_accuracy for client_reporter",
+    crpAccRows?.length === 1 && crpAccRows[0].agent_role === "client_reporter" && crpAccRows[0].approved_count === 1);
+  await db.from("organizations").delete().eq("id", orgCrp);
 
   console.log("== org context ==");
   {
