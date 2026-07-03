@@ -956,6 +956,26 @@ export async function applyAction(
     return { ok: true, recordTable: "bank_recon_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_financial_ratios") {
+    const { data, error } = await db
+      .from("ratio_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        liquidity_ratios: v.payload.liquidity_ratios,
+        profitability_ratios: v.payload.profitability_ratios,
+        leverage_ratios: v.payload.leverage_ratios,
+        efficiency_ratios: v.payload.efficiency_ratios,
+        overall_health: v.payload.overall_health,
+        notes: v.payload.notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "ratio_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

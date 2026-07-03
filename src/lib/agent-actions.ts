@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1636,6 +1636,54 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "reconcile_bank",
       payload: { book_balance, bank_balance, variance, unmatched_items, reconciliation_status, total_unmatched, notes },
+    };
+  }
+
+  if (kind === "analyze_financial_ratios") {
+    const HEALTH = ["strong", "healthy", "watch", "weak", "critical"];
+    const overall_health = typeof p.overall_health === "string" && HEALTH.includes(p.overall_health) ? p.overall_health : null;
+    if (!overall_health) return { ok: false, reason: "bad_overall_health" };
+    const notesRaw = str(p.notes);
+    if (!notesRaw) return { ok: false, reason: "missing_notes" };
+    const notes = notesRaw.slice(0, 1000);
+
+    // Each ratio category is a required object, but every key inside it is optional:
+    // a key that is missing or fails its range check is silently dropped to null
+    // (same as "not calculable from the data") rather than rejecting the whole proposal.
+    function ratioObj(v: unknown, spec: Record<string, [number, number]>): Record<string, number | null> | null {
+      if (typeof v !== "object" || v === null || Array.isArray(v)) return null;
+      const rec = v as Record<string, unknown>;
+      const out: Record<string, number | null> = {};
+      for (const key of Object.keys(spec)) {
+        const [min, max] = spec[key];
+        const val = numOrNull(rec[key], min, max);
+        out[key] = val === NUM_INVALID ? null : val;
+      }
+      return out;
+    }
+
+    const liquidity_ratios = ratioObj(p.liquidity_ratios, {
+      current_ratio: [-Infinity, Infinity], quick_ratio: [-Infinity, Infinity], cash_ratio: [-Infinity, Infinity],
+    });
+    if (!liquidity_ratios) return { ok: false, reason: "bad_liquidity_ratios" };
+    const profitability_ratios = ratioObj(p.profitability_ratios, {
+      gross_margin: [0, 100], net_margin: [-Infinity, Infinity], roe: [-Infinity, Infinity],
+      roa: [-Infinity, Infinity], ebitda_margin: [-Infinity, Infinity],
+    });
+    if (!profitability_ratios) return { ok: false, reason: "bad_profitability_ratios" };
+    const leverage_ratios = ratioObj(p.leverage_ratios, {
+      debt_to_equity: [-Infinity, Infinity], debt_to_assets: [0, 1], interest_coverage: [-Infinity, Infinity],
+    });
+    if (!leverage_ratios) return { ok: false, reason: "bad_leverage_ratios" };
+    const efficiency_ratios = ratioObj(p.efficiency_ratios, {
+      asset_turnover: [-Infinity, Infinity], inventory_turnover: [-Infinity, Infinity], receivables_turnover: [-Infinity, Infinity],
+    });
+    if (!efficiency_ratios) return { ok: false, reason: "bad_efficiency_ratios" };
+
+    return {
+      ok: true,
+      kind: "analyze_financial_ratios",
+      payload: { liquidity_ratios, profitability_ratios, leverage_ratios, efficiency_ratios, overall_health, notes },
     };
   }
 
