@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2742,6 +2742,48 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "prioritize_actions",
       payload: { prioritized_actions, top_3_actions, total_actions_reviewed, decision_rationale },
+    };
+  }
+
+  if (kind === "profile_columns") {
+    const DATA_TYPES = ["string", "integer", "float", "date", "boolean", "mixed", "empty"];
+    const rawProfiles = Array.isArray(p.column_profiles) ? (p.column_profiles as unknown[]).slice(0, 200) : [];
+    const column_profiles: { column_name: string; data_type: string; null_count: number; null_percentage: number; unique_count: number; unique_percentage: number; min_value: string | null; max_value: string | null; top_values: { value: string; count: number }[]; has_issues: boolean }[] = [];
+    for (const c of rawProfiles) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const data_type = typeof rec.data_type === "string" && DATA_TYPES.includes(rec.data_type) ? rec.data_type : null;
+      const null_count = typeof rec.null_count === "number" && Number.isInteger(rec.null_count) && rec.null_count >= 0 ? rec.null_count : null;
+      const null_percentage = typeof rec.null_percentage === "number" && Number.isFinite(rec.null_percentage) && rec.null_percentage >= 0 && rec.null_percentage <= 100 ? rec.null_percentage : null;
+      const unique_count = typeof rec.unique_count === "number" && Number.isInteger(rec.unique_count) && rec.unique_count >= 0 ? rec.unique_count : null;
+      const unique_percentage = typeof rec.unique_percentage === "number" && Number.isFinite(rec.unique_percentage) && rec.unique_percentage >= 0 && rec.unique_percentage <= 100 ? rec.unique_percentage : null;
+      if (!column_name || !data_type || null_count === null || null_percentage === null || unique_count === null || unique_percentage === null || typeof rec.has_issues !== "boolean") continue;
+      const min_value = typeof rec.min_value === "string" ? rec.min_value.slice(0, MAX_STR) : null;
+      const max_value = typeof rec.max_value === "string" ? rec.max_value.slice(0, MAX_STR) : null;
+      const rawTop = Array.isArray(rec.top_values) ? (rec.top_values as unknown[]).slice(0, 5) : [];
+      const top_values: { value: string; count: number }[] = [];
+      for (const t of rawTop) {
+        if (typeof t !== "object" || t === null) continue;
+        const trec = t as Record<string, unknown>;
+        const value = str(trec.value);
+        const count = typeof trec.count === "number" && Number.isInteger(trec.count) && trec.count >= 0 ? trec.count : null;
+        if (value && count !== null) top_values.push({ value, count });
+      }
+      column_profiles.push({ column_name, data_type, null_count, null_percentage, unique_count, unique_percentage, min_value, max_value, top_values, has_issues: rec.has_issues });
+    }
+
+    const total_rows = typeof p.total_rows === "number" && Number.isInteger(p.total_rows) && p.total_rows >= 0 ? p.total_rows : null;
+    if (total_rows === null) return { ok: false, reason: "bad_total_rows" };
+    const total_columns = typeof p.total_columns === "number" && Number.isInteger(p.total_columns) && p.total_columns >= 0 ? p.total_columns : null;
+    if (total_columns === null) return { ok: false, reason: "bad_total_columns" };
+    const overall_completeness = typeof p.overall_completeness === "number" && Number.isFinite(p.overall_completeness) && p.overall_completeness >= 0 && p.overall_completeness <= 100 ? p.overall_completeness : null;
+    if (overall_completeness === null) return { ok: false, reason: "bad_overall_completeness" };
+
+    return {
+      ok: true,
+      kind: "profile_columns",
+      payload: { column_profiles, total_rows, total_columns, overall_completeness },
     };
   }
 
