@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -837,6 +837,38 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "summarize_audit_trail",
       payload: { events_summarized: eventsSummarized, summary_paragraphs, key_actions, anomalies_noted },
+    };
+  }
+
+  if (kind === "review_code") {
+    const language_detected = str(p.language_detected);
+    if (!language_detected) return { ok: false, reason: "missing_language_detected" };
+    const RISKS = ["low", "medium", "high", "critical", "none_detected"];
+    const overall_risk = typeof p.overall_risk === "string" && RISKS.includes(p.overall_risk) ? p.overall_risk : null;
+    if (!overall_risk) return { ok: false, reason: "bad_overall_risk" };
+    const totalIssues = typeof p.total_issues === "number" ? Math.round(p.total_issues) : NaN;
+    if (!Number.isFinite(totalIssues) || totalIssues < 0) return { ok: false, reason: "bad_total_issues" };
+    if (!Array.isArray(p.findings)) return { ok: false, reason: "findings_not_array" };
+    const ISSUE_TYPES = ["bug", "security", "performance", "style", "logic", "other"];
+    const SEVERITIES = ["low", "medium", "high", "critical"];
+    const MAX_FINDINGS = 50;
+    const raw = (p.findings as unknown[]).slice(0, MAX_FINDINGS);
+    const findings: { location: string; issue_type: string; severity: string; description: string }[] = [];
+    for (const f of raw) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const location = str(rec.location);
+      const issue_type = typeof rec.issue_type === "string" && ISSUE_TYPES.includes(rec.issue_type) ? rec.issue_type : null;
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      const description = str(rec.description);
+      if (location && issue_type && severity && description) {
+        findings.push({ location, issue_type, severity, description });
+      }
+    }
+    return {
+      ok: true,
+      kind: "review_code",
+      payload: { findings, language_detected, overall_risk, total_issues: totalIssues },
     };
   }
 
