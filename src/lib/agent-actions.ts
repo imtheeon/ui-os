@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2694,6 +2694,54 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "detect_conflicts",
       payload: { conflicts, conflict_count, severity, resolution_suggestions },
+    };
+  }
+
+  if (kind === "prioritize_actions") {
+    const IMPACTS2 = ["high", "medium", "low"];
+    const EFFORTS2 = ["high", "medium", "low"];
+    const URGENCIES = ["immediate", "this_week", "this_month", "this_quarter"];
+    const rawActions = Array.isArray(p.prioritized_actions) ? (p.prioritized_actions as unknown[]).slice(0, 30) : [];
+    const prioritized_actions: { action: string; priority_rank: number; impact: string; effort: string; urgency: string; owner_role: string; rationale: string }[] = [];
+    for (const a of rawActions) {
+      if (typeof a !== "object" || a === null) continue;
+      const rec = a as Record<string, unknown>;
+      const action = str(rec.action);
+      const priority_rank = typeof rec.priority_rank === "number" && Number.isInteger(rec.priority_rank) && rec.priority_rank >= 1 ? rec.priority_rank : null;
+      const impact = typeof rec.impact === "string" && IMPACTS2.includes(rec.impact) ? rec.impact : null;
+      const effort = typeof rec.effort === "string" && EFFORTS2.includes(rec.effort) ? rec.effort : null;
+      const urgency = typeof rec.urgency === "string" && URGENCIES.includes(rec.urgency) ? rec.urgency : null;
+      const owner_role = str(rec.owner_role);
+      const rationale = str(rec.rationale);
+      if (action && priority_rank !== null && impact && effort && urgency && owner_role && rationale) {
+        prioritized_actions.push({ action, priority_rank, impact, effort, urgency, owner_role, rationale });
+      }
+    }
+
+    if (!Array.isArray(p.top_3_actions) || p.top_3_actions.length !== 3) {
+      return { ok: false, reason: "top_3_actions_must_have_exactly_3_items" };
+    }
+    const top_3_actions: { rank: number; action: string; why_now: string }[] = [];
+    for (const t of p.top_3_actions as unknown[]) {
+      if (typeof t !== "object" || t === null) return { ok: false, reason: "bad_top_3_action" };
+      const rec = t as Record<string, unknown>;
+      const rank = typeof rec.rank === "number" && Number.isInteger(rec.rank) && rec.rank >= 1 && rec.rank <= 3 ? rec.rank : null;
+      const action = str(rec.action);
+      const why_now = str(rec.why_now);
+      if (rank === null || !action || !why_now) return { ok: false, reason: "bad_top_3_action" };
+      top_3_actions.push({ rank, action, why_now });
+    }
+
+    const total_actions_reviewed = typeof p.total_actions_reviewed === "number" && Number.isInteger(p.total_actions_reviewed) && p.total_actions_reviewed >= 0 ? p.total_actions_reviewed : null;
+    if (total_actions_reviewed === null) return { ok: false, reason: "bad_total_actions_reviewed" };
+
+    const decision_rationale = typeof p.decision_rationale === "string" && p.decision_rationale.length > 0 ? p.decision_rationale.slice(0, 1000) : null;
+    if (!decision_rationale) return { ok: false, reason: "missing_decision_rationale" };
+
+    return {
+      ok: true,
+      kind: "prioritize_actions",
+      payload: { prioritized_actions, top_3_actions, total_actions_reviewed, decision_rationale },
     };
   }
 
