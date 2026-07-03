@@ -1023,6 +1023,31 @@ export async function applyAction(
     return { ok: true, recordTable: "working_capital_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_break_even") {
+    const { data, error } = await db
+      .from("break_even_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        fixed_costs: v.payload.fixed_costs,
+        variable_cost_per_unit: v.payload.variable_cost_per_unit,
+        price_per_unit: v.payload.price_per_unit,
+        break_even_units: v.payload.break_even_units,
+        break_even_revenue: v.payload.break_even_revenue,
+        current_units_or_revenue: v.payload.current_units_or_revenue,
+        margin_of_safety: v.payload.margin_of_safety,
+        margin_of_safety_percentage: v.payload.margin_of_safety_percentage,
+        contribution_margin_per_unit: v.payload.contribution_margin_per_unit,
+        contribution_margin_ratio: v.payload.contribution_margin_ratio,
+        status: v.payload.status,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "break_even_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
