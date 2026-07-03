@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -1062,6 +1062,37 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_recommendations",
       payload: { recommendations, next_upload_type, priority },
+    };
+  }
+
+  if (kind === "extract_patterns") {
+    const patternCount = typeof p.pattern_count === "number" ? Math.round(p.pattern_count) : NaN;
+    if (!Number.isFinite(patternCount) || patternCount < 0) return { ok: false, reason: "bad_pattern_count" };
+    if (typeof p.learnable !== "boolean") return { ok: false, reason: "bad_learnable" };
+    if (!Array.isArray(p.patterns)) return { ok: false, reason: "patterns_not_array" };
+    const MAX_PATTERNS = 30;
+    const MAX_EXAMPLE_VALUES = 5;
+    const raw = (p.patterns as unknown[]).slice(0, MAX_PATTERNS);
+    const patterns: { pattern_type: string; description: string; confidence: number; example_values: string[]; recurring: boolean }[] = [];
+    for (const pat of raw) {
+      if (typeof pat !== "object" || pat === null) continue;
+      const rec = pat as Record<string, unknown>;
+      const pattern_type = str(rec.pattern_type);
+      const description = str(rec.description);
+      const confidence = typeof rec.confidence === "number" ? rec.confidence : NaN;
+      const recurring = typeof rec.recurring === "boolean" ? rec.recurring : null;
+      if (
+        pattern_type && description && recurring !== null &&
+        Number.isFinite(confidence) && confidence >= 0 && confidence <= 1
+      ) {
+        const example_values = strArray(rec.example_values, MAX_EXAMPLE_VALUES, MAX_STR);
+        patterns.push({ pattern_type, description, confidence, example_values, recurring });
+      }
+    }
+    return {
+      ok: true,
+      kind: "extract_patterns",
+      payload: { patterns, pattern_count: patternCount, learnable: p.learnable },
     };
   }
 
