@@ -1466,6 +1466,25 @@ export async function applyAction(
     return { ok: true, recordTable: "data_dictionary_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_missing_data") {
+    const { data, error } = await db
+      .from("missing_data_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        missing_summary: v.payload.missing_summary,
+        critical_gaps: v.payload.critical_gaps,
+        imputation_suggestions: v.payload.imputation_suggestions,
+        overall_completeness: v.payload.overall_completeness,
+        data_usability: v.payload.data_usability,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "missing_data_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

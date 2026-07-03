@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -2817,6 +2817,54 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "build_data_dictionary",
       payload: { entries, total_columns_documented, undocumented_columns },
+    };
+  }
+
+  if (kind === "analyze_missing_data") {
+    const PATTERNS = ["random", "systematic", "none", "unknown"];
+    const IMPACTS3 = ["critical", "high", "medium", "low"];
+    const rawSummary = Array.isArray(p.missing_summary) ? (p.missing_summary as unknown[]).slice(0, 200) : [];
+    const missing_summary: { column_name: string; missing_count: number; missing_percentage: number; missing_pattern: string; impact: string }[] = [];
+    for (const m of rawSummary) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const missing_count = typeof rec.missing_count === "number" && Number.isInteger(rec.missing_count) && rec.missing_count >= 0 ? rec.missing_count : null;
+      const missing_percentage = typeof rec.missing_percentage === "number" && Number.isFinite(rec.missing_percentage) && rec.missing_percentage >= 0 && rec.missing_percentage <= 100 ? rec.missing_percentage : null;
+      const missing_pattern = typeof rec.missing_pattern === "string" && PATTERNS.includes(rec.missing_pattern) ? rec.missing_pattern : null;
+      const impact = typeof rec.impact === "string" && IMPACTS3.includes(rec.impact) ? rec.impact : null;
+      if (column_name && missing_count !== null && missing_percentage !== null && missing_pattern && impact) {
+        missing_summary.push({ column_name, missing_count, missing_percentage, missing_pattern, impact });
+      }
+    }
+
+    const critical_gaps = strArray(p.critical_gaps, 20, MAX_STR);
+
+    const STRATEGIES = ["mean", "median", "mode", "forward_fill", "backward_fill", "zero", "drop_row", "model", "flag_and_exclude"];
+    const rawImputation = Array.isArray(p.imputation_suggestions) ? (p.imputation_suggestions as unknown[]).slice(0, 20) : [];
+    const imputation_suggestions: { column_name: string; strategy: string; rationale: string }[] = [];
+    for (const i of rawImputation) {
+      if (typeof i !== "object" || i === null) continue;
+      const rec = i as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      const strategy = typeof rec.strategy === "string" && STRATEGIES.includes(rec.strategy) ? rec.strategy : null;
+      const rationale = str(rec.rationale);
+      if (column_name && strategy && rationale) {
+        imputation_suggestions.push({ column_name, strategy, rationale });
+      }
+    }
+
+    const overall_completeness = typeof p.overall_completeness === "number" && Number.isFinite(p.overall_completeness) && p.overall_completeness >= 0 && p.overall_completeness <= 100 ? p.overall_completeness : null;
+    if (overall_completeness === null) return { ok: false, reason: "bad_overall_completeness" };
+
+    const USABILITIES = ["fully_usable", "partially_usable", "limited_use", "not_usable"];
+    const data_usability = typeof p.data_usability === "string" && USABILITIES.includes(p.data_usability) ? p.data_usability : null;
+    if (!data_usability) return { ok: false, reason: "bad_data_usability" };
+
+    return {
+      ok: true,
+      kind: "analyze_missing_data",
+      payload: { missing_summary, critical_gaps, imputation_suggestions, overall_completeness, data_usability },
     };
   }
 
