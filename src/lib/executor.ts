@@ -1937,6 +1937,29 @@ export async function applyAction(
     return { ok: true, recordTable: "spend_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_discounts") {
+    const { data, error } = await db
+      .from("discount_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        discount_summary: v.payload.discount_summary,
+        total_list_price: v.payload.total_list_price,
+        total_discounted_price: v.payload.total_discounted_price,
+        total_discount_amount: v.payload.total_discount_amount,
+        average_discount_percentage: v.payload.average_discount_percentage,
+        discount_by_segment: v.payload.discount_by_segment,
+        excessive_discounts: v.payload.excessive_discounts,
+        revenue_leakage: v.payload.revenue_leakage,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "discount_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

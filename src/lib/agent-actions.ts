@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3908,6 +3908,60 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_spend",
       payload: { total_spend, spend_by_category, spend_by_vendor, spend_trends, top_opportunities, potential_savings },
+    };
+  }
+
+  if (kind === "analyze_discounts") {
+    const rawSummary = Array.isArray(p.discount_summary) ? (p.discount_summary as unknown[]).slice(0, 200) : [];
+    const discount_summary: { deal_ref: string; customer: string | null; list_price: number; discounted_price: number; discount_amount: number; discount_percentage: number; discount_reason: string | null; approved_by: string | null; is_excessive: boolean }[] = [];
+    for (const d of rawSummary) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const deal_ref = str(rec.deal_ref);
+      const list_price = typeof rec.list_price === "number" && Number.isFinite(rec.list_price) && rec.list_price >= 0 ? rec.list_price : null;
+      const discounted_price = typeof rec.discounted_price === "number" && Number.isFinite(rec.discounted_price) && rec.discounted_price >= 0 ? rec.discounted_price : null;
+      const discount_amount = typeof rec.discount_amount === "number" && Number.isFinite(rec.discount_amount) && rec.discount_amount >= 0 ? rec.discount_amount : null;
+      const discount_percentage = typeof rec.discount_percentage === "number" && Number.isFinite(rec.discount_percentage) && rec.discount_percentage >= 0 && rec.discount_percentage <= 100 ? rec.discount_percentage : null;
+      if (!deal_ref || list_price === null || discounted_price === null || discount_amount === null || discount_percentage === null || typeof rec.is_excessive !== "boolean") continue;
+      const customer = typeof rec.customer === "string" && rec.customer.length > 0 ? rec.customer.slice(0, MAX_STR) : null;
+      const discount_reason = typeof rec.discount_reason === "string" && rec.discount_reason.length > 0 ? rec.discount_reason.slice(0, MAX_STR) : null;
+      const approved_by = typeof rec.approved_by === "string" && rec.approved_by.length > 0 ? rec.approved_by.slice(0, MAX_STR) : null;
+      discount_summary.push({ deal_ref, customer, list_price, discounted_price, discount_amount, discount_percentage, discount_reason, approved_by, is_excessive: rec.is_excessive });
+    }
+
+    const total_list_price = typeof p.total_list_price === "number" && Number.isFinite(p.total_list_price) && p.total_list_price >= 0 ? p.total_list_price : null;
+    if (total_list_price === null) return { ok: false, reason: "bad_total_list_price" };
+    const total_discounted_price = typeof p.total_discounted_price === "number" && Number.isFinite(p.total_discounted_price) && p.total_discounted_price >= 0 ? p.total_discounted_price : null;
+    if (total_discounted_price === null) return { ok: false, reason: "bad_total_discounted_price" };
+    const total_discount_amount = typeof p.total_discount_amount === "number" && Number.isFinite(p.total_discount_amount) && p.total_discount_amount >= 0 ? p.total_discount_amount : null;
+    if (total_discount_amount === null) return { ok: false, reason: "bad_total_discount_amount" };
+    const average_discount_percentage = typeof p.average_discount_percentage === "number" && Number.isFinite(p.average_discount_percentage) && p.average_discount_percentage >= 0 && p.average_discount_percentage <= 100 ? p.average_discount_percentage : null;
+    if (average_discount_percentage === null) return { ok: false, reason: "bad_average_discount_percentage" };
+
+    const rawSegment = Array.isArray(p.discount_by_segment) ? (p.discount_by_segment as unknown[]).slice(0, 20) : [];
+    const discount_by_segment: { segment: string; avg_discount: number; deal_count: number }[] = [];
+    for (const s of rawSegment) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const segment = str(rec.segment);
+      const avg_discount = typeof rec.avg_discount === "number" && Number.isFinite(rec.avg_discount) && rec.avg_discount >= 0 && rec.avg_discount <= 100 ? rec.avg_discount : null;
+      const deal_count = typeof rec.deal_count === "number" && Number.isInteger(rec.deal_count) && rec.deal_count >= 0 ? rec.deal_count : null;
+      if (segment && avg_discount !== null && deal_count !== null) {
+        discount_by_segment.push({ segment, avg_discount, deal_count });
+      }
+    }
+
+    const excessive_discounts = strArray(p.excessive_discounts, 20, MAX_STR);
+
+    const revenue_leakage = typeof p.revenue_leakage === "number" && Number.isFinite(p.revenue_leakage) && p.revenue_leakage >= 0 ? p.revenue_leakage : null;
+    if (revenue_leakage === null) return { ok: false, reason: "bad_revenue_leakage" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_discounts",
+      payload: { discount_summary, total_list_price, total_discounted_price, total_discount_amount, average_discount_percentage, discount_by_segment, excessive_discounts, revenue_leakage, recommendations },
     };
   }
 
