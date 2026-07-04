@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4485,6 +4485,63 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "generate_esg_report",
       payload: { environmental_metrics, social_metrics, governance_metrics, esg_score, key_highlights, gaps_and_recommendations, reporting_framework },
+    };
+  }
+
+  if (kind === "analyze_seasonality") {
+    const metric_name = str(p.metric_name);
+    if (!metric_name) return { ok: false, reason: "bad_metric_name" };
+
+    const rawIndices = Array.isArray(p.seasonal_indices) ? (p.seasonal_indices as unknown[]).slice(0, 52) : [];
+    const seasonal_indices: { period: string; index: number; raw_value: number | null }[] = [];
+    for (const s of rawIndices) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const index = typeof rec.index === "number" && Number.isFinite(rec.index) && rec.index > 0 ? rec.index : null;
+      if (index === null) continue;
+      const raw_value = numOrNull(rec.raw_value);
+      if (raw_value === NUM_INVALID) continue;
+      seasonal_indices.push({ period: str(rec.period) ?? "", index, raw_value });
+    }
+
+    const parseSeason = (raw: unknown, pctKey: string): { period: string; index: number; [k: string]: unknown } | null => {
+      if (typeof raw !== "object" || raw === null) return null;
+      const rec = raw as Record<string, unknown>;
+      const period = str(rec.period);
+      const index = typeof rec.index === "number" && Number.isFinite(rec.index) && rec.index > 0 ? rec.index : null;
+      const pct = typeof rec[pctKey] === "number" && Number.isFinite(rec[pctKey] as number) && (rec[pctKey] as number) >= 0 ? (rec[pctKey] as number) : null;
+      if (!period || index === null || pct === null) return null;
+      return { period, index, [pctKey]: pct };
+    };
+    const peak_season = parseSeason(p.peak_season, "percentage_above_average");
+    if (!peak_season) return { ok: false, reason: "bad_peak_season" };
+    const trough_season = parseSeason(p.trough_season, "percentage_below_average");
+    if (!trough_season) return { ok: false, reason: "bad_trough_season" };
+
+    const rawYoy = Array.isArray(p.year_over_year_comparison) ? (p.year_over_year_comparison as unknown[]).slice(0, 5) : [];
+    const year_over_year_comparison: { year: string; total: number | null; yoy_growth: number | null }[] = [];
+    for (const y of rawYoy) {
+      if (typeof y !== "object" || y === null) continue;
+      const rec = y as Record<string, unknown>;
+      const year = str(rec.year);
+      if (!year) continue;
+      const total = numOrNull(rec.total);
+      const yoy_growth = numOrNull(rec.yoy_growth);
+      if (total === NUM_INVALID || yoy_growth === NUM_INVALID) continue;
+      year_over_year_comparison.push({ year, total, yoy_growth });
+    }
+
+    const STRENGTHS = ["strong", "moderate", "weak", "none", "insufficient_data"];
+    const seasonality_strength = typeof p.seasonality_strength === "string" && STRENGTHS.includes(p.seasonality_strength) ? p.seasonality_strength : null;
+    if (!seasonality_strength) return { ok: false, reason: "bad_seasonality_strength" };
+
+    const business_implications = strArray(p.business_implications, 10, MAX_STR);
+    const planning_recommendations = strArray(p.planning_recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_seasonality",
+      payload: { metric_name, seasonal_indices, peak_season, trough_season, year_over_year_comparison, seasonality_strength, business_implications, planning_recommendations },
     };
   }
 
