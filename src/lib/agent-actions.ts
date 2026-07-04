@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3768,6 +3768,42 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_price_volume_mix",
       payload: { total_revenue_change, price_effect, volume_effect, mix_effect, pvm_breakdown, primary_driver, insights },
+    };
+  }
+
+  if (kind === "build_bridge_analysis") {
+    const BRIDGE_TYPES = ["revenue", "ebitda", "profit", "cash", "headcount", "budget_vs_actual", "custom"];
+    const bridge_type = typeof p.bridge_type === "string" && BRIDGE_TYPES.includes(p.bridge_type) ? p.bridge_type : null;
+    if (bridge_type === null) return { ok: false, reason: "bad_bridge_type" };
+
+    const opening_value = typeof p.opening_value === "number" && Number.isFinite(p.opening_value) ? p.opening_value : null;
+    if (opening_value === null) return { ok: false, reason: "bad_opening_value" };
+    const closing_value = typeof p.closing_value === "number" && Number.isFinite(p.closing_value) ? p.closing_value : null;
+    if (closing_value === null) return { ok: false, reason: "bad_closing_value" };
+    const total_change = typeof p.total_change === "number" && Number.isFinite(p.total_change) ? p.total_change : null;
+    if (total_change === null) return { ok: false, reason: "bad_total_change" };
+
+    const STEP_TYPES = ["positive", "negative", "subtotal", "total"];
+    const rawSteps = Array.isArray(p.bridge_steps) ? (p.bridge_steps as unknown[]).slice(0, 20) : [];
+    const bridge_steps: { label: string; value: number; type: string; cumulative_value: number }[] = [];
+    for (const s of rawSteps) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const label = str(rec.label);
+      const type = typeof rec.type === "string" && STEP_TYPES.includes(rec.type) ? rec.type : null;
+      const value = typeof rec.value === "number" && Number.isFinite(rec.value) ? rec.value : null;
+      const cumulative_value = typeof rec.cumulative_value === "number" && Number.isFinite(rec.cumulative_value) ? rec.cumulative_value : null;
+      if (!label || !type || value === null || cumulative_value === null) continue;
+      bridge_steps.push({ label, value, type, cumulative_value });
+    }
+    if (bridge_steps.length < 2) return { ok: false, reason: "insufficient_bridge_steps" };
+
+    const key_insights = strArray(p.key_insights, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "build_bridge_analysis",
+      payload: { bridge_type, opening_value, closing_value, total_change, bridge_steps, key_insights },
     };
   }
 

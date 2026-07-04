@@ -1875,6 +1875,26 @@ export async function applyAction(
     return { ok: true, recordTable: "price_volume_mix_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "build_bridge_analysis") {
+    const { data, error } = await db
+      .from("bridge_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        bridge_type: v.payload.bridge_type,
+        opening_value: v.payload.opening_value,
+        closing_value: v.payload.closing_value,
+        total_change: v.payload.total_change,
+        bridge_steps: v.payload.bridge_steps,
+        key_insights: v.payload.key_insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "bridge_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
