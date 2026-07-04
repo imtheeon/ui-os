@@ -1568,6 +1568,30 @@ export async function applyAction(
     return { ok: true, recordTable: "subscription_tracker_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_headcount_analytics") {
+    const { data, error } = await db
+      .from("headcount_analytics_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_headcount: v.payload.total_headcount,
+        headcount_by_department: v.payload.headcount_by_department,
+        headcount_by_type: v.payload.headcount_by_type,
+        new_hires: v.payload.new_hires,
+        terminations: v.payload.terminations,
+        attrition_rate: v.payload.attrition_rate,
+        avg_tenure_months: v.payload.avg_tenure_months,
+        revenue_per_employee: v.payload.revenue_per_employee,
+        cost_per_employee: v.payload.cost_per_employee,
+        open_positions: v.payload.open_positions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "headcount_analytics_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
