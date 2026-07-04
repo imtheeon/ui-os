@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3848,6 +3848,66 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "calculate_run_rate",
       payload: { current_period_value, annualization_method, annualized_run_rate, adjusted_run_rate, run_rate_adjustments, months_of_data_used, confidence, caveats },
+    };
+  }
+
+  if (kind === "analyze_spend") {
+    const total_spend = typeof p.total_spend === "number" && Number.isFinite(p.total_spend) && p.total_spend >= 0 ? p.total_spend : null;
+    if (total_spend === null) return { ok: false, reason: "bad_total_spend" };
+
+    const STATUSES4 = ["increasing", "decreasing", "stable", "new", "unknown"];
+    const rawCategory = Array.isArray(p.spend_by_category) ? (p.spend_by_category as unknown[]).slice(0, 30) : [];
+    const spend_by_category: { category: string; amount: number; percentage_of_total: number; yoy_change: number | null; status: string }[] = [];
+    for (const c of rawCategory) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const category = str(rec.category);
+      const amount = typeof rec.amount === "number" && Number.isFinite(rec.amount) && rec.amount >= 0 ? rec.amount : null;
+      const percentage_of_total = typeof rec.percentage_of_total === "number" && Number.isFinite(rec.percentage_of_total) && rec.percentage_of_total >= 0 && rec.percentage_of_total <= 100 ? rec.percentage_of_total : null;
+      const status = typeof rec.status === "string" && STATUSES4.includes(rec.status) ? rec.status : null;
+      if (!category || amount === null || percentage_of_total === null || !status) continue;
+      const yoy_change = numOrNull(rec.yoy_change);
+      if (yoy_change === NUM_INVALID) continue;
+      spend_by_category.push({ category, amount, percentage_of_total, yoy_change, status });
+    }
+
+    const rawVendor = Array.isArray(p.spend_by_vendor) ? (p.spend_by_vendor as unknown[]).slice(0, 50) : [];
+    const spend_by_vendor: { vendor_name: string; amount: number; percentage_of_total: number; transaction_count: number; category: string }[] = [];
+    for (const v of rawVendor) {
+      if (typeof v !== "object" || v === null) continue;
+      const rec = v as Record<string, unknown>;
+      const vendor_name = str(rec.vendor_name);
+      const amount = typeof rec.amount === "number" && Number.isFinite(rec.amount) && rec.amount >= 0 ? rec.amount : null;
+      const percentage_of_total = typeof rec.percentage_of_total === "number" && Number.isFinite(rec.percentage_of_total) && rec.percentage_of_total >= 0 && rec.percentage_of_total <= 100 ? rec.percentage_of_total : null;
+      const transaction_count = typeof rec.transaction_count === "number" && Number.isInteger(rec.transaction_count) && rec.transaction_count >= 0 ? rec.transaction_count : null;
+      const category = str(rec.category);
+      if (!vendor_name || amount === null || percentage_of_total === null || transaction_count === null || !category) continue;
+      spend_by_vendor.push({ vendor_name, amount, percentage_of_total, transaction_count, category });
+    }
+
+    const spend_trends = strArray(p.spend_trends, 10, MAX_STR);
+
+    const EFFORTS = ["high", "medium", "low"];
+    const rawOpportunities = Array.isArray(p.top_opportunities) ? (p.top_opportunities as unknown[]).slice(0, 10) : [];
+    const top_opportunities: { opportunity: string; estimated_savings: number; effort: string; category: string }[] = [];
+    for (const o of rawOpportunities) {
+      if (typeof o !== "object" || o === null) continue;
+      const rec = o as Record<string, unknown>;
+      const opportunity = str(rec.opportunity);
+      const estimated_savings = typeof rec.estimated_savings === "number" && Number.isFinite(rec.estimated_savings) && rec.estimated_savings >= 0 ? rec.estimated_savings : null;
+      const effort = typeof rec.effort === "string" && EFFORTS.includes(rec.effort) ? rec.effort : null;
+      const category = str(rec.category);
+      if (!opportunity || estimated_savings === null || !effort || !category) continue;
+      top_opportunities.push({ opportunity, estimated_savings, effort, category });
+    }
+
+    const potential_savings = numOrNull(p.potential_savings, 0);
+    if (potential_savings === NUM_INVALID) return { ok: false, reason: "bad_potential_savings" };
+
+    return {
+      ok: true,
+      kind: "analyze_spend",
+      payload: { total_spend, spend_by_category, spend_by_vendor, spend_trends, top_opportunities, potential_savings },
     };
   }
 
