@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3244,6 +3244,62 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_productivity",
       payload: { productivity_metrics, output_per_person, bottlenecks, benchmarks, improvement_recommendations, overall_productivity_score },
+    };
+  }
+
+  if (kind === "analyze_overtime") {
+    const rawRecords = Array.isArray(p.overtime_records) ? (p.overtime_records as unknown[]).slice(0, 500) : [];
+    const overtime_records: { employee_ref: string; department: string; period: string; regular_hours: number; overtime_hours: number; overtime_cost: number; consecutive_weeks_overtime: number | null }[] = [];
+    for (const r of rawRecords) {
+      if (typeof r !== "object" || r === null) continue;
+      const rec = r as Record<string, unknown>;
+      const employee_ref = str(rec.employee_ref);
+      const department = str(rec.department);
+      const period = str(rec.period);
+      const regular_hours = typeof rec.regular_hours === "number" && Number.isFinite(rec.regular_hours) && rec.regular_hours >= 0 ? rec.regular_hours : null;
+      const overtime_hours = typeof rec.overtime_hours === "number" && Number.isFinite(rec.overtime_hours) && rec.overtime_hours >= 0 ? rec.overtime_hours : null;
+      const overtime_cost = typeof rec.overtime_cost === "number" && Number.isFinite(rec.overtime_cost) && rec.overtime_cost >= 0 ? rec.overtime_cost : null;
+      if (!employee_ref || !department || !period || regular_hours === null || overtime_hours === null || overtime_cost === null) continue;
+      let consecutive_weeks_overtime: number | null;
+      if (rec.consecutive_weeks_overtime === null || rec.consecutive_weeks_overtime === undefined) {
+        consecutive_weeks_overtime = null;
+      } else if (typeof rec.consecutive_weeks_overtime === "number" && Number.isInteger(rec.consecutive_weeks_overtime) && rec.consecutive_weeks_overtime >= 0) {
+        consecutive_weeks_overtime = rec.consecutive_weeks_overtime;
+      } else {
+        continue;
+      }
+      overtime_records.push({ employee_ref, department, period, regular_hours, overtime_hours, overtime_cost, consecutive_weeks_overtime });
+    }
+
+    const total_overtime_hours = typeof p.total_overtime_hours === "number" && Number.isFinite(p.total_overtime_hours) && p.total_overtime_hours >= 0 ? p.total_overtime_hours : null;
+    if (total_overtime_hours === null) return { ok: false, reason: "bad_total_overtime_hours" };
+    const total_overtime_cost = typeof p.total_overtime_cost === "number" && Number.isFinite(p.total_overtime_cost) && p.total_overtime_cost >= 0 ? p.total_overtime_cost : null;
+    if (total_overtime_cost === null) return { ok: false, reason: "bad_total_overtime_cost" };
+
+    const overtime_rate = numOrNull(p.overtime_rate, 0);
+    if (overtime_rate === NUM_INVALID) return { ok: false, reason: "bad_overtime_rate" };
+
+    const rawDepts = Array.isArray(p.departments_by_overtime) ? (p.departments_by_overtime as unknown[]).slice(0, 20) : [];
+    const departments_by_overtime: { department: string; total_ot_hours: number; total_ot_cost: number; employee_count: number }[] = [];
+    for (const d of rawDepts) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const department = str(rec.department);
+      const total_ot_hours = typeof rec.total_ot_hours === "number" && Number.isFinite(rec.total_ot_hours) && rec.total_ot_hours >= 0 ? rec.total_ot_hours : null;
+      const total_ot_cost = typeof rec.total_ot_cost === "number" && Number.isFinite(rec.total_ot_cost) && rec.total_ot_cost >= 0 ? rec.total_ot_cost : null;
+      const employee_count = typeof rec.employee_count === "number" && Number.isInteger(rec.employee_count) && rec.employee_count >= 0 ? rec.employee_count : null;
+      if (department && total_ot_hours !== null && total_ot_cost !== null && employee_count !== null) {
+        departments_by_overtime.push({ department, total_ot_hours, total_ot_cost, employee_count });
+      }
+    }
+
+    const chronic_overtime_employees = strArray(p.chronic_overtime_employees, 50, 200);
+    const risk_indicators = strArray(p.risk_indicators, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_overtime",
+      payload: { overtime_records, total_overtime_hours, total_overtime_cost, overtime_rate, departments_by_overtime, chronic_overtime_employees, risk_indicators },
     };
   }
 
