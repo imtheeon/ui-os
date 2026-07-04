@@ -2025,6 +2025,24 @@ export async function applyAction(
     return { ok: true, recordTable: "bad_debt_provision_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "score_credit_risk") {
+    const { data, error } = await db
+      .from("credit_scoring_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        customers: v.payload.customers,
+        portfolio_summary: v.payload.portfolio_summary,
+        high_risk_exposure: v.payload.high_risk_exposure,
+        recommended_credit_limits: v.payload.recommended_credit_limits,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "credit_scoring_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

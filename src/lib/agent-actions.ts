@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4111,6 +4111,55 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "calculate_bad_debt_provision",
       payload: { total_receivables, current_provision, recommended_provision, provision_methodology, aging_analysis, specific_provisions, provision_adjustment, notes },
+    };
+  }
+
+  if (kind === "score_credit_risk") {
+    const RISK_GRADES = ["AAA", "AA", "A", "BBB", "BB", "B", "CCC", "D"];
+    const rawCustomers = Array.isArray(p.customers) ? (p.customers as unknown[]).slice(0, 100) : [];
+    const customers: { customer_ref: string; credit_score: number; risk_grade: string; payment_history_score: number | null; financial_strength_score: number | null; relationship_score: number | null; current_exposure: number; recommended_credit_limit: number | null; key_risk_factors: string[] }[] = [];
+    for (const c of rawCustomers) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const customer_ref = str(rec.customer_ref);
+      const credit_score = typeof rec.credit_score === "number" && Number.isInteger(rec.credit_score) && rec.credit_score >= 0 && rec.credit_score <= 100 ? rec.credit_score : null;
+      const risk_grade = typeof rec.risk_grade === "string" && RISK_GRADES.includes(rec.risk_grade) ? rec.risk_grade : null;
+      const current_exposure = typeof rec.current_exposure === "number" && Number.isFinite(rec.current_exposure) && rec.current_exposure >= 0 ? rec.current_exposure : null;
+      if (!customer_ref || credit_score === null || !risk_grade || current_exposure === null) continue;
+      const payment_history_score = typeof rec.payment_history_score === "number" && Number.isInteger(rec.payment_history_score) && rec.payment_history_score >= 0 && rec.payment_history_score <= 100 ? rec.payment_history_score : (rec.payment_history_score === null || rec.payment_history_score === undefined ? null : undefined);
+      const financial_strength_score = typeof rec.financial_strength_score === "number" && Number.isInteger(rec.financial_strength_score) && rec.financial_strength_score >= 0 && rec.financial_strength_score <= 100 ? rec.financial_strength_score : (rec.financial_strength_score === null || rec.financial_strength_score === undefined ? null : undefined);
+      const relationship_score = typeof rec.relationship_score === "number" && Number.isInteger(rec.relationship_score) && rec.relationship_score >= 0 && rec.relationship_score <= 100 ? rec.relationship_score : (rec.relationship_score === null || rec.relationship_score === undefined ? null : undefined);
+      if (payment_history_score === undefined || financial_strength_score === undefined || relationship_score === undefined) continue;
+      const recommended_credit_limit = numOrNull(rec.recommended_credit_limit, 0);
+      if (recommended_credit_limit === NUM_INVALID) continue;
+      const key_risk_factors = strArray(rec.key_risk_factors, 5, MAX_STR);
+      customers.push({ customer_ref, credit_score, risk_grade, payment_history_score, financial_strength_score, relationship_score, current_exposure, recommended_credit_limit, key_risk_factors });
+    }
+
+    if (typeof p.portfolio_summary !== "object" || p.portfolio_summary === null || Array.isArray(p.portfolio_summary)) {
+      return { ok: false, reason: "bad_portfolio_summary" };
+    }
+    const psRaw = p.portfolio_summary as Record<string, unknown>;
+    const total_customers = typeof psRaw.total_customers === "number" && Number.isInteger(psRaw.total_customers) && psRaw.total_customers >= 0 ? psRaw.total_customers : null;
+    const avg_credit_score = typeof psRaw.avg_credit_score === "number" && Number.isFinite(psRaw.avg_credit_score) && psRaw.avg_credit_score >= 0 && psRaw.avg_credit_score <= 100 ? psRaw.avg_credit_score : null;
+    const high_risk_count = typeof psRaw.high_risk_count === "number" && Number.isInteger(psRaw.high_risk_count) && psRaw.high_risk_count >= 0 ? psRaw.high_risk_count : null;
+    const medium_risk_count = typeof psRaw.medium_risk_count === "number" && Number.isInteger(psRaw.medium_risk_count) && psRaw.medium_risk_count >= 0 ? psRaw.medium_risk_count : null;
+    const low_risk_count = typeof psRaw.low_risk_count === "number" && Number.isInteger(psRaw.low_risk_count) && psRaw.low_risk_count >= 0 ? psRaw.low_risk_count : null;
+    const total_exposure = typeof psRaw.total_exposure === "number" && Number.isFinite(psRaw.total_exposure) && psRaw.total_exposure >= 0 ? psRaw.total_exposure : null;
+    if (total_customers === null || avg_credit_score === null || high_risk_count === null || medium_risk_count === null || low_risk_count === null || total_exposure === null) {
+      return { ok: false, reason: "bad_portfolio_summary" };
+    }
+    const portfolio_summary = { total_customers, avg_credit_score, high_risk_count, medium_risk_count, low_risk_count, total_exposure };
+
+    const high_risk_exposure = typeof p.high_risk_exposure === "number" && Number.isFinite(p.high_risk_exposure) && p.high_risk_exposure >= 0 ? p.high_risk_exposure : null;
+    if (high_risk_exposure === null) return { ok: false, reason: "bad_high_risk_exposure" };
+
+    const recommended_credit_limits = strArray(p.recommended_credit_limits, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "score_credit_risk",
+      payload: { customers, portfolio_summary, high_risk_exposure, recommended_credit_limits },
     };
   }
 
