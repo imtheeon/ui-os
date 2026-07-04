@@ -1653,6 +1653,26 @@ export async function applyAction(
     return { ok: true, recordTable: "overtime_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_growth_rates") {
+    const { data, error } = await db
+      .from("growth_rate_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        growth_metrics: v.payload.growth_metrics,
+        cagr: v.payload.cagr,
+        growth_trajectory: v.payload.growth_trajectory,
+        projection_12m: v.payload.projection_12m,
+        projection_24m: v.payload.projection_24m,
+        growth_drivers: v.payload.growth_drivers,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "growth_rate_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
