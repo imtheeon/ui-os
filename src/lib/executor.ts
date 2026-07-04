@@ -1632,6 +1632,27 @@ export async function applyAction(
     return { ok: true, recordTable: "productivity_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_overtime") {
+    const { data, error } = await db
+      .from("overtime_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        overtime_records: v.payload.overtime_records,
+        total_overtime_hours: v.payload.total_overtime_hours,
+        total_overtime_cost: v.payload.total_overtime_cost,
+        overtime_rate: v.payload.overtime_rate,
+        departments_by_overtime: v.payload.departments_by_overtime,
+        chronic_overtime_employees: v.payload.chronic_overtime_employees,
+        risk_indicators: v.payload.risk_indicators,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "overtime_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
