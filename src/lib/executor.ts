@@ -2126,6 +2126,23 @@ export async function applyAction(
     return { ok: true, recordTable: "swot_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "build_queries") {
+    const { data, error } = await db
+      .from("query_builder_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        detected_schema: v.payload.detected_schema,
+        suggested_queries: v.payload.suggested_queries,
+        natural_language_questions: v.payload.natural_language_questions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "query_builder_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4393,6 +4393,56 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "conduct_swot",
       payload: { strengths, weaknesses, opportunities, threats, strategic_priorities, overall_assessment },
+    };
+  }
+
+  if (kind === "build_queries") {
+    const rawSchema = Array.isArray(p.detected_schema) ? (p.detected_schema as unknown[]).slice(0, 100) : [];
+    const detected_schema: { table_or_sheet: string; columns: string[] }[] = [];
+    for (const s of rawSchema) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const table_or_sheet = str(rec.table_or_sheet);
+      if (!table_or_sheet) continue;
+      const columns = strArray(rec.columns, 100, MAX_STR);
+      detected_schema.push({ table_or_sheet, columns });
+    }
+
+    const QUERY_TYPES = ["aggregation", "filter", "join", "time_series", "ranking", "calculation"];
+    const rawQueries = Array.isArray(p.suggested_queries) ? (p.suggested_queries as unknown[]).slice(0, 10) : [];
+    const suggested_queries: { title: string; description: string; query_type: string; pseudo_sql: string; business_value: string }[] = [];
+    for (const q of rawQueries) {
+      if (typeof q !== "object" || q === null) continue;
+      const rec = q as Record<string, unknown>;
+      const query_type = typeof rec.query_type === "string" && QUERY_TYPES.includes(rec.query_type) ? rec.query_type : null;
+      const pseudo_sql = typeof rec.pseudo_sql === "string" && rec.pseudo_sql.length > 0 ? rec.pseudo_sql.slice(0, 500) : null;
+      if (!query_type || !pseudo_sql) continue;
+      suggested_queries.push({
+        title: str(rec.title) ?? "",
+        description: str(rec.description) ?? "",
+        query_type,
+        pseudo_sql,
+        business_value: str(rec.business_value) ?? "",
+      });
+    }
+    if (suggested_queries.length < 3) return { ok: false, reason: "too_few_suggested_queries" };
+
+    const ANSWER_TYPES = ["number", "list", "chart", "table", "boolean"];
+    const rawQuestions = Array.isArray(p.natural_language_questions) ? (p.natural_language_questions as unknown[]).slice(0, 10) : [];
+    const natural_language_questions: { question: string; answer_type: string }[] = [];
+    for (const q of rawQuestions) {
+      if (typeof q !== "object" || q === null) continue;
+      const rec = q as Record<string, unknown>;
+      const answer_type = typeof rec.answer_type === "string" && ANSWER_TYPES.includes(rec.answer_type) ? rec.answer_type : null;
+      if (!answer_type) continue;
+      natural_language_questions.push({ question: str(rec.question) ?? "", answer_type });
+    }
+    if (natural_language_questions.length < 3) return { ok: false, reason: "too_few_natural_language_questions" };
+
+    return {
+      ok: true,
+      kind: "build_queries",
+      payload: { detected_schema, suggested_queries, natural_language_questions },
     };
   }
 
