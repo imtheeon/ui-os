@@ -1738,6 +1738,30 @@ export async function applyAction(
     return { ok: true, recordTable: "failure_risk_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_unit_economics") {
+    const { data, error } = await db
+      .from("unit_economics_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        ltv: v.payload.ltv,
+        cac: v.payload.cac,
+        ltv_cac_ratio: v.payload.ltv_cac_ratio,
+        payback_period_months: v.payload.payback_period_months,
+        avg_contract_value: v.payload.avg_contract_value,
+        gross_margin_pct: v.payload.gross_margin_pct,
+        churn_rate_monthly: v.payload.churn_rate_monthly,
+        magic_number: v.payload.magic_number,
+        by_channel: v.payload.by_channel,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "unit_economics_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
