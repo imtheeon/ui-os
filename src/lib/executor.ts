@@ -2164,6 +2164,28 @@ export async function applyAction(
     return { ok: true, recordTable: "esg_reporting_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_seasonality") {
+    const { data, error } = await db
+      .from("seasonality_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        metric_name: v.payload.metric_name,
+        seasonal_indices: v.payload.seasonal_indices,
+        peak_season: v.payload.peak_season,
+        trough_season: v.payload.trough_season,
+        year_over_year_comparison: v.payload.year_over_year_comparison,
+        seasonality_strength: v.payload.seasonality_strength,
+        business_implications: v.payload.business_implications,
+        planning_recommendations: v.payload.planning_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "seasonality_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
