@@ -1787,6 +1787,29 @@ export async function applyAction(
     return { ok: true, recordTable: "valuation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_cap_table") {
+    const { data, error } = await db
+      .from("cap_table_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_shares_outstanding: v.payload.total_shares_outstanding,
+        fully_diluted_shares: v.payload.fully_diluted_shares,
+        option_pool_pct: v.payload.option_pool_pct,
+        top_holder_concentration_pct: v.payload.top_holder_concentration_pct,
+        founder_ownership_pct: v.payload.founder_ownership_pct,
+        investor_ownership_pct: v.payload.investor_ownership_pct,
+        employee_pool_pct: v.payload.employee_pool_pct,
+        holders: v.payload.holders,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "cap_table_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

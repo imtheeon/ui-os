@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3550,6 +3550,49 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "estimate_valuation",
       payload: { arr, arr_multiple, ev_ebitda_multiple, dcf_value, comparable_low, comparable_high, estimated_valuation_low, estimated_valuation_high, primary_method, valuation_notes, data_period },
+    };
+  }
+
+  if (kind === "analyze_cap_table") {
+    const total_shares_outstanding = typeof p.total_shares_outstanding === "number" && Number.isInteger(p.total_shares_outstanding) && p.total_shares_outstanding >= 0 ? p.total_shares_outstanding : null;
+    if (total_shares_outstanding === null) return { ok: false, reason: "bad_total_shares_outstanding" };
+    const fully_diluted_shares = typeof p.fully_diluted_shares === "number" && Number.isInteger(p.fully_diluted_shares) && p.fully_diluted_shares >= 0 ? p.fully_diluted_shares : null;
+    if (fully_diluted_shares === null) return { ok: false, reason: "bad_fully_diluted_shares" };
+    if (fully_diluted_shares < total_shares_outstanding) return { ok: false, reason: "fully_diluted_below_outstanding" };
+
+    const option_pool_pct = numOrNull(p.option_pool_pct, 0, 100);
+    if (option_pool_pct === NUM_INVALID) return { ok: false, reason: "bad_option_pool_pct" };
+    const top_holder_concentration_pct = numOrNull(p.top_holder_concentration_pct, 0, 100);
+    if (top_holder_concentration_pct === NUM_INVALID) return { ok: false, reason: "bad_top_holder_concentration_pct" };
+    const founder_ownership_pct = numOrNull(p.founder_ownership_pct, 0, 100);
+    if (founder_ownership_pct === NUM_INVALID) return { ok: false, reason: "bad_founder_ownership_pct" };
+    const investor_ownership_pct = numOrNull(p.investor_ownership_pct, 0, 100);
+    if (investor_ownership_pct === NUM_INVALID) return { ok: false, reason: "bad_investor_ownership_pct" };
+    const employee_pool_pct = numOrNull(p.employee_pool_pct, 0, 100);
+    if (employee_pool_pct === NUM_INVALID) return { ok: false, reason: "bad_employee_pool_pct" };
+
+    const HOLDER_TYPES = ["founder", "investor", "employee", "advisor", "other"];
+    const rawHolders = Array.isArray(p.holders) ? (p.holders as unknown[]).slice(0, 50) : [];
+    const holders: { name: string; shares: number; ownership_pct: number; holder_type: string }[] = [];
+    for (const h of rawHolders) {
+      if (typeof h !== "object" || h === null) continue;
+      const rec = h as Record<string, unknown>;
+      const name = str(rec.name);
+      const shares = typeof rec.shares === "number" && Number.isInteger(rec.shares) && rec.shares >= 0 ? rec.shares : null;
+      const ownership_pct = typeof rec.ownership_pct === "number" && Number.isFinite(rec.ownership_pct) && rec.ownership_pct >= 0 && rec.ownership_pct <= 100 ? rec.ownership_pct : null;
+      const holder_type = typeof rec.holder_type === "string" && HOLDER_TYPES.includes(rec.holder_type) ? rec.holder_type : null;
+      if (name && shares !== null && ownership_pct !== null && holder_type) {
+        holders.push({ name, shares, ownership_pct, holder_type });
+      }
+    }
+
+    const data_period = str(p.data_period);
+    if (!data_period) return { ok: false, reason: "bad_data_period" };
+
+    return {
+      ok: true,
+      kind: "analyze_cap_table",
+      payload: { total_shares_outstanding, fully_diluted_shares, option_pool_pct, top_holder_concentration_pct, founder_ownership_pct, investor_ownership_pct, employee_pool_pct, holders, data_period },
     };
   }
 
