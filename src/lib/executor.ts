@@ -2143,6 +2143,27 @@ export async function applyAction(
     return { ok: true, recordTable: "query_builder_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "generate_esg_report") {
+    const { data, error } = await db
+      .from("esg_reporting_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        environmental_metrics: v.payload.environmental_metrics,
+        social_metrics: v.payload.social_metrics,
+        governance_metrics: v.payload.governance_metrics,
+        esg_score: v.payload.esg_score,
+        key_highlights: v.payload.key_highlights,
+        gaps_and_recommendations: v.payload.gaps_and_recommendations,
+        reporting_framework: v.payload.reporting_framework,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "esg_reporting_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
