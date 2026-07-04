@@ -1673,6 +1673,25 @@ export async function applyAction(
     return { ok: true, recordTable: "growth_rate_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "explain_outliers") {
+    const { data, error } = await db
+      .from("outlier_explanation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        outlier_count: v.payload.outlier_count,
+        explained_count: v.payload.explained_count,
+        outliers: v.payload.outliers,
+        summary: v.payload.summary,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "outlier_explanation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
