@@ -1854,6 +1854,27 @@ export async function applyAction(
     return { ok: true, recordTable: "asset_register_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_price_volume_mix") {
+    const { data, error } = await db
+      .from("price_volume_mix_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_revenue_change: v.payload.total_revenue_change,
+        price_effect: v.payload.price_effect,
+        volume_effect: v.payload.volume_effect,
+        mix_effect: v.payload.mix_effect,
+        pvm_breakdown: v.payload.pvm_breakdown,
+        primary_driver: v.payload.primary_driver,
+        insights: v.payload.insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "price_volume_mix_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

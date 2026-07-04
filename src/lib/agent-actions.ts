@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3726,6 +3726,48 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_asset_register",
       payload: { assets, total_gross_value, total_accumulated_depreciation, total_net_book_value, assets_fully_depreciated, assets_near_end_of_life, annual_depreciation_charge, asset_class_summary, replacement_needs },
+    };
+  }
+
+  if (kind === "analyze_price_volume_mix") {
+    const total_revenue_change = typeof p.total_revenue_change === "number" && Number.isFinite(p.total_revenue_change) ? p.total_revenue_change : null;
+    if (total_revenue_change === null) return { ok: false, reason: "bad_total_revenue_change" };
+    const price_effect = typeof p.price_effect === "number" && Number.isFinite(p.price_effect) ? p.price_effect : null;
+    if (price_effect === null) return { ok: false, reason: "bad_price_effect" };
+    const volume_effect = typeof p.volume_effect === "number" && Number.isFinite(p.volume_effect) ? p.volume_effect : null;
+    if (volume_effect === null) return { ok: false, reason: "bad_volume_effect" };
+    const mix_effect = typeof p.mix_effect === "number" && Number.isFinite(p.mix_effect) ? p.mix_effect : null;
+    if (mix_effect === null) return { ok: false, reason: "bad_mix_effect" };
+
+    const rawBreakdown = Array.isArray(p.pvm_breakdown) ? (p.pvm_breakdown as unknown[]).slice(0, 30) : [];
+    const pvm_breakdown: { segment: string; prior_price: number; current_price: number; prior_volume: number; current_volume: number; price_effect: number; volume_effect: number; mix_effect: number; total_effect: number }[] = [];
+    for (const b of rawBreakdown) {
+      if (typeof b !== "object" || b === null) continue;
+      const rec = b as Record<string, unknown>;
+      const segment = str(rec.segment);
+      if (!segment) continue;
+      const prior_price = typeof rec.prior_price === "number" && Number.isFinite(rec.prior_price) && rec.prior_price >= 0 ? rec.prior_price : null;
+      const current_price = typeof rec.current_price === "number" && Number.isFinite(rec.current_price) && rec.current_price >= 0 ? rec.current_price : null;
+      const prior_volume = typeof rec.prior_volume === "number" && Number.isFinite(rec.prior_volume) && rec.prior_volume >= 0 ? rec.prior_volume : null;
+      const current_volume = typeof rec.current_volume === "number" && Number.isFinite(rec.current_volume) && rec.current_volume >= 0 ? rec.current_volume : null;
+      const bPriceEffect = typeof rec.price_effect === "number" && Number.isFinite(rec.price_effect) ? rec.price_effect : null;
+      const bVolumeEffect = typeof rec.volume_effect === "number" && Number.isFinite(rec.volume_effect) ? rec.volume_effect : null;
+      const bMixEffect = typeof rec.mix_effect === "number" && Number.isFinite(rec.mix_effect) ? rec.mix_effect : null;
+      const total_effect = typeof rec.total_effect === "number" && Number.isFinite(rec.total_effect) ? rec.total_effect : null;
+      if (prior_price === null || current_price === null || prior_volume === null || current_volume === null || bPriceEffect === null || bVolumeEffect === null || bMixEffect === null || total_effect === null) continue;
+      pvm_breakdown.push({ segment, prior_price, current_price, prior_volume, current_volume, price_effect: bPriceEffect, volume_effect: bVolumeEffect, mix_effect: bMixEffect, total_effect });
+    }
+
+    const DRIVERS = ["price", "volume", "mix", "balanced", "insufficient_data"];
+    const primary_driver = typeof p.primary_driver === "string" && DRIVERS.includes(p.primary_driver) ? p.primary_driver : null;
+    if (primary_driver === null) return { ok: false, reason: "bad_primary_driver" };
+
+    const insights = strArray(p.insights, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_price_volume_mix",
+      payload: { total_revenue_change, price_effect, volume_effect, mix_effect, pvm_breakdown, primary_driver, insights },
     };
   }
 
