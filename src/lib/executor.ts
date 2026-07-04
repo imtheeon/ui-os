@@ -2043,6 +2043,27 @@ export async function applyAction(
     return { ok: true, recordTable: "credit_scoring_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_fx_exposure") {
+    const { data, error } = await db
+      .from("fx_exposure_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        functional_currency: v.payload.functional_currency,
+        exposures: v.payload.exposures,
+        total_transaction_exposure: v.payload.total_transaction_exposure,
+        total_translation_exposure: v.payload.total_translation_exposure,
+        net_exposure_usd_equivalent: v.payload.net_exposure_usd_equivalent,
+        sensitivity_analysis: v.payload.sensitivity_analysis,
+        hedging_recommendations: v.payload.hedging_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "fx_exposure_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

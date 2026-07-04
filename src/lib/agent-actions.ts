@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4160,6 +4160,57 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "score_credit_risk",
       payload: { customers, portfolio_summary, high_risk_exposure, recommended_credit_limits },
+    };
+  }
+
+  if (kind === "analyze_fx_exposure") {
+    const functional_currency = str(p.functional_currency);
+    if (!functional_currency) return { ok: false, reason: "bad_functional_currency" };
+
+    const EXPOSURE_TYPES = ["transaction", "translation", "economic"];
+    const DIRECTIONS = ["long", "short"];
+    const RISK_LEVELS2 = ["critical", "high", "medium", "low"];
+    const rawExposures = Array.isArray(p.exposures) ? (p.exposures as unknown[]).slice(0, 30) : [];
+    const exposures: { currency: string; exposure_type: string; gross_amount: number; usd_equivalent: number; exposure_direction: string; risk_level: string }[] = [];
+    for (const e of rawExposures) {
+      if (typeof e !== "object" || e === null) continue;
+      const rec = e as Record<string, unknown>;
+      const currency = str(rec.currency);
+      const exposure_type = typeof rec.exposure_type === "string" && EXPOSURE_TYPES.includes(rec.exposure_type) ? rec.exposure_type : null;
+      const gross_amount = typeof rec.gross_amount === "number" && Number.isFinite(rec.gross_amount) ? rec.gross_amount : null;
+      const usd_equivalent = typeof rec.usd_equivalent === "number" && Number.isFinite(rec.usd_equivalent) ? rec.usd_equivalent : null;
+      const exposure_direction = typeof rec.exposure_direction === "string" && DIRECTIONS.includes(rec.exposure_direction) ? rec.exposure_direction : null;
+      const risk_level = typeof rec.risk_level === "string" && RISK_LEVELS2.includes(rec.risk_level) ? rec.risk_level : null;
+      if (!currency || !exposure_type || gross_amount === null || usd_equivalent === null || !exposure_direction || !risk_level) continue;
+      exposures.push({ currency, exposure_type, gross_amount, usd_equivalent, exposure_direction, risk_level });
+    }
+
+    const total_transaction_exposure = typeof p.total_transaction_exposure === "number" && Number.isFinite(p.total_transaction_exposure) && p.total_transaction_exposure >= 0 ? p.total_transaction_exposure : null;
+    if (total_transaction_exposure === null) return { ok: false, reason: "bad_total_transaction_exposure" };
+    const total_translation_exposure = typeof p.total_translation_exposure === "number" && Number.isFinite(p.total_translation_exposure) && p.total_translation_exposure >= 0 ? p.total_translation_exposure : null;
+    if (total_translation_exposure === null) return { ok: false, reason: "bad_total_translation_exposure" };
+    const net_exposure_usd_equivalent = typeof p.net_exposure_usd_equivalent === "number" && Number.isFinite(p.net_exposure_usd_equivalent) ? p.net_exposure_usd_equivalent : null;
+    if (net_exposure_usd_equivalent === null) return { ok: false, reason: "bad_net_exposure_usd_equivalent" };
+
+    const rawSensitivity = Array.isArray(p.sensitivity_analysis) ? (p.sensitivity_analysis as unknown[]).slice(0, 10) : [];
+    const sensitivity_analysis: { scenario: string; fx_move_percentage: number; p_and_l_impact_usd: number }[] = [];
+    for (const s of rawSensitivity) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const scenario = str(rec.scenario);
+      const fx_move_percentage = typeof rec.fx_move_percentage === "number" && Number.isFinite(rec.fx_move_percentage) ? rec.fx_move_percentage : null;
+      const p_and_l_impact_usd = typeof rec.p_and_l_impact_usd === "number" && Number.isFinite(rec.p_and_l_impact_usd) ? rec.p_and_l_impact_usd : null;
+      if (scenario && fx_move_percentage !== null && p_and_l_impact_usd !== null) {
+        sensitivity_analysis.push({ scenario, fx_move_percentage, p_and_l_impact_usd });
+      }
+    }
+
+    const hedging_recommendations = strArray(p.hedging_recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_fx_exposure",
+      payload: { functional_currency, exposures, total_transaction_exposure, total_translation_exposure, net_exposure_usd_equivalent, sensitivity_analysis, hedging_recommendations },
     };
   }
 
