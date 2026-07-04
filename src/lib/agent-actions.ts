@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3078,6 +3078,61 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "track_subscriptions",
       payload: { subscriptions, total_mrr, total_arr, new_mrr, expansion_mrr, contraction_mrr, churned_mrr, net_new_mrr, subscription_count, avg_subscription_value },
+    };
+  }
+
+  if (kind === "analyze_headcount_analytics") {
+    const total_headcount = typeof p.total_headcount === "number" && Number.isInteger(p.total_headcount) && p.total_headcount >= 0 ? p.total_headcount : null;
+    if (total_headcount === null) return { ok: false, reason: "bad_total_headcount" };
+
+    const rawByDept = Array.isArray(p.headcount_by_department) ? (p.headcount_by_department as unknown[]).slice(0, 30) : [];
+    const headcount_by_department: { department: string; count: number; percentage: number }[] = [];
+    for (const d of rawByDept) {
+      if (typeof d !== "object" || d === null) continue;
+      const rec = d as Record<string, unknown>;
+      const department = str(rec.department);
+      const count = typeof rec.count === "number" && Number.isInteger(rec.count) && rec.count >= 0 ? rec.count : null;
+      const percentage = typeof rec.percentage === "number" && Number.isFinite(rec.percentage) && rec.percentage >= 0 && rec.percentage <= 100 ? rec.percentage : null;
+      if (department && count !== null && percentage !== null) {
+        headcount_by_department.push({ department, count, percentage });
+      }
+    }
+
+    const EMPLOYMENT_TYPES = ["full_time", "part_time", "contractor", "intern", "other"];
+    const rawByType = Array.isArray(p.headcount_by_type) ? (p.headcount_by_type as unknown[]).slice(0, 10) : [];
+    const headcount_by_type: { employment_type: string; count: number; percentage: number }[] = [];
+    for (const t of rawByType) {
+      if (typeof t !== "object" || t === null) continue;
+      const rec = t as Record<string, unknown>;
+      const employment_type = typeof rec.employment_type === "string" && EMPLOYMENT_TYPES.includes(rec.employment_type) ? rec.employment_type : null;
+      const count = typeof rec.count === "number" && Number.isInteger(rec.count) && rec.count >= 0 ? rec.count : null;
+      const percentage = typeof rec.percentage === "number" && Number.isFinite(rec.percentage) && rec.percentage >= 0 && rec.percentage <= 100 ? rec.percentage : null;
+      if (employment_type && count !== null && percentage !== null) {
+        headcount_by_type.push({ employment_type, count, percentage });
+      }
+    }
+
+    const new_hires = typeof p.new_hires === "number" && Number.isInteger(p.new_hires) && p.new_hires >= 0 ? p.new_hires : null;
+    if (new_hires === null) return { ok: false, reason: "bad_new_hires" };
+    const terminations = typeof p.terminations === "number" && Number.isInteger(p.terminations) && p.terminations >= 0 ? p.terminations : null;
+    if (terminations === null) return { ok: false, reason: "bad_terminations" };
+
+    const attrition_rate = numOrNull(p.attrition_rate, 0, 100);
+    if (attrition_rate === NUM_INVALID) return { ok: false, reason: "bad_attrition_rate" };
+    const avg_tenure_months = numOrNull(p.avg_tenure_months, 0);
+    if (avg_tenure_months === NUM_INVALID) return { ok: false, reason: "bad_avg_tenure_months" };
+    const revenue_per_employee = numOrNull(p.revenue_per_employee, 0);
+    if (revenue_per_employee === NUM_INVALID) return { ok: false, reason: "bad_revenue_per_employee" };
+    const cost_per_employee = numOrNull(p.cost_per_employee, 0);
+    if (cost_per_employee === NUM_INVALID) return { ok: false, reason: "bad_cost_per_employee" };
+
+    const open_positions = typeof p.open_positions === "number" && Number.isInteger(p.open_positions) && p.open_positions >= 0 ? p.open_positions : null;
+    if (open_positions === null) return { ok: false, reason: "bad_open_positions" };
+
+    return {
+      ok: true,
+      kind: "analyze_headcount_analytics",
+      payload: { total_headcount, headcount_by_department, headcount_by_type, new_hires, terminations, attrition_rate, avg_tenure_months, revenue_per_employee, cost_per_employee, open_positions },
     };
   }
 
