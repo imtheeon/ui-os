@@ -2003,6 +2003,28 @@ export async function applyAction(
     return { ok: true, recordTable: "collections_priority_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_bad_debt_provision") {
+    const { data, error } = await db
+      .from("bad_debt_provision_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_receivables: v.payload.total_receivables,
+        current_provision: v.payload.current_provision,
+        recommended_provision: v.payload.recommended_provision,
+        provision_methodology: v.payload.provision_methodology,
+        aging_analysis: v.payload.aging_analysis,
+        specific_provisions: v.payload.specific_provisions,
+        provision_adjustment: v.payload.provision_adjustment,
+        notes: v.payload.notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "bad_debt_provision_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
