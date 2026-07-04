@@ -1715,6 +1715,29 @@ export async function applyAction(
     return { ok: true, recordTable: "time_series_decomp_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "assess_failure_risk") {
+    const { data, error } = await db
+      .from("failure_risk_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        overall_risk_score: v.payload.overall_risk_score,
+        risk_level: v.payload.risk_level,
+        primary_risk_factors: v.payload.primary_risk_factors,
+        altman_z_score: v.payload.altman_z_score,
+        current_ratio: v.payload.current_ratio,
+        debt_to_equity: v.payload.debt_to_equity,
+        interest_coverage_ratio: v.payload.interest_coverage_ratio,
+        cash_runway_months: v.payload.cash_runway_months,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "failure_risk_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

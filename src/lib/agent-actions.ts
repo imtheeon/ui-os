@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3426,6 +3426,49 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "decompose_time_series",
       payload: { trend_direction, trend_strength, seasonality_detected, seasonality_period, cycle_length_periods, residual_variance_pct, data_points_analyzed, components, data_period },
+    };
+  }
+
+  if (kind === "assess_failure_risk") {
+    const overall_risk_score = typeof p.overall_risk_score === "number" && Number.isFinite(p.overall_risk_score) && p.overall_risk_score >= 0 && p.overall_risk_score <= 100 ? p.overall_risk_score : null;
+    if (overall_risk_score === null) return { ok: false, reason: "bad_overall_risk_score" };
+
+    const RISK_LEVELS = ["low", "medium", "high", "critical"];
+    const risk_level = typeof p.risk_level === "string" && RISK_LEVELS.includes(p.risk_level) ? p.risk_level : null;
+    if (risk_level === null) return { ok: false, reason: "bad_risk_level" };
+
+    const SEVERITIES = ["low", "medium", "high"];
+    const rawFactors = Array.isArray(p.primary_risk_factors) ? (p.primary_risk_factors as unknown[]).slice(0, 10) : [];
+    const primary_risk_factors: { factor: string; severity: string; description: string }[] = [];
+    for (const f of rawFactors) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const factor = str(rec.factor);
+      const severity = typeof rec.severity === "string" && SEVERITIES.includes(rec.severity) ? rec.severity : null;
+      const description = str(rec.description) ?? "";
+      if (factor && severity) {
+        primary_risk_factors.push({ factor, severity, description });
+      }
+    }
+
+    const altman_z_score = numOrNull(p.altman_z_score);
+    if (altman_z_score === NUM_INVALID) return { ok: false, reason: "bad_altman_z_score" };
+    const current_ratio = numOrNull(p.current_ratio, 0);
+    if (current_ratio === NUM_INVALID) return { ok: false, reason: "bad_current_ratio" };
+    const debt_to_equity = numOrNull(p.debt_to_equity);
+    if (debt_to_equity === NUM_INVALID) return { ok: false, reason: "bad_debt_to_equity" };
+    const interest_coverage_ratio = numOrNull(p.interest_coverage_ratio);
+    if (interest_coverage_ratio === NUM_INVALID) return { ok: false, reason: "bad_interest_coverage_ratio" };
+    const cash_runway_months = numOrNull(p.cash_runway_months, 0);
+    if (cash_runway_months === NUM_INVALID) return { ok: false, reason: "bad_cash_runway_months" };
+
+    const data_period = str(p.data_period);
+    if (!data_period) return { ok: false, reason: "bad_data_period" };
+
+    return {
+      ok: true,
+      kind: "assess_failure_risk",
+      payload: { overall_risk_score, risk_level, primary_risk_factors, altman_z_score, current_ratio, debt_to_equity, interest_coverage_ratio, cash_runway_months, data_period },
     };
   }
 
