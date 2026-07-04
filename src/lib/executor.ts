@@ -1762,6 +1762,31 @@ export async function applyAction(
     return { ok: true, recordTable: "unit_economics_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "estimate_valuation") {
+    const { data, error } = await db
+      .from("valuation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        arr: v.payload.arr,
+        arr_multiple: v.payload.arr_multiple,
+        ev_ebitda_multiple: v.payload.ev_ebitda_multiple,
+        dcf_value: v.payload.dcf_value,
+        comparable_low: v.payload.comparable_low,
+        comparable_high: v.payload.comparable_high,
+        estimated_valuation_low: v.payload.estimated_valuation_low,
+        estimated_valuation_high: v.payload.estimated_valuation_high,
+        primary_method: v.payload.primary_method,
+        valuation_notes: v.payload.valuation_notes,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "valuation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

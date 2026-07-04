@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3513,6 +3513,43 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_unit_economics",
       payload: { ltv, cac, ltv_cac_ratio, payback_period_months, avg_contract_value, gross_margin_pct, churn_rate_monthly, magic_number, by_channel, data_period },
+    };
+  }
+
+  if (kind === "estimate_valuation") {
+    const arr = numOrNull(p.arr, 0);
+    if (arr === NUM_INVALID) return { ok: false, reason: "bad_arr" };
+    const arr_multiple = numOrNull(p.arr_multiple, 0);
+    if (arr_multiple === NUM_INVALID) return { ok: false, reason: "bad_arr_multiple" };
+    const ev_ebitda_multiple = numOrNull(p.ev_ebitda_multiple);
+    if (ev_ebitda_multiple === NUM_INVALID) return { ok: false, reason: "bad_ev_ebitda_multiple" };
+    const dcf_value = numOrNull(p.dcf_value, 0);
+    if (dcf_value === NUM_INVALID) return { ok: false, reason: "bad_dcf_value" };
+    const comparable_low = numOrNull(p.comparable_low, 0);
+    if (comparable_low === NUM_INVALID) return { ok: false, reason: "bad_comparable_low" };
+    const comparable_high = numOrNull(p.comparable_high, 0);
+    if (comparable_high === NUM_INVALID) return { ok: false, reason: "bad_comparable_high" };
+    const estimated_valuation_low = numOrNull(p.estimated_valuation_low, 0);
+    if (estimated_valuation_low === NUM_INVALID) return { ok: false, reason: "bad_estimated_valuation_low" };
+    const estimated_valuation_high = numOrNull(p.estimated_valuation_high, 0);
+    if (estimated_valuation_high === NUM_INVALID) return { ok: false, reason: "bad_estimated_valuation_high" };
+    if (estimated_valuation_low !== null && estimated_valuation_high !== null && estimated_valuation_high < estimated_valuation_low) {
+      return { ok: false, reason: "valuation_high_below_low" };
+    }
+
+    const METHODS = ["arr_multiple", "ev_ebitda", "dcf", "comparable", "blended"];
+    const primary_method = typeof p.primary_method === "string" && METHODS.includes(p.primary_method) ? p.primary_method : null;
+    if (primary_method === null) return { ok: false, reason: "bad_primary_method" };
+
+    const valuation_notes = str(p.valuation_notes);
+    if (!valuation_notes) return { ok: false, reason: "bad_valuation_notes" };
+    const data_period = str(p.data_period);
+    if (!data_period) return { ok: false, reason: "bad_data_period" };
+
+    return {
+      ok: true,
+      kind: "estimate_valuation",
+      payload: { arr, arr_multiple, ev_ebitda_multiple, dcf_value, comparable_low, comparable_high, estimated_valuation_low, estimated_valuation_high, primary_method, valuation_notes, data_period },
     };
   }
 
