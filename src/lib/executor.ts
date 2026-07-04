@@ -1692,6 +1692,29 @@ export async function applyAction(
     return { ok: true, recordTable: "outlier_explanation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "decompose_time_series") {
+    const { data, error } = await db
+      .from("time_series_decomp_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        trend_direction: v.payload.trend_direction,
+        trend_strength: v.payload.trend_strength,
+        seasonality_detected: v.payload.seasonality_detected,
+        seasonality_period: v.payload.seasonality_period,
+        cycle_length_periods: v.payload.cycle_length_periods,
+        residual_variance_pct: v.payload.residual_variance_pct,
+        data_points_analyzed: v.payload.data_points_analyzed,
+        components: v.payload.components,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "time_series_decomp_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
