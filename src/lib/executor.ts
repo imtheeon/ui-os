@@ -1612,6 +1612,26 @@ export async function applyAction(
     return { ok: true, recordTable: "commission_calculator_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_productivity") {
+    const { data, error } = await db
+      .from("productivity_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        productivity_metrics: v.payload.productivity_metrics,
+        output_per_person: v.payload.output_per_person,
+        bottlenecks: v.payload.bottlenecks,
+        benchmarks: v.payload.benchmarks,
+        improvement_recommendations: v.payload.improvement_recommendations,
+        overall_productivity_score: v.payload.overall_productivity_score,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "productivity_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
