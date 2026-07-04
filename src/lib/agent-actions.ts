@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3029,6 +3029,55 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "check_expense_policy",
       payload: { violations, violation_count, total_policy_exception_amount, compliance_rate, policy_summary, escalations },
+    };
+  }
+
+  if (kind === "track_subscriptions") {
+    const STATUSES2 = ["active", "trialing", "past_due", "cancelled", "paused"];
+    const MOVEMENTS = ["new", "expansion", "contraction", "churn", "reactivation", "unchanged"];
+    const rawSubs = Array.isArray(p.subscriptions) ? (p.subscriptions as unknown[]).slice(0, 500) : [];
+    const subscriptions: { subscription_id: string; customer_name: string; plan: string; mrr: number; arr: number; status: string; start_date: string; renewal_date: string | null; movement: string }[] = [];
+    for (const s of rawSubs) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const subscription_id = str(rec.subscription_id);
+      const customer_name = str(rec.customer_name);
+      const plan = str(rec.plan);
+      const mrr = typeof rec.mrr === "number" && Number.isFinite(rec.mrr) && rec.mrr >= 0 ? rec.mrr : null;
+      const arr = typeof rec.arr === "number" && Number.isFinite(rec.arr) && rec.arr >= 0 ? rec.arr : null;
+      const status = typeof rec.status === "string" && STATUSES2.includes(rec.status) ? rec.status : null;
+      const start_date = str(rec.start_date);
+      const movement = typeof rec.movement === "string" && MOVEMENTS.includes(rec.movement) ? rec.movement : null;
+      if (subscription_id && customer_name && plan && mrr !== null && arr !== null && status && start_date && movement) {
+        const renewal_date = typeof rec.renewal_date === "string" && rec.renewal_date.length > 0 ? rec.renewal_date.slice(0, 100) : null;
+        subscriptions.push({ subscription_id, customer_name, plan, mrr, arr, status, start_date, renewal_date, movement });
+      }
+    }
+
+    const total_mrr = typeof p.total_mrr === "number" && Number.isFinite(p.total_mrr) && p.total_mrr >= 0 ? p.total_mrr : null;
+    if (total_mrr === null) return { ok: false, reason: "bad_total_mrr" };
+    const total_arr = typeof p.total_arr === "number" && Number.isFinite(p.total_arr) && p.total_arr >= 0 ? p.total_arr : null;
+    if (total_arr === null) return { ok: false, reason: "bad_total_arr" };
+    const new_mrr = typeof p.new_mrr === "number" && Number.isFinite(p.new_mrr) && p.new_mrr >= 0 ? p.new_mrr : null;
+    if (new_mrr === null) return { ok: false, reason: "bad_new_mrr" };
+    const expansion_mrr = typeof p.expansion_mrr === "number" && Number.isFinite(p.expansion_mrr) && p.expansion_mrr >= 0 ? p.expansion_mrr : null;
+    if (expansion_mrr === null) return { ok: false, reason: "bad_expansion_mrr" };
+    const contraction_mrr = typeof p.contraction_mrr === "number" && Number.isFinite(p.contraction_mrr) && p.contraction_mrr >= 0 ? p.contraction_mrr : null;
+    if (contraction_mrr === null) return { ok: false, reason: "bad_contraction_mrr" };
+    const churned_mrr = typeof p.churned_mrr === "number" && Number.isFinite(p.churned_mrr) && p.churned_mrr >= 0 ? p.churned_mrr : null;
+    if (churned_mrr === null) return { ok: false, reason: "bad_churned_mrr" };
+    const net_new_mrr = typeof p.net_new_mrr === "number" && Number.isFinite(p.net_new_mrr) ? p.net_new_mrr : null;
+    if (net_new_mrr === null) return { ok: false, reason: "bad_net_new_mrr" };
+    const subscription_count = typeof p.subscription_count === "number" && Number.isInteger(p.subscription_count) && p.subscription_count >= 0 ? p.subscription_count : null;
+    if (subscription_count === null) return { ok: false, reason: "bad_subscription_count" };
+
+    const avg_subscription_value = numOrNull(p.avg_subscription_value, 0);
+    if (avg_subscription_value === NUM_INVALID) return { ok: false, reason: "bad_avg_subscription_value" };
+
+    return {
+      ok: true,
+      kind: "track_subscriptions",
+      payload: { subscriptions, total_mrr, total_arr, new_mrr, expansion_mrr, contraction_mrr, churned_mrr, net_new_mrr, subscription_count, avg_subscription_value },
     };
   }
 

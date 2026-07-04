@@ -1544,6 +1544,30 @@ export async function applyAction(
     return { ok: true, recordTable: "expense_policy_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "track_subscriptions") {
+    const { data, error } = await db
+      .from("subscription_tracker_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        subscriptions: v.payload.subscriptions,
+        total_mrr: v.payload.total_mrr,
+        total_arr: v.payload.total_arr,
+        new_mrr: v.payload.new_mrr,
+        expansion_mrr: v.payload.expansion_mrr,
+        contraction_mrr: v.payload.contraction_mrr,
+        churned_mrr: v.payload.churned_mrr,
+        net_new_mrr: v.payload.net_new_mrr,
+        subscription_count: v.payload.subscription_count,
+        avg_subscription_value: v.payload.avg_subscription_value,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "subscription_tracker_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
