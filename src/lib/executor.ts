@@ -2064,6 +2064,28 @@ export async function applyAction(
     return { ok: true, recordTable: "fx_exposure_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "draft_investor_memo") {
+    const { data, error } = await db
+      .from("investor_memo_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        memo_title: v.payload.memo_title,
+        business_overview: v.payload.business_overview,
+        financial_highlights: v.payload.financial_highlights,
+        key_metrics: v.payload.key_metrics,
+        risks_and_mitigations: v.payload.risks_and_mitigations,
+        investment_thesis: v.payload.investment_thesis,
+        ask: v.payload.ask,
+        use_of_proceeds: v.payload.use_of_proceeds,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "investor_memo_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
