@@ -1917,6 +1917,26 @@ export async function applyAction(
     return { ok: true, recordTable: "run_rate_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_spend") {
+    const { data, error } = await db
+      .from("spend_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_spend: v.payload.total_spend,
+        spend_by_category: v.payload.spend_by_category,
+        spend_by_vendor: v.payload.spend_by_vendor,
+        spend_trends: v.payload.spend_trends,
+        top_opportunities: v.payload.top_opportunities,
+        potential_savings: v.payload.potential_savings,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "spend_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
