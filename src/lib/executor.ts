@@ -1960,6 +1960,27 @@ export async function applyAction(
     return { ok: true, recordTable: "discount_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "detect_maverick_spend") {
+    const { data, error } = await db
+      .from("maverick_spend_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        maverick_transactions: v.payload.maverick_transactions,
+        total_maverick_amount: v.payload.total_maverick_amount,
+        maverick_percentage: v.payload.maverick_percentage,
+        total_spend_analyzed: v.payload.total_spend_analyzed,
+        categories_affected: v.payload.categories_affected,
+        root_causes: v.payload.root_causes,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "maverick_spend_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
