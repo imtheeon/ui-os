@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4327,6 +4327,72 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "track_okrs",
       payload: { objectives, overall_score, on_track_count, at_risk_count, off_track_count, key_blockers },
+    };
+  }
+
+  if (kind === "conduct_swot") {
+    const IMPACTS = ["high", "medium", "low"];
+    const TIMEFRAMES = ["immediate", "near_term", "long_term"];
+    const PRIORITY_TYPES = ["SO", "WO", "ST", "WT"];
+
+    const rawStrengths = Array.isArray(p.strengths) ? (p.strengths as unknown[]).slice(0, 10) : [];
+    const strengths: { point: string; evidence: string; impact: string }[] = [];
+    for (const s of rawStrengths) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const impact = typeof rec.impact === "string" && IMPACTS.includes(rec.impact) ? rec.impact : null;
+      if (!impact) continue;
+      strengths.push({ point: str(rec.point) ?? "", evidence: str(rec.evidence) ?? "", impact });
+    }
+
+    const rawWeaknesses = Array.isArray(p.weaknesses) ? (p.weaknesses as unknown[]).slice(0, 10) : [];
+    const weaknesses: { point: string; evidence: string; urgency: string }[] = [];
+    for (const w of rawWeaknesses) {
+      if (typeof w !== "object" || w === null) continue;
+      const rec = w as Record<string, unknown>;
+      const urgency = typeof rec.urgency === "string" && IMPACTS.includes(rec.urgency) ? rec.urgency : null;
+      if (!urgency) continue;
+      weaknesses.push({ point: str(rec.point) ?? "", evidence: str(rec.evidence) ?? "", urgency });
+    }
+
+    const rawOpportunities = Array.isArray(p.opportunities) ? (p.opportunities as unknown[]).slice(0, 10) : [];
+    const opportunities: { point: string; rationale: string; timeframe: string }[] = [];
+    for (const o of rawOpportunities) {
+      if (typeof o !== "object" || o === null) continue;
+      const rec = o as Record<string, unknown>;
+      const timeframe = typeof rec.timeframe === "string" && TIMEFRAMES.includes(rec.timeframe) ? rec.timeframe : null;
+      if (!timeframe) continue;
+      opportunities.push({ point: str(rec.point) ?? "", rationale: str(rec.rationale) ?? "", timeframe });
+    }
+
+    const rawThreats = Array.isArray(p.threats) ? (p.threats as unknown[]).slice(0, 10) : [];
+    const threats: { point: string; likelihood: string; potential_impact: string }[] = [];
+    for (const t of rawThreats) {
+      if (typeof t !== "object" || t === null) continue;
+      const rec = t as Record<string, unknown>;
+      const likelihood = typeof rec.likelihood === "string" && IMPACTS.includes(rec.likelihood) ? rec.likelihood : null;
+      const potential_impact = typeof rec.potential_impact === "string" && IMPACTS.includes(rec.potential_impact) ? rec.potential_impact : null;
+      if (!likelihood || !potential_impact) continue;
+      threats.push({ point: str(rec.point) ?? "", likelihood, potential_impact });
+    }
+
+    const rawPriorities = Array.isArray(p.strategic_priorities) ? (p.strategic_priorities as unknown[]).slice(0, 5) : [];
+    const strategic_priorities: { priority: string; type: string; rationale: string }[] = [];
+    for (const sp of rawPriorities) {
+      if (typeof sp !== "object" || sp === null) continue;
+      const rec = sp as Record<string, unknown>;
+      const type = typeof rec.type === "string" && PRIORITY_TYPES.includes(rec.type) ? rec.type : null;
+      if (!type) continue;
+      strategic_priorities.push({ priority: str(rec.priority) ?? "", type, rationale: str(rec.rationale) ?? "" });
+    }
+
+    const overall_assessment = typeof p.overall_assessment === "string" && p.overall_assessment.length > 0 ? p.overall_assessment.slice(0, 1000) : null;
+    if (!overall_assessment) return { ok: false, reason: "bad_overall_assessment" };
+
+    return {
+      ok: true,
+      kind: "conduct_swot",
+      payload: { strengths, weaknesses, opportunities, threats, strategic_priorities, overall_assessment },
     };
   }
 

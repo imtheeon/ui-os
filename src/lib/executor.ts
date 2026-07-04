@@ -2106,6 +2106,26 @@ export async function applyAction(
     return { ok: true, recordTable: "okr_tracker_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "conduct_swot") {
+    const { data, error } = await db
+      .from("swot_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        strengths: v.payload.strengths,
+        weaknesses: v.payload.weaknesses,
+        opportunities: v.payload.opportunities,
+        threats: v.payload.threats,
+        strategic_priorities: v.payload.strategic_priorities,
+        overall_assessment: v.payload.overall_assessment,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "swot_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
