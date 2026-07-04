@@ -2086,6 +2086,26 @@ export async function applyAction(
     return { ok: true, recordTable: "investor_memo_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "track_okrs") {
+    const { data, error } = await db
+      .from("okr_tracker_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        objectives: v.payload.objectives,
+        overall_score: v.payload.overall_score,
+        on_track_count: v.payload.on_track_count,
+        at_risk_count: v.payload.at_risk_count,
+        off_track_count: v.payload.off_track_count,
+        key_blockers: v.payload.key_blockers,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "okr_tracker_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
