@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3667,6 +3667,65 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_leases",
       payload: { leases, total_lease_liability, total_right_of_use_asset, annual_lease_expense, asc_842_classification_summary, upcoming_expirations, optimization_opportunities },
+    };
+  }
+
+  if (kind === "analyze_asset_register") {
+    const ASSET_CLASSES = ["land", "building", "equipment", "vehicle", "software", "intangible", "furniture", "other"];
+    const DEPRECIATION_METHODS = ["straight_line", "declining_balance", "units_of_production", "none", "unknown"];
+    const rawAssets = Array.isArray(p.assets) ? (p.assets as unknown[]).slice(0, 200) : [];
+    const assets: { asset_id: string; description: string; asset_class: string; acquisition_date: string; acquisition_cost: number; useful_life_years: number | null; depreciation_method: string; accumulated_depreciation: number; net_book_value: number; is_fully_depreciated: boolean; age_years: number | null }[] = [];
+    for (const a of rawAssets) {
+      if (typeof a !== "object" || a === null) continue;
+      const rec = a as Record<string, unknown>;
+      const asset_id = str(rec.asset_id);
+      const description = str(rec.description);
+      const asset_class = typeof rec.asset_class === "string" && ASSET_CLASSES.includes(rec.asset_class) ? rec.asset_class : null;
+      const acquisition_date = str(rec.acquisition_date);
+      const acquisition_cost = typeof rec.acquisition_cost === "number" && Number.isFinite(rec.acquisition_cost) && rec.acquisition_cost >= 0 ? rec.acquisition_cost : null;
+      const depreciation_method = typeof rec.depreciation_method === "string" && DEPRECIATION_METHODS.includes(rec.depreciation_method) ? rec.depreciation_method : null;
+      const accumulated_depreciation = typeof rec.accumulated_depreciation === "number" && Number.isFinite(rec.accumulated_depreciation) && rec.accumulated_depreciation >= 0 ? rec.accumulated_depreciation : null;
+      const net_book_value = typeof rec.net_book_value === "number" && Number.isFinite(rec.net_book_value) && rec.net_book_value >= 0 ? rec.net_book_value : null;
+      if (!asset_id || !description || !asset_class || !acquisition_date || acquisition_cost === null || !depreciation_method || accumulated_depreciation === null || net_book_value === null || typeof rec.is_fully_depreciated !== "boolean") continue;
+      const useful_life_years = numOrNull(rec.useful_life_years, 0);
+      const age_years = numOrNull(rec.age_years, 0);
+      if (useful_life_years === NUM_INVALID || age_years === NUM_INVALID) continue;
+      assets.push({ asset_id, description, asset_class, acquisition_date, acquisition_cost, useful_life_years, depreciation_method, accumulated_depreciation, net_book_value, is_fully_depreciated: rec.is_fully_depreciated, age_years });
+    }
+
+    const total_gross_value = typeof p.total_gross_value === "number" && Number.isFinite(p.total_gross_value) && p.total_gross_value >= 0 ? p.total_gross_value : null;
+    if (total_gross_value === null) return { ok: false, reason: "bad_total_gross_value" };
+    const total_accumulated_depreciation = typeof p.total_accumulated_depreciation === "number" && Number.isFinite(p.total_accumulated_depreciation) && p.total_accumulated_depreciation >= 0 ? p.total_accumulated_depreciation : null;
+    if (total_accumulated_depreciation === null) return { ok: false, reason: "bad_total_accumulated_depreciation" };
+    const total_net_book_value = typeof p.total_net_book_value === "number" && Number.isFinite(p.total_net_book_value) && p.total_net_book_value >= 0 ? p.total_net_book_value : null;
+    if (total_net_book_value === null) return { ok: false, reason: "bad_total_net_book_value" };
+    const assets_fully_depreciated = typeof p.assets_fully_depreciated === "number" && Number.isInteger(p.assets_fully_depreciated) && p.assets_fully_depreciated >= 0 ? p.assets_fully_depreciated : null;
+    if (assets_fully_depreciated === null) return { ok: false, reason: "bad_assets_fully_depreciated" };
+    const assets_near_end_of_life = typeof p.assets_near_end_of_life === "number" && Number.isInteger(p.assets_near_end_of_life) && p.assets_near_end_of_life >= 0 ? p.assets_near_end_of_life : null;
+    if (assets_near_end_of_life === null) return { ok: false, reason: "bad_assets_near_end_of_life" };
+    const annual_depreciation_charge = typeof p.annual_depreciation_charge === "number" && Number.isFinite(p.annual_depreciation_charge) && p.annual_depreciation_charge >= 0 ? p.annual_depreciation_charge : null;
+    if (annual_depreciation_charge === null) return { ok: false, reason: "bad_annual_depreciation_charge" };
+
+    const rawSummary = Array.isArray(p.asset_class_summary) ? (p.asset_class_summary as unknown[]).slice(0, 10) : [];
+    const asset_class_summary: { asset_class: string; count: number; gross_value: number; net_book_value: number }[] = [];
+    for (const s of rawSummary) {
+      if (typeof s !== "object" || s === null) continue;
+      const rec = s as Record<string, unknown>;
+      const asset_class = str(rec.asset_class);
+      const count = typeof rec.count === "number" && Number.isInteger(rec.count) && rec.count >= 0 ? rec.count : null;
+      const gross_value = typeof rec.gross_value === "number" && Number.isFinite(rec.gross_value) && rec.gross_value >= 0 ? rec.gross_value : null;
+      const summaryNbv = typeof rec.net_book_value === "number" && Number.isFinite(rec.net_book_value) && rec.net_book_value >= 0 ? rec.net_book_value : null;
+      if (asset_class && count !== null && gross_value !== null && summaryNbv !== null) {
+        asset_class_summary.push({ asset_class, count, gross_value, net_book_value: summaryNbv });
+      }
+    }
+
+    const replacement_needs = strArray(p.replacement_needs, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_asset_register",
+      payload: { assets, total_gross_value, total_accumulated_depreciation, total_net_book_value, assets_fully_depreciated, assets_near_end_of_life, annual_depreciation_charge, asset_class_summary, replacement_needs },
     };
   }
 

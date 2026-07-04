@@ -1831,6 +1831,29 @@ export async function applyAction(
     return { ok: true, recordTable: "lease_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_asset_register") {
+    const { data, error } = await db
+      .from("asset_register_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        assets: v.payload.assets,
+        total_gross_value: v.payload.total_gross_value,
+        total_accumulated_depreciation: v.payload.total_accumulated_depreciation,
+        total_net_book_value: v.payload.total_net_book_value,
+        assets_fully_depreciated: v.payload.assets_fully_depreciated,
+        assets_near_end_of_life: v.payload.assets_near_end_of_life,
+        annual_depreciation_charge: v.payload.annual_depreciation_charge,
+        asset_class_summary: v.payload.asset_class_summary,
+        replacement_needs: v.payload.replacement_needs,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "asset_register_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
