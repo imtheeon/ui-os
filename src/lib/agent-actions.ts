@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3593,6 +3593,80 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_cap_table",
       payload: { total_shares_outstanding, fully_diluted_shares, option_pool_pct, top_holder_concentration_pct, founder_ownership_pct, investor_ownership_pct, employee_pool_pct, holders, data_period },
+    };
+  }
+
+  if (kind === "analyze_leases") {
+    const LEASE_TYPES = ["operating", "finance", "short_term", "unclassified"];
+    const rawLeases = Array.isArray(p.leases) ? (p.leases as unknown[]).slice(0, 50) : [];
+    const leases: { lease_id: string; description: string; lease_type: string; commencement_date: string; expiration_date: string; monthly_payment: number; remaining_payments: number; present_value: number | null; right_of_use_asset: number | null; days_until_expiration: number | null; renewal_options: string | null }[] = [];
+    for (const l of rawLeases) {
+      if (typeof l !== "object" || l === null) continue;
+      const rec = l as Record<string, unknown>;
+      const lease_id = str(rec.lease_id);
+      const description = str(rec.description);
+      const lease_type = typeof rec.lease_type === "string" && LEASE_TYPES.includes(rec.lease_type) ? rec.lease_type : null;
+      const commencement_date = str(rec.commencement_date);
+      const expiration_date = str(rec.expiration_date);
+      const monthly_payment = typeof rec.monthly_payment === "number" && Number.isFinite(rec.monthly_payment) && rec.monthly_payment >= 0 ? rec.monthly_payment : null;
+      const remaining_payments = typeof rec.remaining_payments === "number" && Number.isInteger(rec.remaining_payments) && rec.remaining_payments >= 0 ? rec.remaining_payments : null;
+      if (!lease_id || !description || !lease_type || !commencement_date || !expiration_date || monthly_payment === null || remaining_payments === null) continue;
+      const present_value = numOrNull(rec.present_value, 0);
+      const right_of_use_asset = numOrNull(rec.right_of_use_asset, 0);
+      if (present_value === NUM_INVALID || right_of_use_asset === NUM_INVALID) continue;
+      let days_until_expiration: number | null;
+      if (rec.days_until_expiration === null || rec.days_until_expiration === undefined) {
+        days_until_expiration = null;
+      } else if (typeof rec.days_until_expiration === "number" && Number.isInteger(rec.days_until_expiration)) {
+        days_until_expiration = rec.days_until_expiration;
+      } else {
+        continue;
+      }
+      const renewal_options = typeof rec.renewal_options === "string" && rec.renewal_options.length > 0 ? rec.renewal_options.slice(0, MAX_STR) : null;
+      leases.push({ lease_id, description, lease_type, commencement_date, expiration_date, monthly_payment, remaining_payments, present_value, right_of_use_asset, days_until_expiration, renewal_options });
+    }
+
+    const total_lease_liability = typeof p.total_lease_liability === "number" && Number.isFinite(p.total_lease_liability) && p.total_lease_liability >= 0 ? p.total_lease_liability : null;
+    if (total_lease_liability === null) return { ok: false, reason: "bad_total_lease_liability" };
+    const total_right_of_use_asset = typeof p.total_right_of_use_asset === "number" && Number.isFinite(p.total_right_of_use_asset) && p.total_right_of_use_asset >= 0 ? p.total_right_of_use_asset : null;
+    if (total_right_of_use_asset === null) return { ok: false, reason: "bad_total_right_of_use_asset" };
+    const annual_lease_expense = typeof p.annual_lease_expense === "number" && Number.isFinite(p.annual_lease_expense) && p.annual_lease_expense >= 0 ? p.annual_lease_expense : null;
+    if (annual_lease_expense === null) return { ok: false, reason: "bad_annual_lease_expense" };
+
+    if (typeof p.asc_842_classification_summary !== "object" || p.asc_842_classification_summary === null || Array.isArray(p.asc_842_classification_summary)) {
+      return { ok: false, reason: "bad_asc_842_classification_summary" };
+    }
+    const summaryRaw = p.asc_842_classification_summary as Record<string, unknown>;
+    const operating_count = typeof summaryRaw.operating_count === "number" && Number.isInteger(summaryRaw.operating_count) && summaryRaw.operating_count >= 0 ? summaryRaw.operating_count : null;
+    const finance_count = typeof summaryRaw.finance_count === "number" && Number.isInteger(summaryRaw.finance_count) && summaryRaw.finance_count >= 0 ? summaryRaw.finance_count : null;
+    const short_term_count = typeof summaryRaw.short_term_count === "number" && Number.isInteger(summaryRaw.short_term_count) && summaryRaw.short_term_count >= 0 ? summaryRaw.short_term_count : null;
+    const unclassified_count = typeof summaryRaw.unclassified_count === "number" && Number.isInteger(summaryRaw.unclassified_count) && summaryRaw.unclassified_count >= 0 ? summaryRaw.unclassified_count : null;
+    if (operating_count === null || finance_count === null || short_term_count === null || unclassified_count === null) {
+      return { ok: false, reason: "bad_asc_842_classification_summary" };
+    }
+    const asc_842_classification_summary = { operating_count, finance_count, short_term_count, unclassified_count };
+
+    const rawExpirations = Array.isArray(p.upcoming_expirations) ? (p.upcoming_expirations as unknown[]).slice(0, 20) : [];
+    const upcoming_expirations: { lease_id: string; description: string; expiration_date: string; monthly_payment: number; days_until_expiration: number }[] = [];
+    for (const e of rawExpirations) {
+      if (typeof e !== "object" || e === null) continue;
+      const rec = e as Record<string, unknown>;
+      const lease_id = str(rec.lease_id);
+      const description = str(rec.description);
+      const expiration_date = str(rec.expiration_date);
+      const monthly_payment = typeof rec.monthly_payment === "number" && Number.isFinite(rec.monthly_payment) && rec.monthly_payment >= 0 ? rec.monthly_payment : null;
+      const days_until_expiration = typeof rec.days_until_expiration === "number" && Number.isInteger(rec.days_until_expiration) ? rec.days_until_expiration : null;
+      if (lease_id && description && expiration_date && monthly_payment !== null && days_until_expiration !== null) {
+        upcoming_expirations.push({ lease_id, description, expiration_date, monthly_payment, days_until_expiration });
+      }
+    }
+
+    const optimization_opportunities = strArray(p.optimization_opportunities, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_leases",
+      payload: { leases, total_lease_liability, total_right_of_use_asset, annual_lease_expense, asc_842_classification_summary, upcoming_expirations, optimization_opportunities },
     };
   }
 
