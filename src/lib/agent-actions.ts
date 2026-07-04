@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4011,6 +4011,50 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "detect_maverick_spend",
       payload: { maverick_transactions, total_maverick_amount, maverick_percentage, total_spend_analyzed, categories_affected, root_causes, recommendations: recommendations2 },
+    };
+  }
+
+  if (kind === "prioritize_collections") {
+    const PRIORITIES = ["P1", "P2", "P3"];
+    const ACTIONS2 = ["immediate_call", "demand_letter", "payment_plan", "collections_agency", "write_off_candidate", "follow_up"];
+    const COLLECTIBILITY = ["high", "medium", "low", "unknown"];
+    const rawAccounts = Array.isArray(p.accounts) ? (p.accounts as unknown[]).slice(0, 200) : [];
+    const accounts: { account_ref: string; customer_name: string | null; outstanding_amount: number; days_overdue: number; invoice_count: number; priority: string; recommended_action: string; collectibility: string }[] = [];
+    for (const a of rawAccounts) {
+      if (typeof a !== "object" || a === null) continue;
+      const rec = a as Record<string, unknown>;
+      const account_ref = str(rec.account_ref);
+      const outstanding_amount = typeof rec.outstanding_amount === "number" && Number.isFinite(rec.outstanding_amount) && rec.outstanding_amount >= 0 ? rec.outstanding_amount : null;
+      const days_overdue = typeof rec.days_overdue === "number" && Number.isInteger(rec.days_overdue) && rec.days_overdue >= 0 ? rec.days_overdue : null;
+      const invoice_count = typeof rec.invoice_count === "number" && Number.isInteger(rec.invoice_count) && rec.invoice_count >= 0 ? rec.invoice_count : null;
+      const priority = typeof rec.priority === "string" && PRIORITIES.includes(rec.priority) ? rec.priority : null;
+      const recommended_action = typeof rec.recommended_action === "string" && ACTIONS2.includes(rec.recommended_action) ? rec.recommended_action : null;
+      const collectibility = typeof rec.collectibility === "string" && COLLECTIBILITY.includes(rec.collectibility) ? rec.collectibility : null;
+      if (!account_ref || outstanding_amount === null || days_overdue === null || invoice_count === null || !priority || !recommended_action || !collectibility) continue;
+      const customer_name = typeof rec.customer_name === "string" && rec.customer_name.length > 0 ? rec.customer_name.slice(0, MAX_STR) : null;
+      accounts.push({ account_ref, customer_name, outstanding_amount, days_overdue, invoice_count, priority, recommended_action, collectibility });
+    }
+
+    const total_outstanding = typeof p.total_outstanding === "number" && Number.isFinite(p.total_outstanding) && p.total_outstanding >= 0 ? p.total_outstanding : null;
+    if (total_outstanding === null) return { ok: false, reason: "bad_total_outstanding" };
+    const total_overdue = typeof p.total_overdue === "number" && Number.isFinite(p.total_overdue) && p.total_overdue >= 0 ? p.total_overdue : null;
+    if (total_overdue === null) return { ok: false, reason: "bad_total_overdue" };
+    const priority_1_amount = typeof p.priority_1_amount === "number" && Number.isFinite(p.priority_1_amount) && p.priority_1_amount >= 0 ? p.priority_1_amount : null;
+    if (priority_1_amount === null) return { ok: false, reason: "bad_priority_1_amount" };
+    const priority_2_amount = typeof p.priority_2_amount === "number" && Number.isFinite(p.priority_2_amount) && p.priority_2_amount >= 0 ? p.priority_2_amount : null;
+    if (priority_2_amount === null) return { ok: false, reason: "bad_priority_2_amount" };
+    const priority_3_amount = typeof p.priority_3_amount === "number" && Number.isFinite(p.priority_3_amount) && p.priority_3_amount >= 0 ? p.priority_3_amount : null;
+    if (priority_3_amount === null) return { ok: false, reason: "bad_priority_3_amount" };
+
+    const collection_actions = strArray(p.collection_actions, 10, MAX_STR);
+
+    const estimated_collectible = numOrNull(p.estimated_collectible, 0);
+    if (estimated_collectible === NUM_INVALID) return { ok: false, reason: "bad_estimated_collectible" };
+
+    return {
+      ok: true,
+      kind: "prioritize_collections",
+      payload: { accounts, total_outstanding, total_overdue, priority_1_amount, priority_2_amount, priority_3_amount, collection_actions, estimated_collectible },
     };
   }
 

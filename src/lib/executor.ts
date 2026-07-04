@@ -1981,6 +1981,28 @@ export async function applyAction(
     return { ok: true, recordTable: "maverick_spend_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "prioritize_collections") {
+    const { data, error } = await db
+      .from("collections_priority_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        accounts: v.payload.accounts,
+        total_outstanding: v.payload.total_outstanding,
+        total_overdue: v.payload.total_overdue,
+        priority_1_amount: v.payload.priority_1_amount,
+        priority_2_amount: v.payload.priority_2_amount,
+        priority_3_amount: v.payload.priority_3_amount,
+        collection_actions: v.payload.collection_actions,
+        estimated_collectible: v.payload.estimated_collectible,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "collections_priority_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
