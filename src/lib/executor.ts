@@ -1895,6 +1895,28 @@ export async function applyAction(
     return { ok: true, recordTable: "bridge_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_run_rate") {
+    const { data, error } = await db
+      .from("run_rate_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        current_period_value: v.payload.current_period_value,
+        annualization_method: v.payload.annualization_method,
+        annualized_run_rate: v.payload.annualized_run_rate,
+        adjusted_run_rate: v.payload.adjusted_run_rate,
+        run_rate_adjustments: v.payload.run_rate_adjustments,
+        months_of_data_used: v.payload.months_of_data_used,
+        confidence: v.payload.confidence,
+        caveats: v.payload.caveats,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "run_rate_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
