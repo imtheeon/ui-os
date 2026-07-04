@@ -2186,6 +2186,27 @@ export async function applyAction(
     return { ok: true, recordTable: "seasonality_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "benchmark_performance") {
+    const { data, error } = await db
+      .from("benchmark_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        industry: v.payload.industry,
+        company_stage: v.payload.company_stage,
+        benchmarks: v.payload.benchmarks,
+        overall_performance: v.payload.overall_performance,
+        standout_strengths: v.payload.standout_strengths,
+        underperforming_areas: v.payload.underperforming_areas,
+        peer_comparison_notes: v.payload.peer_comparison_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "benchmark_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
