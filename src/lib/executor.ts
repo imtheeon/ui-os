@@ -1810,6 +1810,27 @@ export async function applyAction(
     return { ok: true, recordTable: "cap_table_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_leases") {
+    const { data, error } = await db
+      .from("lease_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        leases: v.payload.leases,
+        total_lease_liability: v.payload.total_lease_liability,
+        total_right_of_use_asset: v.payload.total_right_of_use_asset,
+        annual_lease_expense: v.payload.annual_lease_expense,
+        asc_842_classification_summary: v.payload.asc_842_classification_summary,
+        upcoming_expirations: v.payload.upcoming_expirations,
+        optimization_opportunities: v.payload.optimization_opportunities,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "lease_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
