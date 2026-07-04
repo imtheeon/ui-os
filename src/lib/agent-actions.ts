@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4277,6 +4277,56 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "draft_investor_memo",
       payload: { memo_title, business_overview, financial_highlights, key_metrics, risks_and_mitigations, investment_thesis, ask, use_of_proceeds },
+    };
+  }
+
+  if (kind === "track_okrs") {
+    const OKR_STATUSES = ["on_track", "at_risk", "off_track", "completed", "not_started"];
+    const rawObjectives = Array.isArray(p.objectives) ? (p.objectives as unknown[]).slice(0, 20) : [];
+    const objectives: { objective: string; owner: string | null; key_results: { kr: string; target: string; current: string; progress: number; status: string }[]; objective_status: string; objective_score: number | null }[] = [];
+    for (const o of rawObjectives) {
+      if (typeof o !== "object" || o === null) continue;
+      const rec = o as Record<string, unknown>;
+      const objective = str(rec.objective);
+      const objective_status = typeof rec.objective_status === "string" && OKR_STATUSES.includes(rec.objective_status) ? rec.objective_status : null;
+      if (!objective || !objective_status) continue;
+      const owner = typeof rec.owner === "string" && rec.owner.length > 0 ? rec.owner.slice(0, MAX_STR) : null;
+      const objective_score = numOrNull(rec.objective_score, 0, 100);
+      if (objective_score === NUM_INVALID) continue;
+
+      const rawKrs = Array.isArray(rec.key_results) ? (rec.key_results as unknown[]).slice(0, 5) : [];
+      const key_results: { kr: string; target: string; current: string; progress: number; status: string }[] = [];
+      for (const k of rawKrs) {
+        if (typeof k !== "object" || k === null) continue;
+        const krRec = k as Record<string, unknown>;
+        const status = typeof krRec.status === "string" && OKR_STATUSES.includes(krRec.status) ? krRec.status : null;
+        const progress = typeof krRec.progress === "number" && Number.isFinite(krRec.progress) && krRec.progress >= 0 && krRec.progress <= 100 ? krRec.progress : null;
+        if (!status || progress === null) continue;
+        const kr = str(krRec.kr) ?? "";
+        const target = str(krRec.target) ?? "";
+        const current = str(krRec.current) ?? "";
+        key_results.push({ kr, target, current, progress, status });
+      }
+
+      objectives.push({ objective, owner, key_results, objective_status, objective_score });
+    }
+
+    const overall_score = numOrNull(p.overall_score, 0, 100);
+    if (overall_score === NUM_INVALID) return { ok: false, reason: "bad_overall_score" };
+
+    const on_track_count = typeof p.on_track_count === "number" && Number.isInteger(p.on_track_count) && p.on_track_count >= 0 ? p.on_track_count : null;
+    if (on_track_count === null) return { ok: false, reason: "bad_on_track_count" };
+    const at_risk_count = typeof p.at_risk_count === "number" && Number.isInteger(p.at_risk_count) && p.at_risk_count >= 0 ? p.at_risk_count : null;
+    if (at_risk_count === null) return { ok: false, reason: "bad_at_risk_count" };
+    const off_track_count = typeof p.off_track_count === "number" && Number.isInteger(p.off_track_count) && p.off_track_count >= 0 ? p.off_track_count : null;
+    if (off_track_count === null) return { ok: false, reason: "bad_off_track_count" };
+
+    const key_blockers = strArray(p.key_blockers, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "track_okrs",
+      payload: { objectives, overall_score, on_track_count, at_risk_count, off_track_count, key_blockers },
     };
   }
 
