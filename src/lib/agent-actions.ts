@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -3133,6 +3133,54 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_headcount_analytics",
       payload: { total_headcount, headcount_by_department, headcount_by_type, new_hires, terminations, attrition_rate, avg_tenure_months, revenue_per_employee, cost_per_employee, open_positions },
+    };
+  }
+
+  if (kind === "calculate_commissions") {
+    const rawCommissions = Array.isArray(p.commissions) ? (p.commissions as unknown[]).slice(0, 100) : [];
+    const commissions: { rep_name: string; quota: number | null; actual_sales: number; quota_attainment: number | null; commission_rate: number; commission_amount: number; accelerator_applied: boolean; notes: string | null }[] = [];
+    for (const c of rawCommissions) {
+      if (typeof c !== "object" || c === null) continue;
+      const rec = c as Record<string, unknown>;
+      const rep_name = str(rec.rep_name);
+      const actual_sales = typeof rec.actual_sales === "number" && Number.isFinite(rec.actual_sales) && rec.actual_sales >= 0 ? rec.actual_sales : null;
+      const commission_rate = typeof rec.commission_rate === "number" && Number.isFinite(rec.commission_rate) && rec.commission_rate >= 0 && rec.commission_rate <= 100 ? rec.commission_rate : null;
+      const commission_amount = typeof rec.commission_amount === "number" && Number.isFinite(rec.commission_amount) && rec.commission_amount >= 0 ? rec.commission_amount : null;
+      if (!rep_name || actual_sales === null || commission_rate === null || commission_amount === null || typeof rec.accelerator_applied !== "boolean") continue;
+      const quota = numOrNull(rec.quota, 0);
+      const quota_attainment = numOrNull(rec.quota_attainment, 0);
+      if (quota === NUM_INVALID || quota_attainment === NUM_INVALID) continue;
+      const notes = typeof rec.notes === "string" && rec.notes.length > 0 ? rec.notes.slice(0, MAX_STR) : null;
+      commissions.push({ rep_name, quota, actual_sales, quota_attainment, commission_rate, commission_amount, accelerator_applied: rec.accelerator_applied, notes });
+    }
+
+    const total_commission_payout = typeof p.total_commission_payout === "number" && Number.isFinite(p.total_commission_payout) && p.total_commission_payout >= 0 ? p.total_commission_payout : null;
+    if (total_commission_payout === null) return { ok: false, reason: "bad_total_commission_payout" };
+    const total_sales_value = typeof p.total_sales_value === "number" && Number.isFinite(p.total_sales_value) && p.total_sales_value >= 0 ? p.total_sales_value : null;
+    if (total_sales_value === null) return { ok: false, reason: "bad_total_sales_value" };
+
+    const effective_commission_rate = numOrNull(p.effective_commission_rate, 0, 100);
+    if (effective_commission_rate === NUM_INVALID) return { ok: false, reason: "bad_effective_commission_rate" };
+
+    if (typeof p.quota_attainment_summary !== "object" || p.quota_attainment_summary === null || Array.isArray(p.quota_attainment_summary)) {
+      return { ok: false, reason: "bad_quota_attainment_summary" };
+    }
+    const qasRaw = p.quota_attainment_summary as Record<string, unknown>;
+    const avg_attainment = numOrNull(qasRaw.avg_attainment, 0);
+    if (avg_attainment === NUM_INVALID) return { ok: false, reason: "bad_quota_attainment_summary" };
+    const reps_at_100_plus = typeof qasRaw.reps_at_100_plus === "number" && Number.isInteger(qasRaw.reps_at_100_plus) && qasRaw.reps_at_100_plus >= 0 ? qasRaw.reps_at_100_plus : null;
+    if (reps_at_100_plus === null) return { ok: false, reason: "bad_quota_attainment_summary" };
+    const reps_below_50 = typeof qasRaw.reps_below_50 === "number" && Number.isInteger(qasRaw.reps_below_50) && qasRaw.reps_below_50 >= 0 ? qasRaw.reps_below_50 : null;
+    if (reps_below_50 === null) return { ok: false, reason: "bad_quota_attainment_summary" };
+    const top_performer = typeof qasRaw.top_performer === "string" && qasRaw.top_performer.length > 0 ? qasRaw.top_performer.slice(0, 200) : null;
+    const quota_attainment_summary = { avg_attainment, reps_at_100_plus, reps_below_50, top_performer };
+
+    const disputes = strArray(p.disputes, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "calculate_commissions",
+      payload: { commissions, total_commission_payout, total_sales_value, effective_commission_rate, quota_attainment_summary, disputes },
     };
   }
 

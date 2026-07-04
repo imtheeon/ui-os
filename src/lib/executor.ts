@@ -1592,6 +1592,26 @@ export async function applyAction(
     return { ok: true, recordTable: "headcount_analytics_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "calculate_commissions") {
+    const { data, error } = await db
+      .from("commission_calculator_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        commissions: v.payload.commissions,
+        total_commission_payout: v.payload.total_commission_payout,
+        total_sales_value: v.payload.total_sales_value,
+        effective_commission_rate: v.payload.effective_commission_rate,
+        quota_attainment_summary: v.payload.quota_attainment_summary,
+        disputes: v.payload.disputes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "commission_calculator_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
