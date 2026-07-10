@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -5399,6 +5399,66 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "forecast_cash_flow",
       payload: { opening_cash_balance, weekly_forecast, total_inflows, total_outflows, closing_cash_balance, minimum_cash_week, minimum_cash_amount, cash_constraint_risk, assumptions },
+    };
+  }
+
+  if (kind === "forecast_expenses") {
+    const historical_monthly_avg = numOrNull(p.historical_monthly_avg, 0);
+    if (historical_monthly_avg === NUM_INVALID) return { ok: false, reason: "bad_historical_monthly_avg" };
+
+    const rawPeriods = Array.isArray(p.forecast_periods) ? (p.forecast_periods as unknown[]).slice(0, 12) : [];
+    const forecast_periods: { period_label: string; forecast_amount: number; growth_applied: number }[] = [];
+    for (const item of rawPeriods) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const forecast_amount = numOrNull(rec.forecast_amount, 0);
+      const growth_applied = numOrNull(rec.growth_applied);
+      if (forecast_amount === NUM_INVALID || forecast_amount === null) continue;
+      if (growth_applied === NUM_INVALID || growth_applied === null) continue;
+      forecast_periods.push({ period_label: str(rec.period_label) ?? "", forecast_amount, growth_applied });
+    }
+    if (forecast_periods.length < 1) return { ok: false, reason: "empty_forecast_periods" };
+
+    const total_forecast_amount = numOrNull(p.total_forecast_amount, 0);
+    if (total_forecast_amount === NUM_INVALID || total_forecast_amount === null) return { ok: false, reason: "bad_total_forecast_amount" };
+    const growth_rate_applied = numOrNull(p.growth_rate_applied);
+    if (growth_rate_applied === NUM_INVALID) return { ok: false, reason: "bad_growth_rate_applied" };
+
+    const rawCategories = Array.isArray(p.largest_categories) ? (p.largest_categories as unknown[]).slice(0, 10) : [];
+    const largest_categories: { category: string; monthly_avg: number; forecast_next_period: number }[] = [];
+    for (const item of rawCategories) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const monthly_avg = numOrNull(rec.monthly_avg, 0);
+      const forecast_next_period = numOrNull(rec.forecast_next_period, 0);
+      if (monthly_avg === NUM_INVALID || monthly_avg === null) continue;
+      if (forecast_next_period === NUM_INVALID || forecast_next_period === null) continue;
+      largest_categories.push({ category: str(rec.category) ?? "", monthly_avg, forecast_next_period });
+    }
+
+    let fixed_vs_variable: { fixed: number; variable: number; semi_variable: number } | null = null;
+    if (typeof p.fixed_vs_variable === "object" && p.fixed_vs_variable !== null) {
+      const rec = p.fixed_vs_variable as Record<string, unknown>;
+      const fixed = numOrNull(rec.fixed, 0);
+      const variable = numOrNull(rec.variable, 0);
+      const semi_variable = numOrNull(rec.semi_variable, 0);
+      if (fixed !== NUM_INVALID && fixed !== null && variable !== NUM_INVALID && variable !== null && semi_variable !== NUM_INVALID && semi_variable !== null) {
+        fixed_vs_variable = { fixed, variable, semi_variable };
+      }
+    }
+    if (!fixed_vs_variable) return { ok: false, reason: "bad_fixed_vs_variable" };
+
+    const CONFIDENCES = ["high", "medium", "low"];
+    const confidence = typeof p.confidence === "string" && CONFIDENCES.includes(p.confidence) ? p.confidence : null;
+    if (!confidence) return { ok: false, reason: "bad_confidence" };
+
+    const period_label = typeof p.period_label === "string" && p.period_label.length > 0 ? p.period_label.slice(0, MAX_STR) : null;
+    if (!period_label) return { ok: false, reason: "missing_period_label" };
+
+    return {
+      ok: true,
+      kind: "forecast_expenses",
+      payload: { historical_monthly_avg, forecast_periods, total_forecast_amount, growth_rate_applied, largest_categories, fixed_vs_variable, confidence, period_label },
     };
   }
 

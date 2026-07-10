@@ -2524,6 +2524,28 @@ export async function applyAction(
     return { ok: true, recordTable: "cash_flow_forecast_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "forecast_expenses") {
+    const { data, error } = await db
+      .from("expense_forecast_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        historical_monthly_avg: v.payload.historical_monthly_avg,
+        forecast_periods: v.payload.forecast_periods,
+        total_forecast_amount: v.payload.total_forecast_amount,
+        growth_rate_applied: v.payload.growth_rate_applied,
+        largest_categories: v.payload.largest_categories,
+        fixed_vs_variable: v.payload.fixed_vs_variable,
+        confidence: v.payload.confidence,
+        period_label: v.payload.period_label,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "expense_forecast_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
