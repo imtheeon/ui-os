@@ -2352,6 +2352,33 @@ export async function applyAction(
     return { ok: true, recordTable: "legal_billing_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_hospitality_financials") {
+    const { data, error } = await db
+      .from("hospitality_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        occupancy_rate: v.payload.occupancy_rate,
+        adr: v.payload.adr,
+        revpar: v.payload.revpar,
+        total_rooms: v.payload.total_rooms,
+        room_revenue: v.payload.room_revenue,
+        fb_revenue: v.payload.fb_revenue,
+        other_revenue: v.payload.other_revenue,
+        total_revenue: v.payload.total_revenue,
+        goppar: v.payload.goppar,
+        cost_per_occupied_room: v.payload.cost_per_occupied_room,
+        channel_mix: v.payload.channel_mix,
+        performance_vs_stly: v.payload.performance_vs_stly,
+        revenue_management_insights: v.payload.revenue_management_insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "hospitality_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
