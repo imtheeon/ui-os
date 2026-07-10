@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4887,6 +4887,60 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_nonprofit_financials",
       payload: { revenue_by_source, total_revenue, program_expenses, administrative_expenses, fundraising_expenses, total_expenses, program_efficiency_ratio, fundraising_efficiency_ratio, months_of_reserves, donor_metrics, grant_pipeline, compliance_notes },
+    };
+  }
+
+  if (kind === "analyze_healthcare_financials") {
+    const net_patient_revenue = numOrNull(p.net_patient_revenue, 0);
+    if (net_patient_revenue === NUM_INVALID || net_patient_revenue === null) return { ok: false, reason: "bad_net_patient_revenue" };
+    const gross_charges = numOrNull(p.gross_charges, 0);
+    if (gross_charges === NUM_INVALID) return { ok: false, reason: "bad_gross_charges" };
+    const contractual_adjustments = numOrNull(p.contractual_adjustments, 0);
+    if (contractual_adjustments === NUM_INVALID) return { ok: false, reason: "bad_contractual_adjustments" };
+    const bad_debt_expense = numOrNull(p.bad_debt_expense, 0);
+    if (bad_debt_expense === NUM_INVALID) return { ok: false, reason: "bad_bad_debt_expense" };
+
+    const PAYORS = ["medicare", "medicaid", "commercial", "self_pay", "other"];
+    const rawPayorMix = Array.isArray(p.payor_mix) ? (p.payor_mix as unknown[]).slice(0, 10) : [];
+    const payor_mix: { payor: string; revenue_percentage: number; reimbursement_rate: number | null }[] = [];
+    for (const item of rawPayorMix) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const payor = typeof rec.payor === "string" && PAYORS.includes(rec.payor) ? rec.payor : null;
+      if (!payor) continue;
+      const revenue_percentage = numOrNull(rec.revenue_percentage, 0, 100);
+      const reimbursement_rate = numOrNull(rec.reimbursement_rate, 0, 100);
+      if (revenue_percentage === NUM_INVALID || revenue_percentage === null) continue;
+      if (reimbursement_rate === NUM_INVALID) continue;
+      payor_mix.push({ payor, revenue_percentage, reimbursement_rate });
+    }
+
+    const cost_per_patient_encounter = numOrNull(p.cost_per_patient_encounter, 0);
+    if (cost_per_patient_encounter === NUM_INVALID) return { ok: false, reason: "bad_cost_per_patient_encounter" };
+    const days_in_ar = numOrNull(p.days_in_ar, 0);
+    if (days_in_ar === NUM_INVALID) return { ok: false, reason: "bad_days_in_ar" };
+    const denial_rate = numOrNull(p.denial_rate, 0, 100);
+    if (denial_rate === NUM_INVALID) return { ok: false, reason: "bad_denial_rate" };
+    const clean_claim_rate = numOrNull(p.clean_claim_rate, 0, 100);
+    if (clean_claim_rate === NUM_INVALID) return { ok: false, reason: "bad_clean_claim_rate" };
+
+    const QUALITY_STATUSES = ["above", "at", "below", "unknown"];
+    const rawQuality = Array.isArray(p.quality_metrics) ? (p.quality_metrics as unknown[]).slice(0, 15) : [];
+    const quality_metrics: { metric_name: string; value: string | null; benchmark: string | null; status: string }[] = [];
+    for (const q of rawQuality) {
+      if (typeof q !== "object" || q === null) continue;
+      const rec = q as Record<string, unknown>;
+      const status = typeof rec.status === "string" && QUALITY_STATUSES.includes(rec.status) ? rec.status : null;
+      if (!status) continue;
+      quality_metrics.push({ metric_name: str(rec.metric_name) ?? "", value: str(rec.value), benchmark: str(rec.benchmark), status });
+    }
+
+    const revenue_cycle_insights = strArray(p.revenue_cycle_insights, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_healthcare_financials",
+      payload: { net_patient_revenue, gross_charges, contractual_adjustments, bad_debt_expense, payor_mix, cost_per_patient_encounter, days_in_ar, denial_rate, clean_claim_rate, quality_metrics, revenue_cycle_insights },
     };
   }
 

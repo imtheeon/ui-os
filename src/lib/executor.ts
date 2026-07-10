@@ -2304,6 +2304,31 @@ export async function applyAction(
     return { ok: true, recordTable: "nonprofit_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_healthcare_financials") {
+    const { data, error } = await db
+      .from("healthcare_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        net_patient_revenue: v.payload.net_patient_revenue,
+        gross_charges: v.payload.gross_charges,
+        contractual_adjustments: v.payload.contractual_adjustments,
+        bad_debt_expense: v.payload.bad_debt_expense,
+        payor_mix: v.payload.payor_mix,
+        cost_per_patient_encounter: v.payload.cost_per_patient_encounter,
+        days_in_ar: v.payload.days_in_ar,
+        denial_rate: v.payload.denial_rate,
+        clean_claim_rate: v.payload.clean_claim_rate,
+        quality_metrics: v.payload.quality_metrics,
+        revenue_cycle_insights: v.payload.revenue_cycle_insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "healthcare_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
