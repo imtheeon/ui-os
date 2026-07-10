@@ -2723,6 +2723,29 @@ export async function applyAction(
     return { ok: true, recordTable: "board_narrative_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "draft_investor_update") {
+    const { data, error } = await db
+      .from("investor_update_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        subject_line: v.payload.subject_line,
+        headline_metric: v.payload.headline_metric,
+        kpi_summary: v.payload.kpi_summary,
+        wins: v.payload.wins,
+        challenges: v.payload.challenges,
+        asks: v.payload.asks,
+        next_period_targets: v.payload.next_period_targets,
+        full_draft: v.payload.full_draft,
+        period: v.payload.period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "investor_update_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
