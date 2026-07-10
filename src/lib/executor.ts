@@ -2254,6 +2254,30 @@ export async function applyAction(
     return { ok: true, recordTable: "ecommerce_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_professional_services") {
+    const { data, error } = await db
+      .from("professional_services_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        utilization_rate: v.payload.utilization_rate,
+        billable_hours: v.payload.billable_hours,
+        total_hours: v.payload.total_hours,
+        average_bill_rate: v.payload.average_bill_rate,
+        revenue_per_consultant: v.payload.revenue_per_consultant,
+        wip_value: v.payload.wip_value,
+        project_profitability: v.payload.project_profitability,
+        staff_utilization: v.payload.staff_utilization,
+        realization_rate: v.payload.realization_rate,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "professional_services_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
