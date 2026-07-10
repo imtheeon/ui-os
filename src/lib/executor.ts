@@ -2616,6 +2616,27 @@ export async function applyAction(
     return { ok: true, recordTable: "tax_provision_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "manage_collections") {
+    const { data, error } = await db
+      .from("collections_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_ar_balance: v.payload.total_ar_balance,
+        overdue_balance: v.payload.overdue_balance,
+        overdue_pct: v.payload.overdue_pct,
+        priority_accounts: v.payload.priority_accounts,
+        aging_summary: v.payload.aging_summary,
+        collection_drafts: v.payload.collection_drafts,
+        avg_days_outstanding: v.payload.avg_days_outstanding,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "collections_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -5622,6 +5622,61 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_tax_provision",
       payload: { pre_tax_income, estimated_tax_provision, effective_tax_rate, statutory_rate, rate_reconciliation, deferred_tax_assets, deferred_tax_liabilities, net_deferred_tax_position, tax_risk_flags, period },
+    };
+  }
+
+  if (kind === "manage_collections") {
+    const total_ar_balance = numOrNull(p.total_ar_balance, 0);
+    if (total_ar_balance === NUM_INVALID || total_ar_balance === null) return { ok: false, reason: "bad_total_ar_balance" };
+    const overdue_balance = numOrNull(p.overdue_balance, 0);
+    if (overdue_balance === NUM_INVALID || overdue_balance === null) return { ok: false, reason: "bad_overdue_balance" };
+    const overdue_pct = numOrNull(p.overdue_pct, 0, 100);
+    if (overdue_pct === NUM_INVALID || overdue_pct === null) return { ok: false, reason: "bad_overdue_pct" };
+
+    const PRIORITIES = ["critical", "high", "medium", "low"];
+    const rawAccounts = Array.isArray(p.priority_accounts) ? (p.priority_accounts as unknown[]).slice(0, 20) : [];
+    const priority_accounts: { customer_name: string; balance: number; days_overdue: number; priority: string; action_recommended: string }[] = [];
+    for (const item of rawAccounts) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const priority = typeof rec.priority === "string" && PRIORITIES.includes(rec.priority) ? rec.priority : null;
+      if (!priority) continue;
+      const balance = numOrNull(rec.balance, 0);
+      const days_overdue = numOrNull(rec.days_overdue, 0);
+      if (balance === NUM_INVALID || balance === null) continue;
+      if (days_overdue === NUM_INVALID || days_overdue === null || !Number.isInteger(days_overdue)) continue;
+      priority_accounts.push({ customer_name: str(rec.customer_name) ?? "", balance, days_overdue, priority, action_recommended: str(rec.action_recommended) ?? "" });
+    }
+
+    const rawAging = Array.isArray(p.aging_summary) ? (p.aging_summary as unknown[]).slice(0, 5) : [];
+    const aging_summary: { bucket: string; balance: number; count: number }[] = [];
+    for (const item of rawAging) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const balance = numOrNull(rec.balance, 0);
+      const count = numOrNull(rec.count, 0);
+      if (balance === NUM_INVALID || balance === null) continue;
+      if (count === NUM_INVALID || count === null || !Number.isInteger(count)) continue;
+      aging_summary.push({ bucket: str(rec.bucket) ?? "", balance, count });
+    }
+
+    const rawDrafts = Array.isArray(p.collection_drafts) ? (p.collection_drafts as unknown[]).slice(0, 5) : [];
+    const collection_drafts: { customer_name: string; draft_message: string }[] = [];
+    for (const item of rawDrafts) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const draft_message = str(rec.draft_message);
+      if (!draft_message) continue;
+      collection_drafts.push({ customer_name: str(rec.customer_name) ?? "", draft_message });
+    }
+
+    const avg_days_outstanding = numOrNull(p.avg_days_outstanding, 0);
+    if (avg_days_outstanding === NUM_INVALID) return { ok: false, reason: "bad_avg_days_outstanding" };
+
+    return {
+      ok: true,
+      kind: "manage_collections",
+      payload: { total_ar_balance, overdue_balance, overdue_pct, priority_accounts, aging_summary, collection_drafts, avg_days_outstanding },
     };
   }
 
