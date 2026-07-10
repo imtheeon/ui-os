@@ -2278,6 +2278,32 @@ export async function applyAction(
     return { ok: true, recordTable: "professional_services_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_nonprofit_financials") {
+    const { data, error } = await db
+      .from("nonprofit_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        revenue_by_source: v.payload.revenue_by_source,
+        total_revenue: v.payload.total_revenue,
+        program_expenses: v.payload.program_expenses,
+        administrative_expenses: v.payload.administrative_expenses,
+        fundraising_expenses: v.payload.fundraising_expenses,
+        total_expenses: v.payload.total_expenses,
+        program_efficiency_ratio: v.payload.program_efficiency_ratio,
+        fundraising_efficiency_ratio: v.payload.fundraising_efficiency_ratio,
+        months_of_reserves: v.payload.months_of_reserves,
+        donor_metrics: v.payload.donor_metrics,
+        grant_pipeline: v.payload.grant_pipeline,
+        compliance_notes: v.payload.compliance_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "nonprofit_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
