@@ -2207,6 +2207,28 @@ export async function applyAction(
     return { ok: true, recordTable: "benchmark_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "consolidate_entities") {
+    const { data, error } = await db
+      .from("consolidation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        entities: v.payload.entities,
+        intercompany_eliminations: v.payload.intercompany_eliminations,
+        consolidated_revenue: v.payload.consolidated_revenue,
+        consolidated_costs: v.payload.consolidated_costs,
+        consolidated_profit: v.payload.consolidated_profit,
+        minority_interests: v.payload.minority_interests,
+        fx_translation_adjustments: v.payload.fx_translation_adjustments,
+        consolidation_notes: v.payload.consolidation_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "consolidation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
