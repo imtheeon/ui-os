@@ -2701,6 +2701,28 @@ export async function applyAction(
     return { ok: true, recordTable: "schema_detection_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "draft_board_narrative") {
+    const { data, error } = await db
+      .from("board_narrative_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        executive_summary: v.payload.executive_summary,
+        financial_highlights: v.payload.financial_highlights,
+        key_risks: v.payload.key_risks,
+        key_opportunities: v.payload.key_opportunities,
+        asks_for_board: v.payload.asks_for_board,
+        narrative_sections: v.payload.narrative_sections,
+        tone: v.payload.tone,
+        period: v.payload.period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "board_narrative_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
