@@ -2477,6 +2477,30 @@ export async function applyAction(
     return { ok: true, recordTable: "customer_cohort_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_variances") {
+    const { data, error } = await db
+      .from("variance_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        variances: v.payload.variances,
+        total_budget: v.payload.total_budget,
+        total_actual: v.payload.total_actual,
+        total_variance: v.payload.total_variance,
+        total_variance_pct: v.payload.total_variance_pct,
+        favorable_count: v.payload.favorable_count,
+        unfavorable_count: v.payload.unfavorable_count,
+        significant_variances: v.payload.significant_variances,
+        root_causes: v.payload.root_causes,
+        period: v.payload.period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "variance_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
