@@ -2501,6 +2501,29 @@ export async function applyAction(
     return { ok: true, recordTable: "variance_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "forecast_cash_flow") {
+    const { data, error } = await db
+      .from("cash_flow_forecast_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        opening_cash_balance: v.payload.opening_cash_balance,
+        weekly_forecast: v.payload.weekly_forecast,
+        total_inflows: v.payload.total_inflows,
+        total_outflows: v.payload.total_outflows,
+        closing_cash_balance: v.payload.closing_cash_balance,
+        minimum_cash_week: v.payload.minimum_cash_week,
+        minimum_cash_amount: v.payload.minimum_cash_amount,
+        cash_constraint_risk: v.payload.cash_constraint_risk,
+        assumptions: v.payload.assumptions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "cash_flow_forecast_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
