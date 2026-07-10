@@ -2546,6 +2546,30 @@ export async function applyAction(
     return { ok: true, recordTable: "expense_forecast_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_headcount") {
+    const { data, error } = await db
+      .from("headcount_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_headcount: v.payload.total_headcount,
+        total_payroll_cost: v.payload.total_payroll_cost,
+        cost_per_head: v.payload.cost_per_head,
+        by_department: v.payload.by_department,
+        by_level: v.payload.by_level,
+        headcount_revenue_ratio: v.payload.headcount_revenue_ratio,
+        compensation_revenue_pct: v.payload.compensation_revenue_pct,
+        open_roles: v.payload.open_roles,
+        attrition_rate: v.payload.attrition_rate,
+        period: v.payload.period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "headcount_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
