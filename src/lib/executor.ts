@@ -2229,6 +2229,31 @@ export async function applyAction(
     return { ok: true, recordTable: "consolidation_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_ecommerce") {
+    const { data, error } = await db
+      .from("ecommerce_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        gmv: v.payload.gmv,
+        net_revenue: v.payload.net_revenue,
+        take_rate: v.payload.take_rate,
+        order_count: v.payload.order_count,
+        average_order_value: v.payload.average_order_value,
+        conversion_rate: v.payload.conversion_rate,
+        cart_abandonment_rate: v.payload.cart_abandonment_rate,
+        top_products: v.payload.top_products,
+        channel_breakdown: v.payload.channel_breakdown,
+        fulfillment_metrics: v.payload.fulfillment_metrics,
+        growth_insights: v.payload.growth_insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "ecommerce_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
