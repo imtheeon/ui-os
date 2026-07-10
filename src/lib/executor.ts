@@ -2592,6 +2592,30 @@ export async function applyAction(
     return { ok: true, recordTable: "debt_covenant_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_tax_provision") {
+    const { data, error } = await db
+      .from("tax_provision_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        pre_tax_income: v.payload.pre_tax_income,
+        estimated_tax_provision: v.payload.estimated_tax_provision,
+        effective_tax_rate: v.payload.effective_tax_rate,
+        statutory_rate: v.payload.statutory_rate,
+        rate_reconciliation: v.payload.rate_reconciliation,
+        deferred_tax_assets: v.payload.deferred_tax_assets,
+        deferred_tax_liabilities: v.payload.deferred_tax_liabilities,
+        net_deferred_tax_position: v.payload.net_deferred_tax_position,
+        tax_risk_flags: v.payload.tax_risk_flags,
+        period: v.payload.period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "tax_provision_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
