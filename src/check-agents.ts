@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, customer_segmentation_agent, contract_analysis_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["document_classifier", "schema_evolution_agent", "column_profiler", "data_dictionary_agent", "missing_data_agent", "headcount_analytics_agent", "productivity_agent", "growth_rate_agent", "data_privacy_agent", "data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "kpi_extractor", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "outlier_explanation_agent", "time_series_decomp_agent", "failure_risk_agent", "run_rate_agent", "spend_analysis_agent", "investor_memo_agent", "okr_tracker_agent", "swot_agent", "query_builder_agent", "esg_reporting_agent", "seasonality_agent", "benchmark_agent", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "customer_segmentation_agent", "contract_analysis_agent", "fraud_detection_agent", "concentration_risk_agent", "scenario_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "data_merger", "report_generator", "exec_summarizer", "insight_synthesis_agent", "conflict_detection_agent", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst", "action_priority_agent"]));
+  ok("non-financial routes to [document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, customer_segmentation_agent, contract_analysis_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, ecommerce_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["document_classifier", "schema_evolution_agent", "column_profiler", "data_dictionary_agent", "missing_data_agent", "headcount_analytics_agent", "productivity_agent", "growth_rate_agent", "data_privacy_agent", "data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "kpi_extractor", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "outlier_explanation_agent", "time_series_decomp_agent", "failure_risk_agent", "run_rate_agent", "spend_analysis_agent", "investor_memo_agent", "okr_tracker_agent", "swot_agent", "query_builder_agent", "esg_reporting_agent", "seasonality_agent", "benchmark_agent", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "customer_segmentation_agent", "contract_analysis_agent", "fraud_detection_agent", "concentration_risk_agent", "scenario_agent", "ecommerce_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "data_merger", "report_generator", "exec_summarizer", "insight_synthesis_agent", "conflict_detection_agent", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst", "action_priority_agent"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -5459,6 +5459,62 @@ async function main() {
   const routeCheckCn = await routeCn({ orgId: orgCn, payloadId: payloadCn }, { db, enqueue: () => {} });
   ok("consolidation_agent routes on the financial route", routeCheckCn.ok && routeCheckCn.plan.includes("consolidation_agent"));
   await db.from("organizations").delete().eq("id", orgCn);
+
+  console.log("== ecommerce agent ==");
+  ok("analyze_ecommerce accepts good", validateProposal("analyze_ecommerce", {
+    gmv: 285000, net_revenue: 256500, take_rate: 90.0, order_count: 342,
+    average_order_value: 833, conversion_rate: 3.2, cart_abandonment_rate: 68.5,
+    top_products: [{ product_name: "Widget", units_sold: 85, revenue: 127500, return_rate: 2.1 }],
+    channel_breakdown: [{ channel: "organic", revenue: 89775, orders: 120, percentage: 35.0 }],
+    fulfillment_metrics: { avg_delivery_days: 3.2, on_time_rate: 94.5, return_rate: 3.1, refund_rate: 1.8 },
+    growth_insights: ["invest in SEO"],
+  }).ok);
+  ok("analyze_ecommerce filters out channel_breakdown item with bad channel", (() => {
+    const r = validateProposal("analyze_ecommerce", {
+      gmv: 1000, net_revenue: 900, take_rate: 90, order_count: 10,
+      average_order_value: 90, conversion_rate: 2, cart_abandonment_rate: 50,
+      top_products: [],
+      channel_breakdown: [
+        { channel: "organic", revenue: 500, orders: 5, percentage: 50 },
+        { channel: "referral", revenue: 500, orders: 5, percentage: 50 },
+      ],
+      fulfillment_metrics: { avg_delivery_days: 3, on_time_rate: 90, return_rate: 2, refund_rate: 1 },
+      growth_insights: [],
+    });
+    return r.ok && (r.payload.channel_breakdown as unknown[]).length === 1;
+  })());
+  ok("analyze_ecommerce rejects conversion_rate > 100", !validateProposal("analyze_ecommerce", {
+    gmv: 1000, net_revenue: 900, take_rate: 90, order_count: 10,
+    average_order_value: 90, conversion_rate: 150, cart_abandonment_rate: 50,
+    top_products: [], channel_breakdown: [],
+    fulfillment_metrics: { avg_delivery_days: 3, on_time_rate: 90, return_rate: 2, refund_rate: 1 },
+    growth_insights: [],
+  }).ok);
+  ok("ecommerce_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("ecommerce_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentEc } = await import("./lib/run-agent");
+  const { stubBrain: sbEc } = await import("./lib/agent-brain");
+  const { approveAction: approveEc, listPending: listEc } = await import("./lib/actions-service");
+  const orgEc = await makeOrg("pro");
+  const payloadEc = await makePayload(orgEc);
+  const rEc = await runAgentEc({ orgId: orgEc, payloadId: payloadEc, role: "ecommerce_agent" }, { db, brain: sbEc });
+  ok("ecommerce_agent run produced an analysis", rEc.ok && rEc.proposalCount === 1);
+  const pendEc = await listEc(orgEc, { db });
+  ok("stub proposal passes validateProposal and returns analyze_ecommerce", pendEc.length === 1 && pendEc[0].kind === "analyze_ecommerce");
+  const apprEc = await approveEc(orgEc, pendEc[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes ecommerce_runs", apprEc.ok && apprEc.recordTable === "ecommerce_runs", JSON.stringify(apprEc));
+  const { data: ecRows } = await db.from("ecommerce_runs").select("org_id,gmv").eq("org_id", orgEc);
+  ok("ecommerce record org-stamped", ecRows?.length === 1 && ecRows[0].org_id === orgEc);
+  const { routePayload: routeEc } = await import("./lib/manager");
+  const { data: plainPayloadEc } = await db.from("inbound_payloads").insert({
+    org_id: orgEc, source: "upload", storage_path: `${orgEc}/ec/plain.csv`, original_filename: "plain.csv",
+    mime_type: "text/csv", scan_status: "clean", status: "completed",
+    extracted_json: { columns: ["name", "city"], rowCount: 1, rows: [["a", "b"]], truncated: false, parser: "static-mvp" },
+  }).select("id").single();
+  const routeCheckEc = await routeEc({ orgId: orgEc, payloadId: plainPayloadEc!.id }, { db, enqueue: () => {} });
+  ok("ecommerce_agent routes on the non-financial route", routeCheckEc.ok && routeCheckEc.plan.includes("ecommerce_agent"));
+  await db.from("organizations").delete().eq("id", orgEc);
 
   console.log("== org context ==");
   {
