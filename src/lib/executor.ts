@@ -2430,6 +2430,29 @@ export async function applyAction(
     return { ok: true, recordTable: "construction_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_revenue_quality") {
+    const { data, error } = await db
+      .from("revenue_quality_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        recurring_revenue_pct: v.payload.recurring_revenue_pct,
+        non_recurring_revenue_pct: v.payload.non_recurring_revenue_pct,
+        top_customer_concentration_pct: v.payload.top_customer_concentration_pct,
+        revenue_predictability_score: v.payload.revenue_predictability_score,
+        arr_growth_rate_pct: v.payload.arr_growth_rate_pct,
+        net_revenue_retention_pct: v.payload.net_revenue_retention_pct,
+        churn_adjusted_arr: v.payload.churn_adjusted_arr,
+        revenue_by_type: v.payload.revenue_by_type,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "revenue_quality_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
