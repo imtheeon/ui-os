@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -4592,6 +4592,96 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "benchmark_performance",
       payload: { industry, company_stage, benchmarks, overall_performance, standout_strengths, underperforming_areas, peer_comparison_notes },
+    };
+  }
+
+  if (kind === "consolidate_entities") {
+    const ENTITY_TYPES = ["subsidiary", "associate", "joint_venture", "parent"];
+    const rawEntities = Array.isArray(p.entities) ? (p.entities as unknown[]).slice(0, 20) : [];
+    const entities: { entity_name: string; ownership_percentage: number; entity_type: string; currency: string; revenue: number; costs: number; profit: number; intercompany_revenues: number; intercompany_costs: number }[] = [];
+    for (const e of rawEntities) {
+      if (typeof e !== "object" || e === null) continue;
+      const rec = e as Record<string, unknown>;
+      const entity_type = typeof rec.entity_type === "string" && ENTITY_TYPES.includes(rec.entity_type) ? rec.entity_type : null;
+      if (!entity_type) continue;
+      const ownership_percentage = numOrNull(rec.ownership_percentage, 0, 100);
+      const revenue = numOrNull(rec.revenue);
+      const costs = numOrNull(rec.costs);
+      const profit = numOrNull(rec.profit);
+      const intercompany_revenues = numOrNull(rec.intercompany_revenues, 0);
+      const intercompany_costs = numOrNull(rec.intercompany_costs, 0);
+      if (ownership_percentage === NUM_INVALID || ownership_percentage === null) continue;
+      if (revenue === NUM_INVALID || revenue === null) continue;
+      if (costs === NUM_INVALID || costs === null) continue;
+      if (profit === NUM_INVALID || profit === null) continue;
+      if (intercompany_revenues === NUM_INVALID || intercompany_revenues === null) continue;
+      if (intercompany_costs === NUM_INVALID || intercompany_costs === null) continue;
+      entities.push({
+        entity_name: str(rec.entity_name) ?? "",
+        ownership_percentage, entity_type,
+        currency: str(rec.currency) ?? "",
+        revenue, costs, profit, intercompany_revenues, intercompany_costs,
+      });
+    }
+    if (entities.length < 2) return { ok: false, reason: "insufficient_entities" };
+
+    const rawEliminations = Array.isArray(p.intercompany_eliminations) ? (p.intercompany_eliminations as unknown[]).slice(0, 30) : [];
+    const intercompany_eliminations: { description: string; amount: number; from_entity: string; to_entity: string }[] = [];
+    for (const el of rawEliminations) {
+      if (typeof el !== "object" || el === null) continue;
+      const rec = el as Record<string, unknown>;
+      const amount = numOrNull(rec.amount);
+      if (amount === NUM_INVALID || amount === null) continue;
+      intercompany_eliminations.push({
+        description: str(rec.description) ?? "",
+        amount,
+        from_entity: str(rec.from_entity) ?? "",
+        to_entity: str(rec.to_entity) ?? "",
+      });
+    }
+
+    const consolidated_revenue = numOrNull(p.consolidated_revenue);
+    if (consolidated_revenue === NUM_INVALID || consolidated_revenue === null) return { ok: false, reason: "bad_consolidated_revenue" };
+    const consolidated_costs = numOrNull(p.consolidated_costs);
+    if (consolidated_costs === NUM_INVALID || consolidated_costs === null) return { ok: false, reason: "bad_consolidated_costs" };
+    const consolidated_profit = numOrNull(p.consolidated_profit);
+    if (consolidated_profit === NUM_INVALID || consolidated_profit === null) return { ok: false, reason: "bad_consolidated_profit" };
+
+    const rawMinority = Array.isArray(p.minority_interests) ? (p.minority_interests as unknown[]).slice(0, 10) : [];
+    const minority_interests: { entity_name: string; minority_percentage: number; minority_profit_share: number }[] = [];
+    for (const m of rawMinority) {
+      if (typeof m !== "object" || m === null) continue;
+      const rec = m as Record<string, unknown>;
+      const minority_percentage = numOrNull(rec.minority_percentage, 0, 100);
+      const minority_profit_share = numOrNull(rec.minority_profit_share);
+      if (minority_percentage === NUM_INVALID || minority_percentage === null) continue;
+      if (minority_profit_share === NUM_INVALID || minority_profit_share === null) continue;
+      minority_interests.push({ entity_name: str(rec.entity_name) ?? "", minority_percentage, minority_profit_share });
+    }
+
+    const rawFx = Array.isArray(p.fx_translation_adjustments) ? (p.fx_translation_adjustments as unknown[]).slice(0, 20) : [];
+    const fx_translation_adjustments: { entity_name: string; local_currency: string; fx_rate_used: number; translation_adjustment: number }[] = [];
+    for (const f of rawFx) {
+      if (typeof f !== "object" || f === null) continue;
+      const rec = f as Record<string, unknown>;
+      const fx_rate_used = numOrNull(rec.fx_rate_used);
+      if (fx_rate_used === NUM_INVALID || fx_rate_used === null || fx_rate_used <= 0) continue;
+      const translation_adjustment = numOrNull(rec.translation_adjustment);
+      if (translation_adjustment === NUM_INVALID || translation_adjustment === null) continue;
+      fx_translation_adjustments.push({
+        entity_name: str(rec.entity_name) ?? "",
+        local_currency: str(rec.local_currency) ?? "",
+        fx_rate_used, translation_adjustment,
+      });
+    }
+
+    const consolidation_notes = typeof p.consolidation_notes === "string" && p.consolidation_notes.length > 0 ? p.consolidation_notes.slice(0, 1000) : null;
+    if (!consolidation_notes) return { ok: false, reason: "bad_consolidation_notes" };
+
+    return {
+      ok: true,
+      kind: "consolidate_entities",
+      payload: { entities, intercompany_eliminations, consolidated_revenue, consolidated_costs, consolidated_profit, minority_interests, fx_translation_adjustments, consolidation_notes },
     };
   }
 
