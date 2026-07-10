@@ -2637,6 +2637,27 @@ export async function applyAction(
     return { ok: true, recordTable: "collections_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "benchmark_competitive") {
+    const { data, error } = await db
+      .from("competitive_benchmarking_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        client_metrics: v.payload.client_metrics,
+        benchmark_comparisons: v.payload.benchmark_comparisons,
+        performance_quartile: v.payload.performance_quartile,
+        strengths: v.payload.strengths,
+        weaknesses: v.payload.weaknesses,
+        industry_context: v.payload.industry_context,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "competitive_benchmarking_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
