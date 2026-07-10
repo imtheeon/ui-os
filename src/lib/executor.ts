@@ -2405,6 +2405,31 @@ export async function applyAction(
     return { ok: true, recordTable: "retail_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_construction_financials") {
+    const { data, error } = await db
+      .from("construction_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        projects: v.payload.projects,
+        total_contract_value: v.payload.total_contract_value,
+        total_earned_value: v.payload.total_earned_value,
+        total_costs_to_date: v.payload.total_costs_to_date,
+        total_remaining_costs: v.payload.total_remaining_costs,
+        overall_gross_margin: v.payload.overall_gross_margin,
+        overbillings: v.payload.overbillings,
+        underbillings: v.payload.underbillings,
+        backlog_value: v.payload.backlog_value,
+        wip_schedule: v.payload.wip_schedule,
+        risk_summary: v.payload.risk_summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "construction_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
