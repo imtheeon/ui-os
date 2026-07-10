@@ -2570,6 +2570,28 @@ export async function applyAction(
     return { ok: true, recordTable: "headcount_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_debt_covenants") {
+    const { data, error } = await db
+      .from("debt_covenant_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        covenants: v.payload.covenants,
+        overall_status: v.payload.overall_status,
+        breach_count: v.payload.breach_count,
+        at_risk_count: v.payload.at_risk_count,
+        nearest_breach: v.payload.nearest_breach,
+        total_debt_outstanding: v.payload.total_debt_outstanding,
+        debt_service_coverage_ratio: v.payload.debt_service_coverage_ratio,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "debt_covenant_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
