@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -5260,6 +5260,55 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_revenue_quality",
       payload: { recurring_revenue_pct, non_recurring_revenue_pct, top_customer_concentration_pct, revenue_predictability_score, arr_growth_rate_pct, net_revenue_retention_pct, churn_adjusted_arr, revenue_by_type, data_period },
+    };
+  }
+
+  if (kind === "analyze_customer_cohorts") {
+    const rawCohorts = Array.isArray(p.cohorts) ? (p.cohorts as unknown[]).slice(0, 24) : [];
+    const cohorts: { cohort_label: string; cohort_size: number; month_1: number | null; month_3: number | null; month_6: number | null; month_12: number | null; revenue_at_start: number | null }[] = [];
+    for (const item of rawCohorts) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const cohort_size = numOrNull(rec.cohort_size, 0);
+      const month_1 = numOrNull(rec.month_1, 0, 100);
+      const month_3 = numOrNull(rec.month_3, 0, 100);
+      const month_6 = numOrNull(rec.month_6, 0, 100);
+      const month_12 = numOrNull(rec.month_12, 0, 100);
+      const revenue_at_start = numOrNull(rec.revenue_at_start, 0);
+      if (cohort_size === NUM_INVALID || cohort_size === null || !Number.isInteger(cohort_size)) continue;
+      if (month_1 === NUM_INVALID || month_3 === NUM_INVALID || month_6 === NUM_INVALID || month_12 === NUM_INVALID) continue;
+      if (revenue_at_start === NUM_INVALID) continue;
+      cohorts.push({ cohort_label: str(rec.cohort_label) ?? "", cohort_size, month_1, month_3, month_6, month_12, revenue_at_start });
+    }
+    if (cohorts.length < 1) return { ok: false, reason: "empty_cohorts" };
+
+    const COHORT_TYPES = ["revenue", "retention", "usage"];
+    const cohort_type = typeof p.cohort_type === "string" && COHORT_TYPES.includes(p.cohort_type) ? p.cohort_type : null;
+    if (!cohort_type) return { ok: false, reason: "bad_cohort_type" };
+
+    const avg_month1_retention = numOrNull(p.avg_month1_retention, 0, 100);
+    if (avg_month1_retention === NUM_INVALID) return { ok: false, reason: "bad_avg_month1_retention" };
+    const avg_month3_retention = numOrNull(p.avg_month3_retention, 0, 100);
+    if (avg_month3_retention === NUM_INVALID) return { ok: false, reason: "bad_avg_month3_retention" };
+    const avg_month6_retention = numOrNull(p.avg_month6_retention, 0, 100);
+    if (avg_month6_retention === NUM_INVALID) return { ok: false, reason: "bad_avg_month6_retention" };
+    const avg_month12_retention = numOrNull(p.avg_month12_retention, 0, 100);
+    if (avg_month12_retention === NUM_INVALID) return { ok: false, reason: "bad_avg_month12_retention" };
+
+    const best_cohort = str(p.best_cohort);
+    const worst_cohort = str(p.worst_cohort);
+
+    const TRENDS = ["improving", "declining", "stable", "insufficient_data"];
+    const trend = typeof p.trend === "string" && TRENDS.includes(p.trend) ? p.trend : null;
+    if (!trend) return { ok: false, reason: "bad_trend" };
+
+    const data_period = typeof p.data_period === "string" && p.data_period.length > 0 ? p.data_period.slice(0, MAX_STR) : null;
+    if (!data_period) return { ok: false, reason: "missing_data_period" };
+
+    return {
+      ok: true,
+      kind: "analyze_customer_cohorts",
+      payload: { cohorts, cohort_type, avg_month1_retention, avg_month3_retention, avg_month6_retention, avg_month12_retention, best_cohort, worst_cohort, trend, data_period },
     };
   }
 
