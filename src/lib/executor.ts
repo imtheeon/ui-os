@@ -2681,6 +2681,26 @@ export async function applyAction(
     return { ok: true, recordTable: "data_quality_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "detect_schema") {
+    const { data, error } = await db
+      .from("schema_detection_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        detected_schema_type: v.payload.detected_schema_type,
+        confidence: v.payload.confidence,
+        detected_columns: v.payload.detected_columns,
+        key_identifiers: v.payload.key_identifiers,
+        suggested_routing: v.payload.suggested_routing,
+        alternative_schema_types: v.payload.alternative_schema_types,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "schema_detection_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
