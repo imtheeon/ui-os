@@ -2453,6 +2453,30 @@ export async function applyAction(
     return { ok: true, recordTable: "revenue_quality_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_customer_cohorts") {
+    const { data, error } = await db
+      .from("customer_cohort_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        cohorts: v.payload.cohorts,
+        cohort_type: v.payload.cohort_type,
+        avg_month1_retention: v.payload.avg_month1_retention,
+        avg_month3_retention: v.payload.avg_month3_retention,
+        avg_month6_retention: v.payload.avg_month6_retention,
+        avg_month12_retention: v.payload.avg_month12_retention,
+        best_cohort: v.payload.best_cohort,
+        worst_cohort: v.payload.worst_cohort,
+        trend: v.payload.trend,
+        data_period: v.payload.data_period,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "customer_cohort_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
