@@ -179,7 +179,7 @@ async function main() {
   }).select("id").single();
   const enq2: UiEvent[] = [];
   const route2 = await routePayload({ orgId: orgD, payloadId: plainPayload!.id }, { db, enqueue: (e) => enq2.push(e) });
-  ok("non-financial routes to [document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, professional_services_agent, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, customer_segmentation_agent, contract_analysis_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, ecommerce_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["document_classifier", "schema_evolution_agent", "column_profiler", "data_dictionary_agent", "missing_data_agent", "headcount_analytics_agent", "productivity_agent", "growth_rate_agent", "data_privacy_agent", "data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "kpi_extractor", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "outlier_explanation_agent", "time_series_decomp_agent", "failure_risk_agent", "run_rate_agent", "spend_analysis_agent", "investor_memo_agent", "okr_tracker_agent", "swot_agent", "query_builder_agent", "esg_reporting_agent", "seasonality_agent", "benchmark_agent", "professional_services_agent", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "customer_segmentation_agent", "contract_analysis_agent", "fraud_detection_agent", "concentration_risk_agent", "scenario_agent", "ecommerce_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "data_merger", "report_generator", "exec_summarizer", "insight_synthesis_agent", "conflict_detection_agent", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst", "action_priority_agent"]));
+  ok("non-financial routes to [document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, professional_services_agent, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, customer_segmentation_agent, contract_analysis_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, ecommerce_agent, retail_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]", route2.ok && JSON.stringify(route2.plan) === JSON.stringify(["document_classifier", "schema_evolution_agent", "column_profiler", "data_dictionary_agent", "missing_data_agent", "headcount_analytics_agent", "productivity_agent", "growth_rate_agent", "data_privacy_agent", "data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "kpi_extractor", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "outlier_explanation_agent", "time_series_decomp_agent", "failure_risk_agent", "run_rate_agent", "spend_analysis_agent", "investor_memo_agent", "okr_tracker_agent", "swot_agent", "query_builder_agent", "esg_reporting_agent", "seasonality_agent", "benchmark_agent", "professional_services_agent", "inventory_tracker", "reorder_flagger", "supplier_analyst", "po_agent", "code_reviewer", "code_tester", "customer_segmentation_agent", "contract_analysis_agent", "fraud_detection_agent", "concentration_risk_agent", "scenario_agent", "ecommerce_agent", "retail_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "data_merger", "report_generator", "exec_summarizer", "insight_synthesis_agent", "conflict_detection_agent", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst", "action_priority_agent"]));
 
   await db.from("organizations").delete().eq("id", orgD);
 
@@ -5775,6 +5775,62 @@ async function main() {
   const routeCheckHp = await routeHp({ orgId: orgHp, payloadId: payloadHp }, { db, enqueue: () => {} });
   ok("hospitality_agent routes on the financial route", routeCheckHp.ok && routeCheckHp.plan.includes("hospitality_agent"));
   await db.from("organizations").delete().eq("id", orgHp);
+
+  console.log("== retail agent ==");
+  ok("analyze_retail_performance accepts good", validateProposal("analyze_retail_performance", {
+    total_net_sales: 1850000, comparable_store_sales_growth: 5.8, gross_margin_percentage: 42.5,
+    inventory_turnover: 5.2, sell_through_rate: 76.0, shrinkage_rate: 1.2, sales_per_sqft: 485,
+    transactions_per_day: 142, average_transaction_value: 87,
+    store_breakdown: [{ store_id: "Store 01", net_sales: 650000, transactions: 7480, avg_ticket: 87, margin_percentage: 44.2, rank: 1 }],
+    category_performance: [{ category: "Apparel", net_sales: 740000, units_sold: 8500, margin_percentage: 48.0, sell_through: 82.0 }],
+    markdown_analysis: { total_markdown_amount: 148000, markdown_rate: 8.0, categories_with_high_markdown: ["Outerwear"] },
+  }).ok);
+  ok("analyze_retail_performance rejects sell_through_rate > 100", !validateProposal("analyze_retail_performance", {
+    total_net_sales: 100000, comparable_store_sales_growth: 1, gross_margin_percentage: 40,
+    inventory_turnover: 4, sell_through_rate: 150, shrinkage_rate: 1, sales_per_sqft: 100,
+    transactions_per_day: 10, average_transaction_value: 50,
+    store_breakdown: [], category_performance: [],
+    markdown_analysis: { total_markdown_amount: 0, markdown_rate: 0, categories_with_high_markdown: [] },
+  }).ok);
+  ok("analyze_retail_performance filters out store with rank < 1", (() => {
+    const r = validateProposal("analyze_retail_performance", {
+      total_net_sales: 100000, comparable_store_sales_growth: 1, gross_margin_percentage: 40,
+      inventory_turnover: 4, sell_through_rate: 70, shrinkage_rate: 1, sales_per_sqft: 100,
+      transactions_per_day: 10, average_transaction_value: 50,
+      store_breakdown: [
+        { store_id: "Store 01", net_sales: 100000, transactions: 10, avg_ticket: 50, margin_percentage: 40, rank: 1 },
+        { store_id: "Store 02", net_sales: 100000, transactions: 10, avg_ticket: 50, margin_percentage: 40, rank: 0 },
+      ],
+      category_performance: [],
+      markdown_analysis: { total_markdown_amount: 0, markdown_rate: 0, categories_with_high_markdown: [] },
+    });
+    return r.ok && (r.payload.store_breakdown as unknown[]).length === 1;
+  })());
+  ok("retail_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("retail_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentRt } = await import("./lib/run-agent");
+  const { stubBrain: sbRt } = await import("./lib/agent-brain");
+  const { approveAction: approveRt, listPending: listRt } = await import("./lib/actions-service");
+  const orgRt = await makeOrg("pro");
+  const payloadRt = await makePayload(orgRt);
+  const rRt = await runAgentRt({ orgId: orgRt, payloadId: payloadRt, role: "retail_agent" }, { db, brain: sbRt });
+  ok("retail_agent run produced an analysis", rRt.ok && rRt.proposalCount === 1);
+  const pendRt = await listRt(orgRt, { db });
+  ok("stub proposal passes validateProposal and returns analyze_retail_performance", pendRt.length === 1 && pendRt[0].kind === "analyze_retail_performance");
+  const apprRt = await approveRt(orgRt, pendRt[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes retail_runs", apprRt.ok && apprRt.recordTable === "retail_runs", JSON.stringify(apprRt));
+  const { data: rtRows } = await db.from("retail_runs").select("org_id,total_net_sales").eq("org_id", orgRt);
+  ok("retail record org-stamped", rtRows?.length === 1 && rtRows[0].org_id === orgRt);
+  const { routePayload: routeRt } = await import("./lib/manager");
+  const { data: plainPayloadRt } = await db.from("inbound_payloads").insert({
+    org_id: orgRt, source: "upload", storage_path: `${orgRt}/rt/plain.csv`, original_filename: "plain.csv",
+    mime_type: "text/csv", scan_status: "clean", status: "completed",
+    extracted_json: { columns: ["name", "city"], rowCount: 1, rows: [["a", "b"]], truncated: false, parser: "static-mvp" },
+  }).select("id").single();
+  const routeCheckRt = await routeRt({ orgId: orgRt, payloadId: plainPayloadRt!.id }, { db, enqueue: () => {} });
+  ok("retail_agent routes on the non-financial route", routeCheckRt.ok && routeCheckRt.plan.includes("retail_agent"));
+  await db.from("organizations").delete().eq("id", orgRt);
 
   console.log("== org context ==");
   {
