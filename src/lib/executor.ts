@@ -2329,6 +2329,29 @@ export async function applyAction(
     return { ok: true, recordTable: "healthcare_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_legal_billing") {
+    const { data, error } = await db
+      .from("legal_billing_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        matters: v.payload.matters,
+        total_billed: v.payload.total_billed,
+        total_collected: v.payload.total_collected,
+        collection_rate: v.payload.collection_rate,
+        average_hourly_rate: v.payload.average_hourly_rate,
+        timekeeper_summary: v.payload.timekeeper_summary,
+        writeoffs_and_discounts: v.payload.writeoffs_and_discounts,
+        aging_wip: v.payload.aging_wip,
+        billing_flags: v.payload.billing_flags,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "legal_billing_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
