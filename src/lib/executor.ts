@@ -2766,6 +2766,27 @@ export async function applyAction(
     return { ok: true, recordTable: "orchestrator_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "review_confidence") {
+    const { data, error } = await db
+      .from("confidence_reviewer_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        reviewed_proposals: v.payload.reviewed_proposals,
+        overall_confidence: v.payload.overall_confidence,
+        high_confidence_count: v.payload.high_confidence_count,
+        medium_confidence_count: v.payload.medium_confidence_count,
+        low_confidence_count: v.payload.low_confidence_count,
+        flags: v.payload.flags,
+        approval_recommendation: v.payload.approval_recommendation,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "confidence_reviewer_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

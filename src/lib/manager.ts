@@ -46,6 +46,7 @@ export async function routePayload(
   }
   plan.push("report_generator"); // always, before exec_summarizer
   plan.push("orchestrator_agent"); // always, near the end, before exec_summarizer
+  plan.push("confidence_reviewer_agent"); // always, after orchestrator_agent, before exec_summarizer
   plan.push("exec_summarizer"); // always, before alert_agent
   plan.push("insight_synthesis_agent"); // always, after exec_summarizer
   plan.push("conflict_detection_agent"); // always, after insight_synthesis_agent
