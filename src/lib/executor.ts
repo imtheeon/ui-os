@@ -3179,6 +3179,28 @@ export async function applyAction(
     return { ok: true, recordTable: "customer_health_score_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_quota_attainment") {
+    const { data, error } = await db
+      .from("quota_attainment_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        team_attainment_pct: v.payload.team_attainment_pct,
+        rep_attainments: v.payload.rep_attainments,
+        attainment_distribution: v.payload.attainment_distribution,
+        at_risk_reps: v.payload.at_risk_reps,
+        top_performers: v.payload.top_performers,
+        quota_setting_assessment: v.payload.quota_setting_assessment,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "quota_attainment_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
