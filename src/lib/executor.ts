@@ -3042,6 +3042,27 @@ export async function applyAction(
     return { ok: true, recordTable: "clustering_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_funnel") {
+    const { data, error } = await db
+      .from("funnel_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        funnel_name: v.payload.funnel_name,
+        funnel_stages: v.payload.funnel_stages,
+        overall_conversion_rate: v.payload.overall_conversion_rate,
+        biggest_drop_off_stage: v.payload.biggest_drop_off_stage,
+        drop_off_analysis: v.payload.drop_off_analysis,
+        segment_breakdowns: v.payload.segment_breakdowns,
+        optimization_recommendations: v.payload.optimization_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "funnel_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
