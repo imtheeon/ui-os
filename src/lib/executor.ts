@@ -3249,6 +3249,51 @@ export async function applyAction(
     return { ok: true, recordTable: "forecast_accuracy_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_attribution") {
+    const { data, error } = await db
+      .from("attribution_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        attribution_model: v.payload.attribution_model,
+        total_revenue_attributed: v.payload.total_revenue_attributed,
+        channel_attribution: v.payload.channel_attribution,
+        top_converting_paths: v.payload.top_converting_paths,
+        assisted_vs_direct: v.payload.assisted_vs_direct,
+        channel_efficiency: v.payload.channel_efficiency,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "attribution_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_price_elasticity") {
+    const { data, error } = await db
+      .from("price_elasticity_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        product_analyzed: v.payload.product_analyzed,
+        price_points: v.payload.price_points,
+        elasticity_coefficient: v.payload.elasticity_coefficient,
+        elasticity_classification: v.payload.elasticity_classification,
+        revenue_maximizing_price: v.payload.revenue_maximizing_price,
+        current_price: v.payload.current_price,
+        price_increase_headroom_pct: v.payload.price_increase_headroom_pct,
+        segment_elasticity: v.payload.segment_elasticity,
+        competitive_context: v.payload.competitive_context,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "price_elasticity_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
