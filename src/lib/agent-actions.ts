@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -6533,6 +6533,63 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_regression",
       payload: { dependent_variable, independent_variables, regression_type, model_fit, coefficients, predictions, model_warnings, business_interpretation },
+    };
+  }
+
+  if (kind === "test_hypothesis") {
+    const TEST_TYPES = ["t_test", "chi_square", "anova", "mann_whitney", "proportion_z_test"];
+    const rawTests = Array.isArray(p.tests_performed) ? (p.tests_performed as unknown[]).slice(0, 20) : [];
+    const tests_performed: { test_name: string; test_type: string; null_hypothesis: string; p_value: number; reject_null: boolean; confidence_level: number }[] = [];
+    for (const item of rawTests) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const test_name = str(rec.test_name);
+      if (!test_name) continue;
+      if (typeof rec.test_type !== "string" || !TEST_TYPES.includes(rec.test_type)) continue;
+      const p_value = numOrNull(rec.p_value, 0, 1);
+      if (p_value === NUM_INVALID || p_value === null) continue;
+      const confidence_level = numOrNull(rec.confidence_level, 0, 1);
+      if (confidence_level === NUM_INVALID || confidence_level === null) continue;
+      if (typeof rec.reject_null !== "boolean") continue;
+      tests_performed.push({ test_name, test_type: rec.test_type, null_hypothesis: str(rec.null_hypothesis) ?? "", p_value, reject_null: rec.reject_null, confidence_level });
+    }
+    if (tests_performed.length === 0) return { ok: false, reason: "empty_tests_performed" };
+
+    const rawSignificant = Array.isArray(p.significant_findings) ? (p.significant_findings as unknown[]).slice(0, 10) : [];
+    const significant_findings: { test_name: string; finding: string; p_value: number; practical_significance: string }[] = [];
+    for (const item of rawSignificant) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const test_name = str(rec.test_name);
+      if (!test_name) continue;
+      const p_value = numOrNull(rec.p_value, 0, 1);
+      if (p_value === NUM_INVALID || p_value === null) continue;
+      significant_findings.push({ test_name, finding: str(rec.finding) ?? "", p_value, practical_significance: str(rec.practical_significance) ?? "" });
+    }
+
+    const non_significant_findings = strArray(p.non_significant_findings, 10, MAX_STR);
+
+    const EFFECT_INTERPRETATIONS = ["negligible", "small", "medium", "large"];
+    const rawEffects = Array.isArray(p.effect_sizes) ? (p.effect_sizes as unknown[]).slice(0, 20) : [];
+    const effect_sizes: { test_name: string; effect_size_measure: string; value: number; interpretation: string }[] = [];
+    for (const item of rawEffects) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const test_name = str(rec.test_name);
+      if (!test_name) continue;
+      if (typeof rec.interpretation !== "string" || !EFFECT_INTERPRETATIONS.includes(rec.interpretation)) continue;
+      const value = numOrNull(rec.value);
+      if (value === NUM_INVALID || value === null) continue;
+      effect_sizes.push({ test_name, effect_size_measure: str(rec.effect_size_measure) ?? "", value, interpretation: rec.interpretation });
+    }
+
+    const recommended_actions = strArray(p.recommended_actions, 10, MAX_STR);
+    const statistical_caveats = strArray(p.statistical_caveats, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "test_hypothesis",
+      payload: { tests_performed, significant_findings, non_significant_findings, effect_sizes, recommended_actions, statistical_caveats },
     };
   }
 

@@ -2980,6 +2980,26 @@ export async function applyAction(
     return { ok: true, recordTable: "regression_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "test_hypothesis") {
+    const { data, error } = await db
+      .from("hypothesis_testing_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        tests_performed: v.payload.tests_performed,
+        significant_findings: v.payload.significant_findings,
+        non_significant_findings: v.payload.non_significant_findings,
+        effect_sizes: v.payload.effect_sizes,
+        recommended_actions: v.payload.recommended_actions,
+        statistical_caveats: v.payload.statistical_caveats,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "hypothesis_testing_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
