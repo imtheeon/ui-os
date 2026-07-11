@@ -3110,6 +3110,33 @@ export async function applyAction(
     return { ok: true, recordTable: "ab_test_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_nps") {
+    const { data, error } = await db
+      .from("nps_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        nps_score: v.payload.nps_score,
+        promoter_count: v.payload.promoter_count,
+        passive_count: v.payload.passive_count,
+        detractor_count: v.payload.detractor_count,
+        total_responses: v.payload.total_responses,
+        promoter_pct: v.payload.promoter_pct,
+        passive_pct: v.payload.passive_pct,
+        detractor_pct: v.payload.detractor_pct,
+        top_promoter_themes: v.payload.top_promoter_themes,
+        top_detractor_themes: v.payload.top_detractor_themes,
+        segment_nps: v.payload.segment_nps,
+        trend_assessment: v.payload.trend_assessment,
+        action_priorities: v.payload.action_priorities,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "nps_analysis_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
