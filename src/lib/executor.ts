@@ -2787,6 +2787,31 @@ export async function applyAction(
     return { ok: true, recordTable: "confidence_reviewer_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "reshape_data") {
+    const { data, error } = await db
+      .from("data_reshape_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        source_shape: v.payload.source_shape,
+        target_shape: v.payload.target_shape,
+        id_columns: v.payload.id_columns,
+        variable_column: v.payload.variable_column,
+        value_column: v.payload.value_column,
+        reshaped_preview: v.payload.reshaped_preview,
+        row_count_before: v.payload.row_count_before,
+        row_count_after: v.payload.row_count_after,
+        column_count_before: v.payload.column_count_before,
+        column_count_after: v.payload.column_count_after,
+        reshape_notes: v.payload.reshape_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "data_reshape_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
