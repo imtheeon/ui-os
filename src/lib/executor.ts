@@ -2855,6 +2855,27 @@ export async function applyAction(
     return { ok: true, recordTable: "string_normalization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "normalize_currency") {
+    const { data, error } = await db
+      .from("currency_normalization_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        currencies_detected: v.payload.currencies_detected,
+        base_currency: v.payload.base_currency,
+        conversion_needed: v.payload.conversion_needed,
+        rows_with_mixed_currency: v.payload.rows_with_mixed_currency,
+        normalization_issues: v.payload.normalization_issues,
+        conversion_recommendations: v.payload.conversion_recommendations,
+        columns_affected: v.payload.columns_affected,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "currency_normalization_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
