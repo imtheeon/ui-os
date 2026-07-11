@@ -2812,6 +2812,28 @@ export async function applyAction(
     return { ok: true, recordTable: "data_reshape_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "normalize_dates") {
+    const { data, error } = await db
+      .from("date_normalization_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        detected_formats: v.payload.detected_formats,
+        target_format: v.payload.target_format,
+        normalization_map: v.payload.normalization_map,
+        ambiguous_dates: v.payload.ambiguous_dates,
+        timezone_issues: v.payload.timezone_issues,
+        rows_affected: v.payload.rows_affected,
+        columns_affected: v.payload.columns_affected,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "date_normalization_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
