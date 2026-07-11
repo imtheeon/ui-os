@@ -2876,6 +2876,29 @@ export async function applyAction(
     return { ok: true, recordTable: "currency_normalization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "assess_join_quality") {
+    const { data, error } = await db
+      .from("join_quality_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        left_dataset_profile: v.payload.left_dataset_profile,
+        right_dataset_profile: v.payload.right_dataset_profile,
+        recommended_join_keys: v.payload.recommended_join_keys,
+        join_type_recommendation: v.payload.join_type_recommendation,
+        match_quality: v.payload.match_quality,
+        unmatched_left_count: v.payload.unmatched_left_count,
+        unmatched_right_count: v.payload.unmatched_right_count,
+        duplicate_key_issues: v.payload.duplicate_key_issues,
+        data_quality_flags: v.payload.data_quality_flags,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "join_quality_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
