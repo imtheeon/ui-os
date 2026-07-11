@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -7156,6 +7156,84 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "score_customer_health",
       payload: { scored_customers, score_components, health_distribution, high_risk_customers, champion_customers, model_confidence, recommended_playbooks },
+    };
+  }
+
+  if (kind === "analyze_quota_attainment") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+
+    const team_attainment_pct = numOrNull(p.team_attainment_pct, 0);
+    if (team_attainment_pct === NUM_INVALID || team_attainment_pct === null) return { ok: false, reason: "bad_team_attainment_pct" };
+
+    const rawRepAttainments = Array.isArray(p.rep_attainments) ? (p.rep_attainments as unknown[]).slice(0, 200) : [];
+    const rep_attainments: { rep_name: string; quota: number; actual: number; attainment_pct: number }[] = [];
+    for (const item of rawRepAttainments) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const rep_name = str(rec.rep_name);
+      if (!rep_name) continue;
+      const quota = numOrNull(rec.quota, 0);
+      if (quota === NUM_INVALID || quota === null) continue;
+      const actual = numOrNull(rec.actual, 0);
+      if (actual === NUM_INVALID || actual === null) continue;
+      const attainment_pct = numOrNull(rec.attainment_pct, 0);
+      if (attainment_pct === NUM_INVALID || attainment_pct === null) continue;
+      rep_attainments.push({ rep_name, quota, actual, attainment_pct });
+    }
+    if (rep_attainments.length === 0) return { ok: false, reason: "empty_rep_attainments" };
+
+    function parseAttainmentDistribution(v: unknown): { pct_above_100: number; pct_75_to_100: number; pct_50_to_75: number; pct_below_50: number } | null {
+      if (typeof v !== "object" || v === null) return null;
+      const rec = v as Record<string, unknown>;
+      const pct_above_100 = numOrNull(rec.pct_above_100, 0, 100);
+      if (pct_above_100 === NUM_INVALID || pct_above_100 === null) return null;
+      const pct_75_to_100 = numOrNull(rec.pct_75_to_100, 0, 100);
+      if (pct_75_to_100 === NUM_INVALID || pct_75_to_100 === null) return null;
+      const pct_50_to_75 = numOrNull(rec.pct_50_to_75, 0, 100);
+      if (pct_50_to_75 === NUM_INVALID || pct_50_to_75 === null) return null;
+      const pct_below_50 = numOrNull(rec.pct_below_50, 0, 100);
+      if (pct_below_50 === NUM_INVALID || pct_below_50 === null) return null;
+      return { pct_above_100, pct_75_to_100, pct_50_to_75, pct_below_50 };
+    }
+    const attainment_distribution = parseAttainmentDistribution(p.attainment_distribution);
+    if (!attainment_distribution) return { ok: false, reason: "bad_attainment_distribution" };
+
+    const rawAtRisk = Array.isArray(p.at_risk_reps) ? (p.at_risk_reps as unknown[]).slice(0, 20) : [];
+    const at_risk_reps: { rep_name: string; attainment_pct: number; likely_cause: string; recommended_action: string }[] = [];
+    for (const item of rawAtRisk) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const rep_name = str(rec.rep_name);
+      if (!rep_name) continue;
+      const attainment_pct = numOrNull(rec.attainment_pct, 0);
+      if (attainment_pct === NUM_INVALID || attainment_pct === null) continue;
+      at_risk_reps.push({ rep_name, attainment_pct, likely_cause: str(rec.likely_cause) ?? "", recommended_action: str(rec.recommended_action) ?? "" });
+    }
+
+    const rawTopPerformers = Array.isArray(p.top_performers) ? (p.top_performers as unknown[]).slice(0, 10) : [];
+    const top_performers: { rep_name: string; attainment_pct: number; standout_factor: string }[] = [];
+    for (const item of rawTopPerformers) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const rep_name = str(rec.rep_name);
+      if (!rep_name) continue;
+      const attainment_pct = numOrNull(rec.attainment_pct, 0);
+      if (attainment_pct === NUM_INVALID || attainment_pct === null) continue;
+      top_performers.push({ rep_name, attainment_pct, standout_factor: str(rec.standout_factor) ?? "" });
+    }
+
+    const QUOTA_SETTING_ASSESSMENTS = ["too_aggressive", "balanced", "too_conservative", "mixed"];
+    const quota_setting_assessment = typeof p.quota_setting_assessment === "string" && QUOTA_SETTING_ASSESSMENTS.includes(p.quota_setting_assessment) ? p.quota_setting_assessment : null;
+    if (!quota_setting_assessment) return { ok: false, reason: "bad_quota_setting_assessment" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_quota_attainment",
+      payload: { period, team_attainment_pct, rep_attainments, attainment_distribution, at_risk_reps, top_performers, quota_setting_assessment, recommendations },
     };
   }
 
