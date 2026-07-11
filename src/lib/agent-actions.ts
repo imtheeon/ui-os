@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -7392,6 +7392,153 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_forecast_accuracy",
       payload: { period, forecast_vs_actual, overall_accuracy_pct, bias_direction, mape, period_accuracy_trend, rep_accuracy_breakdown, pipeline_quality_flags, recommendations },
+    };
+  }
+
+  if (kind === "analyze_attribution") {
+    const ATTRIBUTION_MODELS = ["first_touch", "last_touch", "linear", "time_decay", "data_driven"];
+    const attribution_model = str(p.attribution_model);
+    if (!attribution_model || !ATTRIBUTION_MODELS.includes(attribution_model)) return { ok: false, reason: "bad_attribution_model" };
+
+    const total_revenue_attributed = numOrNull(p.total_revenue_attributed, 0);
+    if (total_revenue_attributed === NUM_INVALID || total_revenue_attributed === null) return { ok: false, reason: "bad_total_revenue_attributed" };
+
+    const rawChannels = Array.isArray(p.channel_attribution) ? (p.channel_attribution as unknown[]).slice(0, 20) : [];
+    const channel_attribution: { channel: string; attributed_revenue: number; attributed_pct: number; conversion_count: number; avg_deal_size: number }[] = [];
+    for (const item of rawChannels) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const channel = str(rec.channel);
+      if (!channel) continue;
+      const attributed_revenue = numOrNull(rec.attributed_revenue, 0);
+      if (attributed_revenue === NUM_INVALID || attributed_revenue === null) continue;
+      const attributed_pct = numOrNull(rec.attributed_pct, 0, 100);
+      if (attributed_pct === NUM_INVALID || attributed_pct === null) continue;
+      const conversion_count = numOrNull(rec.conversion_count, 0);
+      if (conversion_count === NUM_INVALID || conversion_count === null) continue;
+      const avg_deal_size = numOrNull(rec.avg_deal_size, 0);
+      if (avg_deal_size === NUM_INVALID || avg_deal_size === null) continue;
+      channel_attribution.push({ channel, attributed_revenue, attributed_pct, conversion_count, avg_deal_size });
+    }
+    if (channel_attribution.length === 0) return { ok: false, reason: "empty_channel_attribution" };
+
+    const rawPaths = Array.isArray(p.top_converting_paths) ? (p.top_converting_paths as unknown[]).slice(0, 10) : [];
+    const top_converting_paths: { path: string; conversion_count: number; avg_deal_size: number; path_revenue_pct: number }[] = [];
+    for (const item of rawPaths) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const path = str(rec.path);
+      if (!path) continue;
+      const conversion_count = numOrNull(rec.conversion_count, 0);
+      if (conversion_count === NUM_INVALID || conversion_count === null) continue;
+      const avg_deal_size = numOrNull(rec.avg_deal_size, 0);
+      if (avg_deal_size === NUM_INVALID || avg_deal_size === null) continue;
+      const path_revenue_pct = numOrNull(rec.path_revenue_pct, 0, 100);
+      if (path_revenue_pct === NUM_INVALID || path_revenue_pct === null) continue;
+      top_converting_paths.push({ path, conversion_count, avg_deal_size, path_revenue_pct });
+    }
+
+    let assisted_vs_direct: { direct_revenue_pct: number; assisted_revenue_pct: number; multi_touch_deal_pct: number } | null = null;
+    if (typeof p.assisted_vs_direct === "object" && p.assisted_vs_direct !== null) {
+      const rec = p.assisted_vs_direct as Record<string, unknown>;
+      const direct_revenue_pct = numOrNull(rec.direct_revenue_pct, 0, 100);
+      const assisted_revenue_pct = numOrNull(rec.assisted_revenue_pct, 0, 100);
+      const multi_touch_deal_pct = numOrNull(rec.multi_touch_deal_pct, 0, 100);
+      if (direct_revenue_pct !== NUM_INVALID && direct_revenue_pct !== null &&
+          assisted_revenue_pct !== NUM_INVALID && assisted_revenue_pct !== null &&
+          multi_touch_deal_pct !== NUM_INVALID && multi_touch_deal_pct !== null) {
+        assisted_vs_direct = { direct_revenue_pct, assisted_revenue_pct, multi_touch_deal_pct };
+      }
+    }
+    if (!assisted_vs_direct) return { ok: false, reason: "bad_assisted_vs_direct" };
+
+    const rawEff = Array.isArray(p.channel_efficiency) ? (p.channel_efficiency as unknown[]).slice(0, 20) : [];
+    const channel_efficiency: { channel: string; cost: number; attributed_revenue: number; roi_pct: number; cac: number }[] = [];
+    for (const item of rawEff) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const channel = str(rec.channel);
+      if (!channel) continue;
+      const cost = numOrNull(rec.cost, 0);
+      if (cost === NUM_INVALID || cost === null) continue;
+      const attributed_revenue = numOrNull(rec.attributed_revenue, 0);
+      if (attributed_revenue === NUM_INVALID || attributed_revenue === null) continue;
+      const roi_pct = numOrNull(rec.roi_pct);
+      if (roi_pct === NUM_INVALID || roi_pct === null) continue;
+      const cac = numOrNull(rec.cac, 0);
+      if (cac === NUM_INVALID || cac === null) continue;
+      channel_efficiency.push({ channel, cost, attributed_revenue, roi_pct, cac });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_attribution",
+      payload: { attribution_model, total_revenue_attributed, channel_attribution, top_converting_paths, assisted_vs_direct, channel_efficiency, recommendations },
+    };
+  }
+
+  if (kind === "analyze_price_elasticity") {
+    const product_analyzed = str(p.product_analyzed);
+    if (!product_analyzed) return { ok: false, reason: "missing_product_analyzed" };
+
+    const rawPoints = Array.isArray(p.price_points) ? (p.price_points as unknown[]).slice(0, 20) : [];
+    const price_points: { price: number; demand_units: number; revenue: number; time_period: string }[] = [];
+    for (const item of rawPoints) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const time_period = str(rec.time_period);
+      if (!time_period) continue;
+      const price = numOrNull(rec.price, 0);
+      if (price === NUM_INVALID || price === null) continue;
+      const demand_units = numOrNull(rec.demand_units, 0);
+      if (demand_units === NUM_INVALID || demand_units === null) continue;
+      const revenue = numOrNull(rec.revenue, 0);
+      if (revenue === NUM_INVALID || revenue === null) continue;
+      price_points.push({ price, demand_units, revenue, time_period });
+    }
+    if (price_points.length < 2) return { ok: false, reason: "insufficient_price_points" };
+
+    const elasticity_coefficient = numOrNull(p.elasticity_coefficient);
+    if (elasticity_coefficient === NUM_INVALID || elasticity_coefficient === null) return { ok: false, reason: "bad_elasticity_coefficient" };
+
+    const ELASTICITY_CLASSES = ["highly_elastic", "elastic", "unit_elastic", "inelastic", "highly_inelastic"];
+    const elasticity_classification = str(p.elasticity_classification);
+    if (!elasticity_classification || !ELASTICITY_CLASSES.includes(elasticity_classification)) return { ok: false, reason: "bad_elasticity_classification" };
+
+    const revenue_maximizing_price = numOrNull(p.revenue_maximizing_price, 0);
+    if (revenue_maximizing_price === NUM_INVALID || revenue_maximizing_price === null) return { ok: false, reason: "bad_revenue_maximizing_price" };
+
+    const current_price = numOrNull(p.current_price, 0);
+    if (current_price === NUM_INVALID || current_price === null) return { ok: false, reason: "bad_current_price" };
+
+    const price_increase_headroom_pct = numOrNull(p.price_increase_headroom_pct);
+    if (price_increase_headroom_pct === NUM_INVALID || price_increase_headroom_pct === null) return { ok: false, reason: "bad_price_increase_headroom_pct" };
+
+    const rawSeg = Array.isArray(p.segment_elasticity) ? (p.segment_elasticity as unknown[]).slice(0, 10) : [];
+    const segment_elasticity: { segment: string; elasticity_coefficient: number; interpretation: string }[] = [];
+    for (const item of rawSeg) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const segment = str(rec.segment);
+      if (!segment) continue;
+      const segElasticity = numOrNull(rec.elasticity_coefficient);
+      if (segElasticity === NUM_INVALID || segElasticity === null) continue;
+      segment_elasticity.push({ segment, elasticity_coefficient: segElasticity, interpretation: str(rec.interpretation) ?? "" });
+    }
+
+    const competitive_context = str(p.competitive_context);
+    if (!competitive_context) return { ok: false, reason: "missing_competitive_context" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_price_elasticity",
+      payload: { product_analyzed, price_points, elasticity_coefficient, elasticity_classification, revenue_maximizing_price, current_price, price_increase_headroom_pct, segment_elasticity, competitive_context, recommendations },
     };
   }
 
