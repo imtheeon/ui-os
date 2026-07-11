@@ -2918,6 +2918,26 @@ export async function applyAction(
     return { ok: true, recordTable: "data_validation_rules_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_distribution") {
+    const { data, error } = await db
+      .from("distribution_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        columns_analyzed: v.payload.columns_analyzed,
+        distribution_summary: v.payload.distribution_summary,
+        skewness_flags: v.payload.skewness_flags,
+        outlier_summary: v.payload.outlier_summary,
+        normality_assessment: v.payload.normality_assessment,
+        visualization_recommendations: v.payload.visualization_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "distribution_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
