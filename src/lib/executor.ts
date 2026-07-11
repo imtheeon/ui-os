@@ -3137,6 +3137,27 @@ export async function applyAction(
     return { ok: true, recordTable: "nps_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_feature_adoption") {
+    const { data, error } = await db
+      .from("feature_adoption_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        features_analyzed: v.payload.features_analyzed,
+        adoption_summary: v.payload.adoption_summary,
+        power_features: v.payload.power_features,
+        underutilized_features: v.payload.underutilized_features,
+        adoption_by_segment: v.payload.adoption_by_segment,
+        correlation_with_retention: v.payload.correlation_with_retention,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "feature_adoption_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
