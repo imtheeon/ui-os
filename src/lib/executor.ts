@@ -3021,6 +3021,27 @@ export async function applyAction(
     return { ok: true, recordTable: "pareto_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "cluster_data") {
+    const { data, error } = await db
+      .from("clustering_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        clustering_dimensions: v.payload.clustering_dimensions,
+        cluster_count: v.payload.cluster_count,
+        clusters: v.payload.clusters,
+        cluster_quality: v.payload.cluster_quality,
+        outlier_entities: v.payload.outlier_entities,
+        business_segments: v.payload.business_segments,
+        recommended_actions: v.payload.recommended_actions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "clustering_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
