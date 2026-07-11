@@ -2899,6 +2899,25 @@ export async function applyAction(
     return { ok: true, recordTable: "join_quality_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "validate_data_rules") {
+    const { data, error } = await db
+      .from("data_validation_rules_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        rules_generated: v.payload.rules_generated,
+        violations_found: v.payload.violations_found,
+        validation_summary: v.payload.validation_summary,
+        recommendations: v.payload.recommendations,
+        data_readiness: v.payload.data_readiness,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "data_validation_rules_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({

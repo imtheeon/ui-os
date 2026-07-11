@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -6274,6 +6274,69 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "assess_join_quality",
       payload: { left_dataset_profile, right_dataset_profile, recommended_join_keys, join_type_recommendation, match_quality, unmatched_left_count, unmatched_right_count, duplicate_key_issues, data_quality_flags },
+    };
+  }
+
+  if (kind === "validate_data_rules") {
+    const rawRules = Array.isArray(p.rules_generated) ? (p.rules_generated as unknown[]).slice(0, 50) : [];
+    const rules_generated: { rule_id: string; column_name: string; rule_type: string; rule_definition: string; description: string }[] = [];
+    for (const item of rawRules) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const rule_id = str(rec.rule_id);
+      if (!rule_id) continue;
+      rules_generated.push({
+        rule_id,
+        column_name: str(rec.column_name) ?? "",
+        rule_type: str(rec.rule_type) ?? "",
+        rule_definition: str(rec.rule_definition) ?? "",
+        description: str(rec.description) ?? "",
+      });
+    }
+
+    const rawViolations = Array.isArray(p.violations_found) ? (p.violations_found as unknown[]).slice(0, 50) : [];
+    const violations_found: { rule_id: string; column_name: string; violation_count: number; example_values: string[] }[] = [];
+    for (const item of rawViolations) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const rule_id = str(rec.rule_id);
+      if (!rule_id) continue;
+      const violation_count = numOrNull(rec.violation_count, 0);
+      if (violation_count === NUM_INVALID || violation_count === null) continue;
+      violations_found.push({
+        rule_id,
+        column_name: str(rec.column_name) ?? "",
+        violation_count,
+        example_values: strArray(rec.example_values, 3, MAX_STR),
+      });
+    }
+
+    function parseValidationSummary(v: unknown): { total_rules: number; rules_passed: number; rules_failed: number; total_violations: number } | null {
+      if (typeof v !== "object" || v === null) return null;
+      const rec = v as Record<string, unknown>;
+      const total_rules = numOrNull(rec.total_rules, 0);
+      if (total_rules === NUM_INVALID || total_rules === null) return null;
+      const rules_passed = numOrNull(rec.rules_passed, 0);
+      if (rules_passed === NUM_INVALID || rules_passed === null) return null;
+      const rules_failed = numOrNull(rec.rules_failed, 0);
+      if (rules_failed === NUM_INVALID || rules_failed === null) return null;
+      const total_violations = numOrNull(rec.total_violations, 0);
+      if (total_violations === NUM_INVALID || total_violations === null) return null;
+      return { total_rules, rules_passed, rules_failed, total_violations };
+    }
+    const validation_summary = parseValidationSummary(p.validation_summary);
+    if (!validation_summary) return { ok: false, reason: "bad_validation_summary" };
+
+    const recommendations = strArray(p.recommendations, 15, MAX_STR);
+
+    const DATA_READINESS = ["production_ready", "needs_cleaning", "major_issues", "unusable"];
+    const data_readiness = typeof p.data_readiness === "string" && DATA_READINESS.includes(p.data_readiness) ? p.data_readiness : null;
+    if (!data_readiness) return { ok: false, reason: "bad_data_readiness" };
+
+    return {
+      ok: true,
+      kind: "validate_data_rules",
+      payload: { rules_generated, violations_found, validation_summary, recommendations, data_readiness },
     };
   }
 
