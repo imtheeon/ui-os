@@ -3201,6 +3201,31 @@ export async function applyAction(
     return { ok: true, recordTable: "quota_attainment_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_win_loss") {
+    const { data, error } = await db
+      .from("win_loss_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        total_opportunities: v.payload.total_opportunities,
+        won_count: v.payload.won_count,
+        lost_count: v.payload.lost_count,
+        win_rate_pct: v.payload.win_rate_pct,
+        win_factors: v.payload.win_factors,
+        loss_factors: v.payload.loss_factors,
+        competitor_analysis: v.payload.competitor_analysis,
+        deal_characteristic_analysis: v.payload.deal_characteristic_analysis,
+        win_rate_by_segment: v.payload.win_rate_by_segment,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "win_loss_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
