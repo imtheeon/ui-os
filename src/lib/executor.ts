@@ -3085,6 +3085,31 @@ export async function applyAction(
     return { ok: true, recordTable: "retention_analysis_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_ab_test") {
+    const { data, error } = await db
+      .from("ab_test_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        test_name: v.payload.test_name,
+        hypothesis: v.payload.hypothesis,
+        variants: v.payload.variants,
+        primary_metric: v.payload.primary_metric,
+        statistical_result: v.payload.statistical_result,
+        winner: v.payload.winner,
+        effect_size: v.payload.effect_size,
+        sample_size_adequacy: v.payload.sample_size_adequacy,
+        segment_effects: v.payload.segment_effects,
+        recommendation: v.payload.recommendation,
+        caveats: v.payload.caveats,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "ab_test_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
