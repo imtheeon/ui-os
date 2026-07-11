@@ -2834,6 +2834,27 @@ export async function applyAction(
     return { ok: true, recordTable: "date_normalization_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "normalize_strings") {
+    const { data, error } = await db
+      .from("string_normalization_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        columns_analyzed: v.payload.columns_analyzed,
+        whitespace_issues: v.payload.whitespace_issues,
+        case_standardization: v.payload.case_standardization,
+        entity_dedup_candidates: v.payload.entity_dedup_candidates,
+        encoding_issues: v.payload.encoding_issues,
+        total_values_affected: v.payload.total_values_affected,
+        normalization_rules: v.payload.normalization_rules,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "string_normalization_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
