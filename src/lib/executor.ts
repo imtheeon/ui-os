@@ -3000,6 +3000,27 @@ export async function applyAction(
     return { ok: true, recordTable: "hypothesis_testing_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_pareto") {
+    const { data, error } = await db
+      .from("pareto_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        analysis_dimension: v.payload.analysis_dimension,
+        value_metric: v.payload.value_metric,
+        pareto_entries: v.payload.pareto_entries,
+        eighty_twenty_threshold: v.payload.eighty_twenty_threshold,
+        concentration_score: v.payload.concentration_score,
+        long_tail_count: v.payload.long_tail_count,
+        business_implications: v.payload.business_implications,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "pareto_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
