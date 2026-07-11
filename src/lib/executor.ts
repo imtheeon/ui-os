@@ -3226,6 +3226,29 @@ export async function applyAction(
     return { ok: true, recordTable: "win_loss_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_forecast_accuracy") {
+    const { data, error } = await db
+      .from("forecast_accuracy_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        forecast_vs_actual: v.payload.forecast_vs_actual,
+        overall_accuracy_pct: v.payload.overall_accuracy_pct,
+        bias_direction: v.payload.bias_direction,
+        mape: v.payload.mape,
+        period_accuracy_trend: v.payload.period_accuracy_trend,
+        rep_accuracy_breakdown: v.payload.rep_accuracy_breakdown,
+        pipeline_quality_flags: v.payload.pipeline_quality_flags,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "forecast_accuracy_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
