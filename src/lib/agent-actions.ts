@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -6981,6 +6981,98 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_nps",
       payload: { nps_score, promoter_count, passive_count, detractor_count, total_responses, promoter_pct, passive_pct, detractor_pct, top_promoter_themes, top_detractor_themes, segment_nps, trend_assessment, action_priorities },
+    };
+  }
+
+  if (kind === "analyze_feature_adoption") {
+    const rawFeatures = Array.isArray(p.features_analyzed) ? (p.features_analyzed as unknown[]).slice(0, 50) : [];
+    const features_analyzed: { feature_name: string; users_who_used: number; total_users: number; adoption_rate_pct: number; avg_uses_per_user: number }[] = [];
+    for (const item of rawFeatures) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const total_users = numOrNull(rec.total_users, 1);
+      if (total_users === NUM_INVALID || total_users === null) continue;
+      const users_who_used = numOrNull(rec.users_who_used, 0);
+      if (users_who_used === NUM_INVALID || users_who_used === null) continue;
+      const adoption_rate_pct = numOrNull(rec.adoption_rate_pct, 0, 100);
+      if (adoption_rate_pct === NUM_INVALID || adoption_rate_pct === null) continue;
+      const avg_uses_per_user = numOrNull(rec.avg_uses_per_user, 0);
+      if (avg_uses_per_user === NUM_INVALID || avg_uses_per_user === null) continue;
+      features_analyzed.push({ feature_name: str(rec.feature_name) ?? "", users_who_used, total_users, adoption_rate_pct, avg_uses_per_user });
+    }
+    if (features_analyzed.length === 0) return { ok: false, reason: "empty_features_analyzed" };
+
+    function parseAdoptionSummary(v: unknown): { total_features: number; avg_adoption_rate_pct: number; median_adoption_rate_pct: number } | null {
+      if (typeof v !== "object" || v === null) return null;
+      const rec = v as Record<string, unknown>;
+      const total_features = numOrNull(rec.total_features, 0);
+      if (total_features === NUM_INVALID || total_features === null) return null;
+      const avg_adoption_rate_pct = numOrNull(rec.avg_adoption_rate_pct, 0, 100);
+      if (avg_adoption_rate_pct === NUM_INVALID || avg_adoption_rate_pct === null) return null;
+      const median_adoption_rate_pct = numOrNull(rec.median_adoption_rate_pct, 0, 100);
+      if (median_adoption_rate_pct === NUM_INVALID || median_adoption_rate_pct === null) return null;
+      return { total_features, avg_adoption_rate_pct, median_adoption_rate_pct };
+    }
+    const adoption_summary = parseAdoptionSummary(p.adoption_summary);
+    if (!adoption_summary) return { ok: false, reason: "bad_adoption_summary" };
+
+    const rawPowerFeatures = Array.isArray(p.power_features) ? (p.power_features as unknown[]).slice(0, 10) : [];
+    const power_features: { feature_name: string; adoption_rate_pct: number; retention_correlation: string; why_powerful: string }[] = [];
+    for (const item of rawPowerFeatures) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const feature_name = str(rec.feature_name);
+      if (!feature_name) continue;
+      const adoption_rate_pct = numOrNull(rec.adoption_rate_pct, 0, 100);
+      if (adoption_rate_pct === NUM_INVALID || adoption_rate_pct === null) continue;
+      power_features.push({ feature_name, adoption_rate_pct, retention_correlation: str(rec.retention_correlation) ?? "", why_powerful: str(rec.why_powerful) ?? "" });
+    }
+
+    const rawUnderutilized = Array.isArray(p.underutilized_features) ? (p.underutilized_features as unknown[]).slice(0, 10) : [];
+    const underutilized_features: { feature_name: string; adoption_rate_pct: number; barrier_hypothesis: string }[] = [];
+    for (const item of rawUnderutilized) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const feature_name = str(rec.feature_name);
+      if (!feature_name) continue;
+      const adoption_rate_pct = numOrNull(rec.adoption_rate_pct, 0, 100);
+      if (adoption_rate_pct === NUM_INVALID || adoption_rate_pct === null) continue;
+      underutilized_features.push({ feature_name, adoption_rate_pct, barrier_hypothesis: str(rec.barrier_hypothesis) ?? "" });
+    }
+
+    const rawAdoptionBySegment = Array.isArray(p.adoption_by_segment) ? (p.adoption_by_segment as unknown[]).slice(0, 10) : [];
+    const adoption_by_segment: { segment: string; top_feature: string; avg_features_used: number }[] = [];
+    for (const item of rawAdoptionBySegment) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const segment = str(rec.segment);
+      if (!segment) continue;
+      const avg_features_used = numOrNull(rec.avg_features_used, 0);
+      if (avg_features_used === NUM_INVALID || avg_features_used === null) continue;
+      adoption_by_segment.push({ segment, top_feature: str(rec.top_feature) ?? "", avg_features_used });
+    }
+
+    const RETENTION_SIGNAL_STRENGTHS = ["strong", "moderate", "weak", "none"];
+    const rawCorrelation = Array.isArray(p.correlation_with_retention) ? (p.correlation_with_retention as unknown[]).slice(0, 10) : [];
+    const correlation_with_retention: { feature_name: string; retained_users_adoption_pct: number; churned_users_adoption_pct: number; retention_signal_strength: string }[] = [];
+    for (const item of rawCorrelation) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      if (typeof rec.retention_signal_strength !== "string" || !RETENTION_SIGNAL_STRENGTHS.includes(rec.retention_signal_strength)) continue;
+      const retained_users_adoption_pct = numOrNull(rec.retained_users_adoption_pct, 0, 100);
+      if (retained_users_adoption_pct === NUM_INVALID || retained_users_adoption_pct === null) continue;
+      const churned_users_adoption_pct = numOrNull(rec.churned_users_adoption_pct, 0, 100);
+      if (churned_users_adoption_pct === NUM_INVALID || churned_users_adoption_pct === null) continue;
+      correlation_with_retention.push({ feature_name: str(rec.feature_name) ?? "", retained_users_adoption_pct, churned_users_adoption_pct, retention_signal_strength: rec.retention_signal_strength });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_feature_adoption",
+      payload: { features_analyzed, adoption_summary, power_features, underutilized_features, adoption_by_segment, correlation_with_retention, recommendations },
     };
   }
 
