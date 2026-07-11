@@ -2938,6 +2938,26 @@ export async function applyAction(
     return { ok: true, recordTable: "distribution_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_correlation") {
+    const { data, error } = await db
+      .from("correlation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        correlation_pairs: v.payload.correlation_pairs,
+        strong_correlations: v.payload.strong_correlations,
+        surprising_correlations: v.payload.surprising_correlations,
+        multicollinearity_flags: v.payload.multicollinearity_flags,
+        business_insights: v.payload.business_insights,
+        columns_included: v.payload.columns_included,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "correlation_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
