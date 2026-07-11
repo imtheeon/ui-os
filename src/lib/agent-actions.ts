@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -7234,6 +7234,95 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_quota_attainment",
       payload: { period, team_attainment_pct, rep_attainments, attainment_distribution, at_risk_reps, top_performers, quota_setting_assessment, recommendations },
+    };
+  }
+
+  if (kind === "analyze_win_loss") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+
+    const total_opportunities = numOrNull(p.total_opportunities, 0);
+    if (total_opportunities === NUM_INVALID || total_opportunities === null) return { ok: false, reason: "bad_total_opportunities" };
+
+    const won_count = numOrNull(p.won_count, 0);
+    if (won_count === NUM_INVALID || won_count === null) return { ok: false, reason: "bad_won_count" };
+
+    const lost_count = numOrNull(p.lost_count, 0);
+    if (lost_count === NUM_INVALID || lost_count === null) return { ok: false, reason: "bad_lost_count" };
+
+    const win_rate_pct = numOrNull(p.win_rate_pct, 0, 100);
+    if (win_rate_pct === NUM_INVALID || win_rate_pct === null) return { ok: false, reason: "bad_win_rate_pct" };
+
+    const IMPACTS = ["high", "medium", "low"];
+    function parseFactors(v: unknown): { factor: string; mention_frequency_pct: number; impact: string }[] {
+      const raw = Array.isArray(v) ? (v as unknown[]).slice(0, 10) : [];
+      const out: { factor: string; mention_frequency_pct: number; impact: string }[] = [];
+      for (const item of raw) {
+        if (typeof item !== "object" || item === null) continue;
+        const rec = item as Record<string, unknown>;
+        if (typeof rec.impact !== "string" || !IMPACTS.includes(rec.impact)) continue;
+        const mention_frequency_pct = numOrNull(rec.mention_frequency_pct, 0, 100);
+        if (mention_frequency_pct === NUM_INVALID || mention_frequency_pct === null) continue;
+        out.push({ factor: str(rec.factor) ?? "", mention_frequency_pct, impact: rec.impact });
+      }
+      return out;
+    }
+    const win_factors = parseFactors(p.win_factors);
+    if (win_factors.length === 0) return { ok: false, reason: "empty_win_factors" };
+    const loss_factors = parseFactors(p.loss_factors);
+    if (loss_factors.length === 0) return { ok: false, reason: "empty_loss_factors" };
+
+    const rawCompetitors = Array.isArray(p.competitor_analysis) ? (p.competitor_analysis as unknown[]).slice(0, 10) : [];
+    const competitor_analysis: { competitor: string; lost_to_count: number; won_against_count: number; win_rate_vs_competitor: number }[] = [];
+    for (const item of rawCompetitors) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const competitor = str(rec.competitor);
+      if (!competitor) continue;
+      const lost_to_count = numOrNull(rec.lost_to_count, 0);
+      if (lost_to_count === NUM_INVALID || lost_to_count === null) continue;
+      const won_against_count = numOrNull(rec.won_against_count, 0);
+      if (won_against_count === NUM_INVALID || won_against_count === null) continue;
+      const win_rate_vs_competitor = numOrNull(rec.win_rate_vs_competitor, 0, 100);
+      if (win_rate_vs_competitor === NUM_INVALID || win_rate_vs_competitor === null) continue;
+      competitor_analysis.push({ competitor, lost_to_count, won_against_count, win_rate_vs_competitor });
+    }
+
+    const rawDealChar = Array.isArray(p.deal_characteristic_analysis) ? (p.deal_characteristic_analysis as unknown[]).slice(0, 10) : [];
+    const deal_characteristic_analysis: { characteristic: string; win_rate_when_present: number; win_rate_when_absent: number }[] = [];
+    for (const item of rawDealChar) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const characteristic = str(rec.characteristic);
+      if (!characteristic) continue;
+      const win_rate_when_present = numOrNull(rec.win_rate_when_present, 0, 100);
+      if (win_rate_when_present === NUM_INVALID || win_rate_when_present === null) continue;
+      const win_rate_when_absent = numOrNull(rec.win_rate_when_absent, 0, 100);
+      if (win_rate_when_absent === NUM_INVALID || win_rate_when_absent === null) continue;
+      deal_characteristic_analysis.push({ characteristic, win_rate_when_present, win_rate_when_absent });
+    }
+
+    const rawSegments = Array.isArray(p.win_rate_by_segment) ? (p.win_rate_by_segment as unknown[]).slice(0, 10) : [];
+    const win_rate_by_segment: { segment: string; win_rate_pct: number; deal_count: number }[] = [];
+    for (const item of rawSegments) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const segment = str(rec.segment);
+      if (!segment) continue;
+      const segWinRatePct = numOrNull(rec.win_rate_pct, 0, 100);
+      if (segWinRatePct === NUM_INVALID || segWinRatePct === null) continue;
+      const deal_count = numOrNull(rec.deal_count, 0);
+      if (deal_count === NUM_INVALID || deal_count === null) continue;
+      win_rate_by_segment.push({ segment, win_rate_pct: segWinRatePct, deal_count });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_win_loss",
+      payload: { period, total_opportunities, won_count, lost_count, win_rate_pct, win_factors, loss_factors, competitor_analysis, deal_characteristic_analysis, win_rate_by_segment, recommendations },
     };
   }
 
