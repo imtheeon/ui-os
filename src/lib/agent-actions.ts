@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -7617,6 +7617,561 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       payload: { total_expansion_potential, opportunity_accounts, expansion_types, readiness_distribution, prioritized_plays, expansion_risk_flags },
     };
   }
+
+
+  if (kind === "analyze_attrition") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+    const total_headcount = typeof p.total_headcount === "number" && Number.isInteger(p.total_headcount) && p.total_headcount >= 0 ? p.total_headcount : null;
+    if (total_headcount === null) return { ok: false, reason: "bad_total_headcount" };
+    const voluntary_exits = typeof p.voluntary_exits === "number" && Number.isInteger(p.voluntary_exits) && p.voluntary_exits >= 0 ? p.voluntary_exits : null;
+    if (voluntary_exits === null) return { ok: false, reason: "bad_voluntary_exits" };
+    const involuntary_exits = typeof p.involuntary_exits === "number" && Number.isInteger(p.involuntary_exits) && p.involuntary_exits >= 0 ? p.involuntary_exits : null;
+    if (involuntary_exits === null) return { ok: false, reason: "bad_involuntary_exits" };
+    const voluntary_attrition_rate_pct = numOrNull(p.voluntary_attrition_rate_pct, 0, 100);
+    if (voluntary_attrition_rate_pct === NUM_INVALID || voluntary_attrition_rate_pct === null) return { ok: false, reason: "bad_voluntary_attrition_rate_pct" };
+    const annualized_attrition_rate_pct = numOrNull(p.annualized_attrition_rate_pct, 0);
+    if (annualized_attrition_rate_pct === NUM_INVALID || annualized_attrition_rate_pct === null) return { ok: false, reason: "bad_annualized_attrition_rate_pct" };
+
+    const rawDept = Array.isArray(p.attrition_by_department) ? (p.attrition_by_department as unknown[]).slice(0, 20) : [];
+    const attrition_by_department: { department: string; headcount: number; exits: number; attrition_rate_pct: number }[] = [];
+    for (const item of rawDept) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const department = str(rec.department);
+      if (!department) continue;
+      const headcount = typeof rec.headcount === "number" && Number.isInteger(rec.headcount) && rec.headcount >= 0 ? rec.headcount : null;
+      if (headcount === null) continue;
+      const exits = typeof rec.exits === "number" && Number.isInteger(rec.exits) && rec.exits >= 0 ? rec.exits : null;
+      if (exits === null) continue;
+      const attrition_rate_pct = numOrNull(rec.attrition_rate_pct, 0, 100);
+      if (attrition_rate_pct === NUM_INVALID || attrition_rate_pct === null) continue;
+      attrition_by_department.push({ department, headcount, exits, attrition_rate_pct });
+    }
+
+    const rawTenure = Array.isArray(p.attrition_by_tenure) ? (p.attrition_by_tenure as unknown[]).slice(0, 10) : [];
+    const attrition_by_tenure: { tenure_band: string; headcount: number; exits: number; attrition_rate_pct: number }[] = [];
+    for (const item of rawTenure) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const tenure_band = str(rec.tenure_band);
+      if (!tenure_band) continue;
+      const headcount = typeof rec.headcount === "number" && Number.isInteger(rec.headcount) && rec.headcount >= 0 ? rec.headcount : null;
+      if (headcount === null) continue;
+      const exits = typeof rec.exits === "number" && Number.isInteger(rec.exits) && rec.exits >= 0 ? rec.exits : null;
+      if (exits === null) continue;
+      const attrition_rate_pct = numOrNull(rec.attrition_rate_pct, 0, 100);
+      if (attrition_rate_pct === NUM_INVALID || attrition_rate_pct === null) continue;
+      attrition_by_tenure.push({ tenure_band, headcount, exits, attrition_rate_pct });
+    }
+
+    const rawLevel = Array.isArray(p.attrition_by_level) ? (p.attrition_by_level as unknown[]).slice(0, 10) : [];
+    const attrition_by_level: { level: string; headcount: number; exits: number; attrition_rate_pct: number }[] = [];
+    for (const item of rawLevel) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const level = str(rec.level);
+      if (!level) continue;
+      const headcount = typeof rec.headcount === "number" && Number.isInteger(rec.headcount) && rec.headcount >= 0 ? rec.headcount : null;
+      if (headcount === null) continue;
+      const exits = typeof rec.exits === "number" && Number.isInteger(rec.exits) && rec.exits >= 0 ? rec.exits : null;
+      if (exits === null) continue;
+      const attrition_rate_pct = numOrNull(rec.attrition_rate_pct, 0, 100);
+      if (attrition_rate_pct === NUM_INVALID || attrition_rate_pct === null) continue;
+      attrition_by_level.push({ level, headcount, exits, attrition_rate_pct });
+    }
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawFlags = Array.isArray(p.flight_risk_flags) ? (p.flight_risk_flags as unknown[]).slice(0, 20) : [];
+    const flight_risk_flags: { flag: string; affected_count: number; severity: string }[] = [];
+    for (const item of rawFlags) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      const affected_count = typeof rec.affected_count === "number" && Number.isInteger(rec.affected_count) && rec.affected_count >= 0 ? rec.affected_count : null;
+      if (affected_count === null) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      flight_risk_flags.push({ flag, affected_count, severity: rec.severity });
+    }
+
+    let cost_of_attrition: { total_estimated_cost: number; cost_per_exit: number; methodology_note: string } | null = null;
+    if (typeof p.cost_of_attrition === "object" && p.cost_of_attrition !== null) {
+      const rec = p.cost_of_attrition as Record<string, unknown>;
+      const total_estimated_cost = numOrNull(rec.total_estimated_cost, 0);
+      const cost_per_exit = numOrNull(rec.cost_per_exit, 0);
+      const methodology_note = str(rec.methodology_note);
+      if (total_estimated_cost !== NUM_INVALID && total_estimated_cost !== null &&
+          cost_per_exit !== NUM_INVALID && cost_per_exit !== null && methodology_note) {
+        cost_of_attrition = { total_estimated_cost, cost_per_exit, methodology_note };
+      }
+    }
+    if (!cost_of_attrition) return { ok: false, reason: "bad_cost_of_attrition" };
+
+    const retention_recommendations = strArray(p.retention_recommendations, 10, MAX_STR);
+    if (retention_recommendations.length === 0) return { ok: false, reason: "empty_retention_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_attrition",
+      payload: { period, total_headcount, voluntary_exits, involuntary_exits, voluntary_attrition_rate_pct, annualized_attrition_rate_pct, attrition_by_department, attrition_by_tenure, attrition_by_level, flight_risk_flags, cost_of_attrition, retention_recommendations },
+    };
+  }
+
+  if (kind === "plan_headcount") {
+    const planning_period = str(p.planning_period);
+    if (!planning_period) return { ok: false, reason: "missing_planning_period" };
+    const current_headcount = typeof p.current_headcount === "number" && Number.isInteger(p.current_headcount) && p.current_headcount >= 0 ? p.current_headcount : null;
+    if (current_headcount === null) return { ok: false, reason: "bad_current_headcount" };
+    const planned_headcount = typeof p.planned_headcount === "number" && Number.isInteger(p.planned_headcount) && p.planned_headcount >= 0 ? p.planned_headcount : null;
+    if (planned_headcount === null) return { ok: false, reason: "bad_planned_headcount" };
+    const net_change = typeof p.net_change === "number" && Number.isInteger(p.net_change) ? p.net_change : null;
+    if (net_change === null) return { ok: false, reason: "bad_net_change" };
+
+    const PRIORITIES = ["critical", "high", "medium", "low"];
+    const rawDept = Array.isArray(p.department_plans) ? (p.department_plans as unknown[]).slice(0, 20) : [];
+    const department_plans: { department: string; current: number; planned: number; open_roles: number; priority: string }[] = [];
+    for (const item of rawDept) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const department = str(rec.department);
+      if (!department) continue;
+      const current = typeof rec.current === "number" && Number.isInteger(rec.current) && rec.current >= 0 ? rec.current : null;
+      if (current === null) continue;
+      const planned = typeof rec.planned === "number" && Number.isInteger(rec.planned) && rec.planned >= 0 ? rec.planned : null;
+      if (planned === null) continue;
+      const open_roles = typeof rec.open_roles === "number" && Number.isInteger(rec.open_roles) && rec.open_roles >= 0 ? rec.open_roles : null;
+      if (open_roles === null) continue;
+      if (typeof rec.priority !== "string" || !PRIORITIES.includes(rec.priority)) continue;
+      department_plans.push({ department, current, planned, open_roles, priority: rec.priority });
+    }
+    if (department_plans.length === 0) return { ok: false, reason: "empty_department_plans" };
+
+    const rawTimeline = Array.isArray(p.hiring_timeline) ? (p.hiring_timeline as unknown[]).slice(0, 12) : [];
+    const hiring_timeline: { month: string; planned_hires: number; cumulative_headcount: number }[] = [];
+    for (const item of rawTimeline) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const month = str(rec.month);
+      if (!month) continue;
+      const planned_hires = typeof rec.planned_hires === "number" && Number.isInteger(rec.planned_hires) && rec.planned_hires >= 0 ? rec.planned_hires : null;
+      if (planned_hires === null) continue;
+      const cumulative_headcount = typeof rec.cumulative_headcount === "number" && Number.isInteger(rec.cumulative_headcount) && rec.cumulative_headcount >= 0 ? rec.cumulative_headcount : null;
+      if (cumulative_headcount === null) continue;
+      hiring_timeline.push({ month, planned_hires, cumulative_headcount });
+    }
+
+    let cost_impact: { current_annual_cost: number; planned_annual_cost: number; incremental_cost: number; avg_fully_loaded_cost: number } | null = null;
+    if (typeof p.cost_impact === "object" && p.cost_impact !== null) {
+      const rec = p.cost_impact as Record<string, unknown>;
+      const current_annual_cost = numOrNull(rec.current_annual_cost, 0);
+      const planned_annual_cost = numOrNull(rec.planned_annual_cost, 0);
+      const incremental_cost = numOrNull(rec.incremental_cost);
+      const avg_fully_loaded_cost = numOrNull(rec.avg_fully_loaded_cost, 0);
+      if (current_annual_cost !== NUM_INVALID && current_annual_cost !== null &&
+          planned_annual_cost !== NUM_INVALID && planned_annual_cost !== null &&
+          incremental_cost !== NUM_INVALID && incremental_cost !== null &&
+          avg_fully_loaded_cost !== NUM_INVALID && avg_fully_loaded_cost !== null) {
+        cost_impact = { current_annual_cost, planned_annual_cost, incremental_cost, avg_fully_loaded_cost };
+      }
+    }
+    if (!cost_impact) return { ok: false, reason: "bad_cost_impact" };
+
+    const URGENCIES = ["immediate", "q_next", "h2", "next_year"];
+    const rawGaps = Array.isArray(p.capacity_gaps) ? (p.capacity_gaps as unknown[]).slice(0, 10) : [];
+    const capacity_gaps: { area: string; gap_description: string; hire_count_needed: number; urgency: string }[] = [];
+    for (const item of rawGaps) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const area = str(rec.area);
+      if (!area) continue;
+      const gap_description = str(rec.gap_description);
+      if (!gap_description) continue;
+      const hire_count_needed = typeof rec.hire_count_needed === "number" && Number.isInteger(rec.hire_count_needed) && rec.hire_count_needed >= 0 ? rec.hire_count_needed : null;
+      if (hire_count_needed === null) continue;
+      if (typeof rec.urgency !== "string" || !URGENCIES.includes(rec.urgency)) continue;
+      capacity_gaps.push({ area, gap_description, hire_count_needed, urgency: rec.urgency });
+    }
+
+    const hiring_risks = strArray(p.hiring_risks, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "plan_headcount",
+      payload: { planning_period, current_headcount, planned_headcount, net_change, department_plans, hiring_timeline, cost_impact, capacity_gaps, hiring_risks },
+    };
+  }
+
+  if (kind === "forecast_demand") {
+    const metric_forecasted = str(p.metric_forecasted);
+    if (!metric_forecasted) return { ok: false, reason: "missing_metric_forecasted" };
+    const forecast_horizon = str(p.forecast_horizon);
+    if (!forecast_horizon) return { ok: false, reason: "missing_forecast_horizon" };
+
+    let historical_data_summary: { period_count: number; avg_value: number; growth_rate_pct: number; data_quality: string } | null = null;
+    const DATA_QUALITIES = ["sufficient", "limited", "sparse"];
+    if (typeof p.historical_data_summary === "object" && p.historical_data_summary !== null) {
+      const rec = p.historical_data_summary as Record<string, unknown>;
+      const period_count = typeof rec.period_count === "number" && Number.isInteger(rec.period_count) && rec.period_count >= 1 ? rec.period_count : null;
+      const avg_value = numOrNull(rec.avg_value);
+      const growth_rate_pct = numOrNull(rec.growth_rate_pct);
+      if (period_count !== null && avg_value !== NUM_INVALID && avg_value !== null &&
+          growth_rate_pct !== NUM_INVALID && growth_rate_pct !== null &&
+          typeof rec.data_quality === "string" && DATA_QUALITIES.includes(rec.data_quality)) {
+        historical_data_summary = { period_count, avg_value, growth_rate_pct, data_quality: rec.data_quality };
+      }
+    }
+    if (!historical_data_summary) return { ok: false, reason: "bad_historical_data_summary" };
+
+    const rawPeriods = Array.isArray(p.forecast_periods) ? (p.forecast_periods as unknown[]).slice(0, 24) : [];
+    const forecast_periods: { period: string; forecast_value: number; low_estimate: number; high_estimate: number; notes: string }[] = [];
+    for (const item of rawPeriods) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const period = str(rec.period);
+      if (!period) continue;
+      const forecast_value = numOrNull(rec.forecast_value);
+      if (forecast_value === NUM_INVALID || forecast_value === null) continue;
+      const low_estimate = numOrNull(rec.low_estimate);
+      if (low_estimate === NUM_INVALID || low_estimate === null) continue;
+      const high_estimate = numOrNull(rec.high_estimate);
+      if (high_estimate === NUM_INVALID || high_estimate === null) continue;
+      forecast_periods.push({ period, forecast_value, low_estimate, high_estimate, notes: str(rec.notes) ?? "" });
+    }
+    if (forecast_periods.length === 0) return { ok: false, reason: "empty_forecast_periods" };
+
+    const METHODOLOGIES = ["linear_trend", "moving_average", "exponential_smoothing", "seasonal_decomposition", "regression_based", "judgmental"];
+    if (typeof p.methodology !== "string" || !METHODOLOGIES.includes(p.methodology)) return { ok: false, reason: "bad_methodology" };
+    if (typeof p.seasonality_detected !== "boolean") return { ok: false, reason: "bad_seasonality_detected" };
+    const TREND_DIRECTIONS = ["accelerating_growth", "steady_growth", "flat", "slowing_growth", "declining"];
+    if (typeof p.trend_direction !== "string" || !TREND_DIRECTIONS.includes(p.trend_direction)) return { ok: false, reason: "bad_trend_direction" };
+    const CONFIDENCES = ["high", "medium", "low"];
+    if (typeof p.forecast_confidence !== "string" || !CONFIDENCES.includes(p.forecast_confidence)) return { ok: false, reason: "bad_forecast_confidence" };
+
+    const key_assumptions = strArray(p.key_assumptions, 10, MAX_STR);
+    if (key_assumptions.length === 0) return { ok: false, reason: "empty_key_assumptions" };
+
+    const PROBABILITIES = ["high", "medium", "low"];
+    const rawScenarios = Array.isArray(p.risk_scenarios) ? (p.risk_scenarios as unknown[]).slice(0, 5) : [];
+    const risk_scenarios: { scenario_name: string; probability: string; impact_on_forecast_pct: number; description: string }[] = [];
+    for (const item of rawScenarios) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const scenario_name = str(rec.scenario_name);
+      if (!scenario_name) continue;
+      if (typeof rec.probability !== "string" || !PROBABILITIES.includes(rec.probability)) continue;
+      const impact_on_forecast_pct = numOrNull(rec.impact_on_forecast_pct);
+      if (impact_on_forecast_pct === NUM_INVALID || impact_on_forecast_pct === null) continue;
+      risk_scenarios.push({ scenario_name, probability: rec.probability, impact_on_forecast_pct, description: str(rec.description) ?? "" });
+    }
+
+    return {
+      ok: true,
+      kind: "forecast_demand",
+      payload: { metric_forecasted, forecast_horizon, historical_data_summary, forecast_periods, methodology: p.methodology, seasonality_detected: p.seasonality_detected, trend_direction: p.trend_direction, forecast_confidence: p.forecast_confidence, key_assumptions, risk_scenarios },
+    };
+  }
+
+  if (kind === "plan_capacity") {
+    const capacity_dimension = str(p.capacity_dimension);
+    if (!capacity_dimension) return { ok: false, reason: "missing_capacity_dimension" };
+    const planning_horizon = str(p.planning_horizon);
+    if (!planning_horizon) return { ok: false, reason: "missing_planning_horizon" };
+
+    let current_capacity: { total_capacity: number; utilized_capacity: number; utilization_pct: number; unit: string } | null = null;
+    if (typeof p.current_capacity === "object" && p.current_capacity !== null) {
+      const rec = p.current_capacity as Record<string, unknown>;
+      const total_capacity = numOrNull(rec.total_capacity, 0);
+      const utilized_capacity = numOrNull(rec.utilized_capacity, 0);
+      const utilization_pct = numOrNull(rec.utilization_pct, 0, 100);
+      const unit = str(rec.unit);
+      if (total_capacity !== NUM_INVALID && total_capacity !== null &&
+          utilized_capacity !== NUM_INVALID && utilized_capacity !== null &&
+          utilization_pct !== NUM_INVALID && utilization_pct !== null && unit) {
+        current_capacity = { total_capacity, utilized_capacity, utilization_pct, unit };
+      }
+    }
+    if (!current_capacity) return { ok: false, reason: "bad_current_capacity" };
+
+    const rawDemand = Array.isArray(p.demand_forecast) ? (p.demand_forecast as unknown[]).slice(0, 12) : [];
+    const demand_forecast: { period: string; expected_demand: number; capacity_required: number; surplus_or_deficit: number }[] = [];
+    for (const item of rawDemand) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const period = str(rec.period);
+      if (!period) continue;
+      const expected_demand = numOrNull(rec.expected_demand, 0);
+      if (expected_demand === NUM_INVALID || expected_demand === null) continue;
+      const capacity_required = numOrNull(rec.capacity_required, 0);
+      if (capacity_required === NUM_INVALID || capacity_required === null) continue;
+      const surplus_or_deficit = numOrNull(rec.surplus_or_deficit);
+      if (surplus_or_deficit === NUM_INVALID || surplus_or_deficit === null) continue;
+      demand_forecast.push({ period, expected_demand, capacity_required, surplus_or_deficit });
+    }
+    if (demand_forecast.length === 0) return { ok: false, reason: "empty_demand_forecast" };
+
+    const GAP_TYPES = ["shortage", "surplus"];
+    const SEVERITIES = ["critical", "high", "medium", "low"];
+    const rawGaps = Array.isArray(p.capacity_gaps) ? (p.capacity_gaps as unknown[]).slice(0, 10) : [];
+    const capacity_gaps: { period: string; gap_size: number; gap_type: string; severity: string }[] = [];
+    for (const item of rawGaps) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const period = str(rec.period);
+      if (!period) continue;
+      const gap_size = numOrNull(rec.gap_size);
+      if (gap_size === NUM_INVALID || gap_size === null) continue;
+      if (typeof rec.gap_type !== "string" || !GAP_TYPES.includes(rec.gap_type)) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      capacity_gaps.push({ period, gap_size, gap_type: rec.gap_type, severity: rec.severity });
+    }
+
+    let utilization_analysis: { optimal_utilization_pct: number; current_vs_optimal: string; peak_utilization_pct: number; trough_utilization_pct: number } | null = null;
+    if (typeof p.utilization_analysis === "object" && p.utilization_analysis !== null) {
+      const rec = p.utilization_analysis as Record<string, unknown>;
+      const optimal_utilization_pct = numOrNull(rec.optimal_utilization_pct, 0, 100);
+      const current_vs_optimal = str(rec.current_vs_optimal);
+      const peak_utilization_pct = numOrNull(rec.peak_utilization_pct, 0, 100);
+      const trough_utilization_pct = numOrNull(rec.trough_utilization_pct, 0, 100);
+      if (optimal_utilization_pct !== NUM_INVALID && optimal_utilization_pct !== null && current_vs_optimal &&
+          peak_utilization_pct !== NUM_INVALID && peak_utilization_pct !== null &&
+          trough_utilization_pct !== NUM_INVALID && trough_utilization_pct !== null) {
+        utilization_analysis = { optimal_utilization_pct, current_vs_optimal, peak_utilization_pct, trough_utilization_pct };
+      }
+    }
+    if (!utilization_analysis) return { ok: false, reason: "bad_utilization_analysis" };
+
+    const FEASIBILITIES = ["easy", "moderate", "difficult", "impossible"];
+    const rawConstraints = Array.isArray(p.constraint_analysis) ? (p.constraint_analysis as unknown[]).slice(0, 10) : [];
+    const constraint_analysis: { constraint: string; current_limit: string; expansion_feasibility: string }[] = [];
+    for (const item of rawConstraints) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const constraint = str(rec.constraint);
+      if (!constraint) continue;
+      const current_limit = str(rec.current_limit);
+      if (!current_limit) continue;
+      if (typeof rec.expansion_feasibility !== "string" || !FEASIBILITIES.includes(rec.expansion_feasibility)) continue;
+      constraint_analysis.push({ constraint, current_limit, expansion_feasibility: rec.expansion_feasibility });
+    }
+
+    const rawOptions = Array.isArray(p.investment_options) ? (p.investment_options as unknown[]).slice(0, 5) : [];
+    const investment_options: { option_name: string; capacity_added: number; cost_estimate: number; lead_time: string; tradeoffs: string }[] = [];
+    for (const item of rawOptions) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const option_name = str(rec.option_name);
+      if (!option_name) continue;
+      const capacity_added = numOrNull(rec.capacity_added, 0);
+      if (capacity_added === NUM_INVALID || capacity_added === null) continue;
+      const cost_estimate = numOrNull(rec.cost_estimate, 0);
+      if (cost_estimate === NUM_INVALID || cost_estimate === null) continue;
+      investment_options.push({ option_name, capacity_added, cost_estimate, lead_time: str(rec.lead_time) ?? "", tradeoffs: str(rec.tradeoffs) ?? "" });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "plan_capacity",
+      payload: { capacity_dimension, planning_horizon, current_capacity, demand_forecast, capacity_gaps, utilization_analysis, constraint_analysis, investment_options, recommendations },
+    };
+  }
+
+  if (kind === "analyze_sla") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+
+    const rawMetrics = Array.isArray(p.sla_metrics) ? (p.sla_metrics as unknown[]).slice(0, 20) : [];
+    const sla_metrics: { metric_name: string; target_value: number; actual_value: number; compliance_pct: number; unit: string; breach_count: number }[] = [];
+    for (const item of rawMetrics) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const metric_name = str(rec.metric_name);
+      if (!metric_name) continue;
+      const target_value = numOrNull(rec.target_value);
+      if (target_value === NUM_INVALID || target_value === null) continue;
+      const actual_value = numOrNull(rec.actual_value);
+      if (actual_value === NUM_INVALID || actual_value === null) continue;
+      const compliance_pct = numOrNull(rec.compliance_pct, 0, 100);
+      if (compliance_pct === NUM_INVALID || compliance_pct === null) continue;
+      const breach_count = typeof rec.breach_count === "number" && Number.isInteger(rec.breach_count) && rec.breach_count >= 0 ? rec.breach_count : null;
+      if (breach_count === null) continue;
+      sla_metrics.push({ metric_name, target_value, actual_value, compliance_pct, unit: str(rec.unit) ?? "", breach_count });
+    }
+    if (sla_metrics.length === 0) return { ok: false, reason: "empty_sla_metrics" };
+
+    const overall_compliance_pct = numOrNull(p.overall_compliance_pct, 0, 100);
+    if (overall_compliance_pct === NUM_INVALID || overall_compliance_pct === null) return { ok: false, reason: "bad_overall_compliance_pct" };
+
+    let breach_summary: { total_breaches: number; critical_breaches: number; breach_rate_pct: number } | null = null;
+    if (typeof p.breach_summary === "object" && p.breach_summary !== null) {
+      const rec = p.breach_summary as Record<string, unknown>;
+      const total_breaches = typeof rec.total_breaches === "number" && Number.isInteger(rec.total_breaches) && rec.total_breaches >= 0 ? rec.total_breaches : null;
+      const critical_breaches = typeof rec.critical_breaches === "number" && Number.isInteger(rec.critical_breaches) && rec.critical_breaches >= 0 ? rec.critical_breaches : null;
+      const breach_rate_pct = numOrNull(rec.breach_rate_pct, 0, 100);
+      if (total_breaches !== null && critical_breaches !== null && breach_rate_pct !== NUM_INVALID && breach_rate_pct !== null) {
+        breach_summary = { total_breaches, critical_breaches, breach_rate_pct };
+      }
+    }
+    if (!breach_summary) return { ok: false, reason: "bad_breach_summary" };
+
+    const rawCategories = Array.isArray(p.worst_performing_categories) ? (p.worst_performing_categories as unknown[]).slice(0, 10) : [];
+    const worst_performing_categories: { category: string; compliance_pct: number; breach_count: number; root_cause_hypothesis: string }[] = [];
+    for (const item of rawCategories) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const category = str(rec.category);
+      if (!category) continue;
+      const compliance_pct = numOrNull(rec.compliance_pct, 0, 100);
+      if (compliance_pct === NUM_INVALID || compliance_pct === null) continue;
+      const breach_count = typeof rec.breach_count === "number" && Number.isInteger(rec.breach_count) && rec.breach_count >= 0 ? rec.breach_count : null;
+      if (breach_count === null) continue;
+      worst_performing_categories.push({ category, compliance_pct, breach_count, root_cause_hypothesis: str(rec.root_cause_hypothesis) ?? "" });
+    }
+
+    const TRENDS = ["improving", "stable", "declining", "insufficient_data"];
+    if (typeof p.trend_assessment !== "string" || !TRENDS.includes(p.trend_assessment)) return { ok: false, reason: "bad_trend_assessment" };
+
+    const RISKS = ["high", "medium", "low"];
+    const rawImpact = Array.isArray(p.customer_impact_assessment) ? (p.customer_impact_assessment as unknown[]).slice(0, 10) : [];
+    const customer_impact_assessment: { customer_tier: string; breaches_experienced: number; escalation_risk: string }[] = [];
+    for (const item of rawImpact) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const customer_tier = str(rec.customer_tier);
+      if (!customer_tier) continue;
+      const breaches_experienced = typeof rec.breaches_experienced === "number" && Number.isInteger(rec.breaches_experienced) && rec.breaches_experienced >= 0 ? rec.breaches_experienced : null;
+      if (breaches_experienced === null) continue;
+      if (typeof rec.escalation_risk !== "string" || !RISKS.includes(rec.escalation_risk)) continue;
+      customer_impact_assessment.push({ customer_tier, breaches_experienced, escalation_risk: rec.escalation_risk });
+    }
+
+    const improvement_actions = strArray(p.improvement_actions, 10, MAX_STR);
+    if (improvement_actions.length === 0) return { ok: false, reason: "empty_improvement_actions" };
+
+    return {
+      ok: true,
+      kind: "analyze_sla",
+      payload: { period, sla_metrics, overall_compliance_pct, breach_summary, worst_performing_categories, trend_assessment: p.trend_assessment, customer_impact_assessment, improvement_actions },
+    };
+  }
+
+  if (kind === "analyze_compensation") {
+    const total_compensation_cost = numOrNull(p.total_compensation_cost, 0);
+    if (total_compensation_cost === NUM_INVALID || total_compensation_cost === null) return { ok: false, reason: "bad_total_compensation_cost" };
+    const avg_total_comp = numOrNull(p.avg_total_comp, 0);
+    if (avg_total_comp === NUM_INVALID || avg_total_comp === null) return { ok: false, reason: "bad_avg_total_comp" };
+
+    const rawLevels = Array.isArray(p.compensation_by_level) ? (p.compensation_by_level as unknown[]).slice(0, 10) : [];
+    const compensation_by_level: { level: string; headcount: number; avg_base: number; avg_total_comp: number; salary_range_min: number; salary_range_max: number }[] = [];
+    for (const item of rawLevels) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const level = str(rec.level);
+      if (!level) continue;
+      const headcount = typeof rec.headcount === "number" && Number.isInteger(rec.headcount) && rec.headcount >= 0 ? rec.headcount : null;
+      if (headcount === null) continue;
+      const avg_base = numOrNull(rec.avg_base, 0);
+      if (avg_base === NUM_INVALID || avg_base === null) continue;
+      const avg_total_comp_lvl = numOrNull(rec.avg_total_comp, 0);
+      if (avg_total_comp_lvl === NUM_INVALID || avg_total_comp_lvl === null) continue;
+      const salary_range_min = numOrNull(rec.salary_range_min, 0);
+      if (salary_range_min === NUM_INVALID || salary_range_min === null) continue;
+      const salary_range_max = numOrNull(rec.salary_range_max, 0);
+      if (salary_range_max === NUM_INVALID || salary_range_max === null) continue;
+      compensation_by_level.push({ level, headcount, avg_base, avg_total_comp: avg_total_comp_lvl, salary_range_min, salary_range_max });
+    }
+    if (compensation_by_level.length === 0) return { ok: false, reason: "empty_compensation_by_level" };
+
+    const rawDept = Array.isArray(p.compensation_by_department) ? (p.compensation_by_department as unknown[]).slice(0, 20) : [];
+    const compensation_by_department: { department: string; headcount: number; avg_base: number; total_dept_cost: number }[] = [];
+    for (const item of rawDept) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const department = str(rec.department);
+      if (!department) continue;
+      const headcount = typeof rec.headcount === "number" && Number.isInteger(rec.headcount) && rec.headcount >= 0 ? rec.headcount : null;
+      if (headcount === null) continue;
+      const avg_base = numOrNull(rec.avg_base, 0);
+      if (avg_base === NUM_INVALID || avg_base === null) continue;
+      const total_dept_cost = numOrNull(rec.total_dept_cost, 0);
+      if (total_dept_cost === NUM_INVALID || total_dept_cost === null) continue;
+      compensation_by_department.push({ department, headcount, avg_base, total_dept_cost });
+    }
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawFlags = Array.isArray(p.pay_equity_flags) ? (p.pay_equity_flags as unknown[]).slice(0, 10) : [];
+    const pay_equity_flags: { flag_type: string; description: string; affected_count: number; severity: string }[] = [];
+    for (const item of rawFlags) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag_type = str(rec.flag_type);
+      if (!flag_type) continue;
+      const description = str(rec.description);
+      if (!description) continue;
+      const affected_count = typeof rec.affected_count === "number" && Number.isInteger(rec.affected_count) && rec.affected_count >= 0 ? rec.affected_count : null;
+      if (affected_count === null) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      pay_equity_flags.push({ flag_type, description, affected_count, severity: rec.severity });
+    }
+
+    const POSITIONS = ["below_p50", "at_p50", "at_p75", "above_p75"];
+    const rawBenchmark = Array.isArray(p.market_benchmarking) ? (p.market_benchmarking as unknown[]).slice(0, 10) : [];
+    const market_benchmarking: { level: string; internal_avg: number; market_p50: number; market_p75: number; position: string }[] = [];
+    for (const item of rawBenchmark) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const level = str(rec.level);
+      if (!level) continue;
+      const internal_avg = numOrNull(rec.internal_avg, 0);
+      if (internal_avg === NUM_INVALID || internal_avg === null) continue;
+      const market_p50 = numOrNull(rec.market_p50, 0);
+      if (market_p50 === NUM_INVALID || market_p50 === null) continue;
+      const market_p75 = numOrNull(rec.market_p75, 0);
+      if (market_p75 === NUM_INVALID || market_p75 === null) continue;
+      if (typeof rec.position !== "string" || !POSITIONS.includes(rec.position)) continue;
+      market_benchmarking.push({ level, internal_avg, market_p50, market_p75, position: rec.position });
+    }
+
+    let comp_ratio_distribution: { below_80_count: number; ratio_80_to_100_count: number; ratio_100_to_120_count: number; above_120_count: number } | null = null;
+    if (typeof p.comp_ratio_distribution === "object" && p.comp_ratio_distribution !== null) {
+      const rec = p.comp_ratio_distribution as Record<string, unknown>;
+      const below_80_count = typeof rec.below_80_count === "number" && Number.isInteger(rec.below_80_count) && rec.below_80_count >= 0 ? rec.below_80_count : null;
+      const ratio_80_to_100_count = typeof rec.ratio_80_to_100_count === "number" && Number.isInteger(rec.ratio_80_to_100_count) && rec.ratio_80_to_100_count >= 0 ? rec.ratio_80_to_100_count : null;
+      const ratio_100_to_120_count = typeof rec.ratio_100_to_120_count === "number" && Number.isInteger(rec.ratio_100_to_120_count) && rec.ratio_100_to_120_count >= 0 ? rec.ratio_100_to_120_count : null;
+      const above_120_count = typeof rec.above_120_count === "number" && Number.isInteger(rec.above_120_count) && rec.above_120_count >= 0 ? rec.above_120_count : null;
+      if (below_80_count !== null && ratio_80_to_100_count !== null && ratio_100_to_120_count !== null && above_120_count !== null) {
+        comp_ratio_distribution = { below_80_count, ratio_80_to_100_count, ratio_100_to_120_count, above_120_count };
+      }
+    }
+    if (!comp_ratio_distribution) return { ok: false, reason: "bad_comp_ratio_distribution" };
+
+    let budget_impact: { annual_base_budget: number; annual_total_comp_budget: number; headcount_budget_pct: number } | null = null;
+    if (typeof p.budget_impact === "object" && p.budget_impact !== null) {
+      const rec = p.budget_impact as Record<string, unknown>;
+      const annual_base_budget = numOrNull(rec.annual_base_budget, 0);
+      const annual_total_comp_budget = numOrNull(rec.annual_total_comp_budget, 0);
+      const headcount_budget_pct = numOrNull(rec.headcount_budget_pct, 0, 100);
+      if (annual_base_budget !== NUM_INVALID && annual_base_budget !== null &&
+          annual_total_comp_budget !== NUM_INVALID && annual_total_comp_budget !== null &&
+          headcount_budget_pct !== NUM_INVALID && headcount_budget_pct !== null) {
+        budget_impact = { annual_base_budget, annual_total_comp_budget, headcount_budget_pct };
+      }
+    }
+    if (!budget_impact) return { ok: false, reason: "bad_budget_impact" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+    if (recommendations.length === 0) return { ok: false, reason: "empty_recommendations" };
+
+    return {
+      ok: true,
+      kind: "analyze_compensation",
+      payload: { total_compensation_cost, avg_total_comp, compensation_by_level, compensation_by_department, pay_equity_flags, market_benchmarking, comp_ratio_distribution, budget_impact, recommendations },
+    };
+  }
+
 
   // store_report
   const title = str(p.title);
