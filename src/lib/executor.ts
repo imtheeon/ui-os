@@ -13,6 +13,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { validateProposal } from "./agent-actions";
+import { createBigQueryConnector } from "./bigquery-connector";
 
 type ApplyOk = { ok: true; recordTable: string; recordId: string };
 type ApplyErr = { ok: false; code: string; message: string };
@@ -3852,6 +3853,88 @@ export async function applyAction(
       .single();
     if (error) return { ok: false, code: "DB_ERROR", message: error.message };
     return { ok: true, recordTable: "invoice_extraction_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "query_bigquery") {
+    const { data: connRow, error: connError } = await db
+      .from("bigquery_connections")
+      .select("id, gcp_project_id")
+      .eq("org_id", orgId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (connError) return { ok: false, code: "DB_ERROR", message: connError.message };
+
+    const baseInsert = {
+      org_id: orgId, // CODE-OWNED
+      payload_id: action.payload_id,
+      proposed_action_id: action.id,
+      natural_language_question: v.payload.natural_language_question,
+      generated_sql: v.payload.generated_sql,
+      query_rationale: v.payload.query_rationale,
+      follow_up_suggestions: v.payload.follow_up_suggestions,
+    };
+
+    if (!connRow) {
+      const { data, error } = await db
+        .from("bigquery_query_runs")
+        .insert({
+          ...baseInsert,
+          connection_id: null,
+          rows_returned: 0,
+          execution_time_ms: 0,
+          result_preview: [],
+          result_schema: [],
+          query_status: "error",
+          error_message: "No active BigQuery connection configured for this organization",
+        })
+        .select("id")
+        .single();
+      if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+      return { ok: true, recordTable: "bigquery_query_runs", recordId: data.id as string };
+    }
+
+    const connector = createBigQueryConnector(db);
+    const substitutedSql = (v.payload.generated_sql as string).split("{project_id}").join(connRow.gcp_project_id as string);
+
+    try {
+      const result = await connector.executeQuery(orgId, connRow.id as string, substitutedSql, 10000);
+      const { data, error } = await db
+        .from("bigquery_query_runs")
+        .insert({
+          ...baseInsert,
+          connection_id: connRow.id,
+          rows_returned: result.rowCount,
+          execution_time_ms: result.executionTimeMs,
+          result_preview: result.rows.slice(0, 20),
+          result_schema: result.schema,
+          query_status: "success",
+          error_message: null,
+        })
+        .select("id")
+        .single();
+      if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+      return { ok: true, recordTable: "bigquery_query_runs", recordId: data.id as string };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const { data, error } = await db
+        .from("bigquery_query_runs")
+        .insert({
+          ...baseInsert,
+          connection_id: connRow.id,
+          rows_returned: 0,
+          execution_time_ms: 0,
+          result_preview: [],
+          result_schema: [],
+          query_status: "error",
+          error_message: message,
+        })
+        .select("id")
+        .single();
+      if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+      return { ok: true, recordTable: "bigquery_query_runs", recordId: data.id as string };
+    }
   }
 
   const { data, error } = await db
