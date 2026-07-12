@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation", "build_metric_tree", "analyze_text", "assess_data_freshness", "diff_narratives", "configure_alert_thresholds", "annotate_data", "normalize_financial_statements", "build_three_statement_model", "assess_quality_of_earnings", "analyze_deferred_revenue", "assess_earnings_quality", "eliminate_intercompany"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation", "build_metric_tree", "analyze_text", "assess_data_freshness", "diff_narratives", "configure_alert_thresholds", "annotate_data", "normalize_financial_statements", "build_three_statement_model", "assess_quality_of_earnings", "analyze_deferred_revenue", "assess_earnings_quality", "eliminate_intercompany", "analyze_stock_based_compensation", "assess_gaap_compliance", "reconcile_tax_rate", "build_due_diligence_checklist", "analyze_market_sizing", "extract_invoice_data"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -9013,6 +9013,452 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
     };
   }
 
+
+  if (kind === "analyze_stock_based_compensation") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+    const total_sbc_expense = numOrNull(p.total_sbc_expense, 0);
+    if (total_sbc_expense === NUM_INVALID || total_sbc_expense === null) return { ok: false, reason: "bad_total_sbc_expense" };
+    const sbc_as_pct_of_revenue = numOrNull(p.sbc_as_pct_of_revenue, 0, 100);
+    if (sbc_as_pct_of_revenue === NUM_INVALID || sbc_as_pct_of_revenue === null) return { ok: false, reason: "bad_sbc_as_pct_of_revenue" };
+    const sbc_as_pct_of_opex = numOrNull(p.sbc_as_pct_of_opex, 0, 100);
+    if (sbc_as_pct_of_opex === NUM_INVALID || sbc_as_pct_of_opex === null) return { ok: false, reason: "bad_sbc_as_pct_of_opex" };
+
+    const rawFn = Array.isArray(p.sbc_by_function) ? (p.sbc_by_function as unknown[]).slice(0, 10) : [];
+    const sbc_by_function: { function_name: string; sbc_amount: number; headcount: number; sbc_per_employee: number }[] = [];
+    for (const item of rawFn) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const function_name = str(rec.function_name);
+      if (!function_name) continue;
+      const sbc_amount = numOrNull(rec.sbc_amount, 0);
+      if (sbc_amount === NUM_INVALID || sbc_amount === null) continue;
+      const headcount = typeof rec.headcount === "number" && Number.isInteger(rec.headcount) && rec.headcount >= 0 ? rec.headcount : null;
+      if (headcount === null) continue;
+      const sbc_per_employee = numOrNull(rec.sbc_per_employee, 0);
+      if (sbc_per_employee === NUM_INVALID || sbc_per_employee === null) continue;
+      sbc_by_function.push({ function_name, sbc_amount, headcount, sbc_per_employee });
+    }
+
+    let unvested_overhang: { total_unvested_shares: number; total_fully_diluted_shares: number; overhang_pct: number; weighted_avg_remaining_vest_years: number } | null = null;
+    if (typeof p.unvested_overhang === "object" && p.unvested_overhang !== null) {
+      const rec = p.unvested_overhang as Record<string, unknown>;
+      const total_unvested_shares = numOrNull(rec.total_unvested_shares, 0);
+      const total_fully_diluted_shares = numOrNull(rec.total_fully_diluted_shares, 0);
+      const overhang_pct = numOrNull(rec.overhang_pct, 0, 100);
+      const weighted_avg_remaining_vest_years = numOrNull(rec.weighted_avg_remaining_vest_years, 0);
+      if (total_unvested_shares !== NUM_INVALID && total_unvested_shares !== null &&
+          total_fully_diluted_shares !== NUM_INVALID && total_fully_diluted_shares !== null &&
+          overhang_pct !== NUM_INVALID && overhang_pct !== null &&
+          weighted_avg_remaining_vest_years !== NUM_INVALID && weighted_avg_remaining_vest_years !== null) {
+        unvested_overhang = { total_unvested_shares, total_fully_diluted_shares, overhang_pct, weighted_avg_remaining_vest_years };
+      }
+    }
+    if (!unvested_overhang) return { ok: false, reason: "bad_unvested_overhang" };
+
+    let dilution_analysis: { basic_shares: number; fully_diluted_shares: number; dilution_pct: number; options_in_the_money: number } | null = null;
+    if (typeof p.dilution_analysis === "object" && p.dilution_analysis !== null) {
+      const rec = p.dilution_analysis as Record<string, unknown>;
+      const basic_shares = numOrNull(rec.basic_shares, 0);
+      const fully_diluted_shares = numOrNull(rec.fully_diluted_shares, 0);
+      const dilution_pct = numOrNull(rec.dilution_pct, 0, 100);
+      const options_in_the_money = numOrNull(rec.options_in_the_money, 0);
+      if (basic_shares !== NUM_INVALID && basic_shares !== null &&
+          fully_diluted_shares !== NUM_INVALID && fully_diluted_shares !== null &&
+          dilution_pct !== NUM_INVALID && dilution_pct !== null &&
+          options_in_the_money !== NUM_INVALID && options_in_the_money !== null) {
+        dilution_analysis = { basic_shares, fully_diluted_shares, dilution_pct, options_in_the_money };
+      }
+    }
+    if (!dilution_analysis) return { ok: false, reason: "bad_dilution_analysis" };
+
+    let cash_vs_gaap_earnings_bridge: { gaap_net_income: number; sbc_expense_addback: number; cash_net_income: number; cash_earnings_per_share_impact: number } | null = null;
+    if (typeof p.cash_vs_gaap_earnings_bridge === "object" && p.cash_vs_gaap_earnings_bridge !== null) {
+      const rec = p.cash_vs_gaap_earnings_bridge as Record<string, unknown>;
+      const gaap_net_income = numOrNull(rec.gaap_net_income);
+      const sbc_expense_addback = numOrNull(rec.sbc_expense_addback, 0);
+      const cash_net_income = numOrNull(rec.cash_net_income);
+      const cash_earnings_per_share_impact = numOrNull(rec.cash_earnings_per_share_impact);
+      if (gaap_net_income !== NUM_INVALID && gaap_net_income !== null &&
+          sbc_expense_addback !== NUM_INVALID && sbc_expense_addback !== null &&
+          cash_net_income !== NUM_INVALID && cash_net_income !== null &&
+          cash_earnings_per_share_impact !== NUM_INVALID && cash_earnings_per_share_impact !== null) {
+        cash_vs_gaap_earnings_bridge = { gaap_net_income, sbc_expense_addback, cash_net_income, cash_earnings_per_share_impact };
+      }
+    }
+    if (!cash_vs_gaap_earnings_bridge) return { ok: false, reason: "bad_cash_vs_gaap_earnings_bridge" };
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawFlags = Array.isArray(p.sbc_quality_flags) ? (p.sbc_quality_flags as unknown[]).slice(0, 10) : [];
+    const sbc_quality_flags: { flag: string; severity: string; detail: string }[] = [];
+    for (const item of rawFlags) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      sbc_quality_flags.push({ flag, severity: rec.severity, detail: str(rec.detail) ?? "" });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_stock_based_compensation",
+      payload: { period, total_sbc_expense, sbc_as_pct_of_revenue, sbc_as_pct_of_opex, sbc_by_function, unvested_overhang, dilution_analysis, cash_vs_gaap_earnings_bridge, sbc_quality_flags, recommendations },
+    };
+  }
+
+  if (kind === "assess_gaap_compliance") {
+    const rawStd = Array.isArray(p.standards_applicable) ? (p.standards_applicable as unknown[]).slice(0, 15) : [];
+    const standards_applicable: { standard_code: string; standard_name: string; relevance_reason: string }[] = [];
+    for (const item of rawStd) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const standard_code = str(rec.standard_code);
+      if (!standard_code) continue;
+      standards_applicable.push({ standard_code, standard_name: str(rec.standard_name) ?? "", relevance_reason: str(rec.relevance_reason) ?? "" });
+    }
+    if (standards_applicable.length === 0) return { ok: false, reason: "empty_standards_applicable" };
+
+    const COMPLIANCE_STATUSES = ["compliant", "likely_compliant", "needs_review", "non_compliant", "not_applicable"];
+    const rawAssess = Array.isArray(p.compliance_assessments) ? (p.compliance_assessments as unknown[]).slice(0, 20) : [];
+    const compliance_assessments: { area: string; standard_code: string; compliance_status: string; finding: string }[] = [];
+    for (const item of rawAssess) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const area = str(rec.area);
+      if (!area) continue;
+      if (typeof rec.compliance_status !== "string" || !COMPLIANCE_STATUSES.includes(rec.compliance_status)) continue;
+      compliance_assessments.push({ area, standard_code: str(rec.standard_code) ?? "", compliance_status: rec.compliance_status, finding: str(rec.finding) ?? "" });
+    }
+    if (compliance_assessments.length === 0) return { ok: false, reason: "empty_compliance_assessments" };
+
+    const URGENCIES = ["immediate", "near_term", "planned"];
+    const rawFindings = Array.isArray(p.critical_findings) ? (p.critical_findings as unknown[]).slice(0, 10) : [];
+    const critical_findings: { finding: string; standard_violated: string; financial_impact: string; urgency: string }[] = [];
+    for (const item of rawFindings) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const finding = str(rec.finding);
+      if (!finding) continue;
+      if (typeof rec.urgency !== "string" || !URGENCIES.includes(rec.urgency)) continue;
+      critical_findings.push({ finding, standard_violated: str(rec.standard_violated) ?? "", financial_impact: str(rec.financial_impact) ?? "", urgency: rec.urgency });
+    }
+
+    const rawGaps = Array.isArray(p.disclosure_gaps) ? (p.disclosure_gaps as unknown[]).slice(0, 15) : [];
+    const disclosure_gaps: { disclosure_type: string; required_by: string; gap_description: string }[] = [];
+    for (const item of rawGaps) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const disclosure_type = str(rec.disclosure_type);
+      if (!disclosure_type) continue;
+      disclosure_gaps.push({ disclosure_type, required_by: str(rec.required_by) ?? "", gap_description: str(rec.gap_description) ?? "" });
+    }
+
+    const ALIGNMENTS = ["aligned", "acceptable_alternative", "review_needed", "non_compliant"];
+    const rawPolicy = Array.isArray(p.accounting_policy_notes) ? (p.accounting_policy_notes as unknown[]).slice(0, 10) : [];
+    const accounting_policy_notes: { policy_area: string; current_policy: string; gaap_alignment: string }[] = [];
+    for (const item of rawPolicy) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const policy_area = str(rec.policy_area);
+      if (!policy_area) continue;
+      if (typeof rec.gaap_alignment !== "string" || !ALIGNMENTS.includes(rec.gaap_alignment)) continue;
+      accounting_policy_notes.push({ policy_area, current_policy: str(rec.current_policy) ?? "", gaap_alignment: rec.gaap_alignment });
+    }
+
+    const RATINGS = ["strong", "adequate", "needs_improvement", "material_weakness"];
+    if (typeof p.overall_compliance_rating !== "string" || !RATINGS.includes(p.overall_compliance_rating)) return { ok: false, reason: "bad_overall_compliance_rating" };
+
+    const PRIORITIES = ["p1", "p2", "p3"];
+    const rawPlan = Array.isArray(p.remediation_plan) ? (p.remediation_plan as unknown[]).slice(0, 15) : [];
+    const remediation_plan: { action: string; priority: string; timeline: string; owner: string }[] = [];
+    for (const item of rawPlan) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const action = str(rec.action);
+      if (!action) continue;
+      if (typeof rec.priority !== "string" || !PRIORITIES.includes(rec.priority)) continue;
+      remediation_plan.push({ action, priority: rec.priority, timeline: str(rec.timeline) ?? "", owner: str(rec.owner) ?? "" });
+    }
+
+    return {
+      ok: true,
+      kind: "assess_gaap_compliance",
+      payload: { standards_applicable, compliance_assessments, critical_findings, disclosure_gaps, accounting_policy_notes, overall_compliance_rating: p.overall_compliance_rating, remediation_plan },
+    };
+  }
+
+  if (kind === "reconcile_tax_rate") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+    const statutory_rate_pct = numOrNull(p.statutory_rate_pct, 0, 100);
+    if (statutory_rate_pct === NUM_INVALID || statutory_rate_pct === null) return { ok: false, reason: "bad_statutory_rate_pct" };
+    const effective_tax_rate_pct = numOrNull(p.effective_tax_rate_pct);
+    if (effective_tax_rate_pct === NUM_INVALID || effective_tax_rate_pct === null) return { ok: false, reason: "bad_effective_tax_rate_pct" };
+    const rate_difference_pct = numOrNull(p.rate_difference_pct);
+    if (rate_difference_pct === NUM_INVALID || rate_difference_pct === null) return { ok: false, reason: "bad_rate_difference_pct" };
+    const pre_tax_income = numOrNull(p.pre_tax_income);
+    if (pre_tax_income === NUM_INVALID || pre_tax_income === null) return { ok: false, reason: "bad_pre_tax_income" };
+    const tax_provision = numOrNull(p.tax_provision);
+    if (tax_provision === NUM_INVALID || tax_provision === null) return { ok: false, reason: "bad_tax_provision" };
+
+    const rawItems = Array.isArray(p.reconciling_items) ? (p.reconciling_items as unknown[]).slice(0, 20) : [];
+    const reconciling_items: { item: string; effect_on_rate_ppts: number; explanation: string }[] = [];
+    for (const item of rawItems) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const itemName = str(rec.item);
+      if (!itemName) continue;
+      const effect_on_rate_ppts = numOrNull(rec.effect_on_rate_ppts);
+      if (effect_on_rate_ppts === NUM_INVALID || effect_on_rate_ppts === null) continue;
+      reconciling_items.push({ item: itemName, effect_on_rate_ppts, explanation: str(rec.explanation) ?? "" });
+    }
+
+    let deferred_tax_analysis: { deferred_tax_asset: number; deferred_tax_liability: number; net_deferred_tax: number; valuation_allowance: number; realizability_assessment: string } | null = null;
+    if (typeof p.deferred_tax_analysis === "object" && p.deferred_tax_analysis !== null) {
+      const rec = p.deferred_tax_analysis as Record<string, unknown>;
+      const deferred_tax_asset = numOrNull(rec.deferred_tax_asset, 0);
+      const deferred_tax_liability = numOrNull(rec.deferred_tax_liability, 0);
+      const net_deferred_tax = numOrNull(rec.net_deferred_tax);
+      const valuation_allowance = numOrNull(rec.valuation_allowance, 0);
+      if (deferred_tax_asset !== NUM_INVALID && deferred_tax_asset !== null &&
+          deferred_tax_liability !== NUM_INVALID && deferred_tax_liability !== null &&
+          net_deferred_tax !== NUM_INVALID && net_deferred_tax !== null &&
+          valuation_allowance !== NUM_INVALID && valuation_allowance !== null) {
+        deferred_tax_analysis = { deferred_tax_asset, deferred_tax_liability, net_deferred_tax, valuation_allowance, realizability_assessment: str(rec.realizability_assessment) ?? "" };
+      }
+    }
+    if (!deferred_tax_analysis) return { ok: false, reason: "bad_deferred_tax_analysis" };
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawFlags = Array.isArray(p.tax_risk_flags) ? (p.tax_risk_flags as unknown[]).slice(0, 10) : [];
+    const tax_risk_flags: { flag: string; severity: string; potential_exposure: string }[] = [];
+    for (const item of rawFlags) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      tax_risk_flags.push({ flag, severity: rec.severity, potential_exposure: str(rec.potential_exposure) ?? "" });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "reconcile_tax_rate",
+      payload: { period, statutory_rate_pct, effective_tax_rate_pct, rate_difference_pct, pre_tax_income, tax_provision, reconciling_items, deferred_tax_analysis, tax_risk_flags, recommendations },
+    };
+  }
+
+  if (kind === "build_due_diligence_checklist") {
+    const TXN_TYPES = ["ma_acquisition", "fundraising_series_a", "fundraising_series_b_plus", "debt_financing", "ipo_readiness", "vendor_onboarding", "general"];
+    if (typeof p.transaction_type !== "string" || !TXN_TYPES.includes(p.transaction_type)) return { ok: false, reason: "bad_transaction_type" };
+
+    const COMPLETION_STATUSES = ["complete", "partial", "not_started"];
+    const rawCat = Array.isArray(p.checklist_categories) ? (p.checklist_categories as unknown[]).slice(0, 15) : [];
+    const checklist_categories: { category: string; item_count: number; completion_status: string }[] = [];
+    for (const item of rawCat) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const category = str(rec.category);
+      if (!category) continue;
+      const item_count = typeof rec.item_count === "number" && Number.isInteger(rec.item_count) && rec.item_count >= 0 ? rec.item_count : null;
+      if (item_count === null) continue;
+      if (typeof rec.completion_status !== "string" || !COMPLETION_STATUSES.includes(rec.completion_status)) continue;
+      checklist_categories.push({ category, item_count, completion_status: rec.completion_status });
+    }
+    if (checklist_categories.length === 0) return { ok: false, reason: "empty_checklist_categories" };
+
+    const total_items = typeof p.total_items === "number" && Number.isInteger(p.total_items) && p.total_items >= 0 ? p.total_items : null;
+    if (total_items === null) return { ok: false, reason: "bad_total_items" };
+
+    const ITEM_STATUSES = ["evidenced", "open", "not_applicable"];
+    const PRIORITIES = ["p1", "p2", "p3"];
+    const rawCritical = Array.isArray(p.critical_items) ? (p.critical_items as unknown[]).slice(0, 20) : [];
+    const critical_items: { item: string; category: string; status: string; priority: string }[] = [];
+    for (const item of rawCritical) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const itemName = str(rec.item);
+      if (!itemName) continue;
+      if (typeof rec.status !== "string" || !ITEM_STATUSES.includes(rec.status)) continue;
+      if (typeof rec.priority !== "string" || !PRIORITIES.includes(rec.priority)) continue;
+      critical_items.push({ item: itemName, category: str(rec.category) ?? "", status: rec.status, priority: rec.priority });
+    }
+
+    const rawEvidenced = Array.isArray(p.items_evidenced_in_data) ? (p.items_evidenced_in_data as unknown[]).slice(0, 30) : [];
+    const items_evidenced_in_data: { item: string; evidence_found: string }[] = [];
+    for (const item of rawEvidenced) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const itemName = str(rec.item);
+      if (!itemName) continue;
+      items_evidenced_in_data.push({ item: itemName, evidence_found: str(rec.evidence_found) ?? "" });
+    }
+
+    const rawOpen = Array.isArray(p.open_items) ? (p.open_items as unknown[]).slice(0, 30) : [];
+    const open_items: { item: string; category: string; reason_open: string }[] = [];
+    for (const item of rawOpen) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const itemName = str(rec.item);
+      if (!itemName) continue;
+      open_items.push({ item: itemName, category: str(rec.category) ?? "", reason_open: str(rec.reason_open) ?? "" });
+    }
+
+    const risk_summary = str(p.risk_summary);
+    if (!risk_summary) return { ok: false, reason: "missing_risk_summary" };
+
+    return {
+      ok: true,
+      kind: "build_due_diligence_checklist",
+      payload: { transaction_type: p.transaction_type, checklist_categories, total_items, critical_items, items_evidenced_in_data, open_items, risk_summary },
+    };
+  }
+
+  if (kind === "analyze_market_sizing") {
+    const market_definition = str(p.market_definition);
+    if (!market_definition) return { ok: false, reason: "missing_market_definition" };
+    const tam_estimate = numOrNull(p.tam_estimate, 0);
+    if (tam_estimate === NUM_INVALID || tam_estimate === null) return { ok: false, reason: "bad_tam_estimate" };
+    const sam_estimate = numOrNull(p.sam_estimate, 0);
+    if (sam_estimate === NUM_INVALID || sam_estimate === null) return { ok: false, reason: "bad_sam_estimate" };
+    const som_estimate = numOrNull(p.som_estimate, 0);
+    if (som_estimate === NUM_INVALID || som_estimate === null) return { ok: false, reason: "bad_som_estimate" };
+
+    const METHODOLOGIES = ["top_down", "bottom_up", "value_theory", "hybrid"];
+    if (typeof p.sizing_methodology !== "string" || !METHODOLOGIES.includes(p.sizing_methodology)) return { ok: false, reason: "bad_sizing_methodology" };
+
+    const current_market_share_pct = numOrNull(p.current_market_share_pct, 0, 100);
+    if (current_market_share_pct === NUM_INVALID || current_market_share_pct === null) return { ok: false, reason: "bad_current_market_share_pct" };
+
+    let addressable_customers: { total_addressable_count: number; segments: { name: string; count: number }[] } | null = null;
+    if (typeof p.addressable_customers === "object" && p.addressable_customers !== null) {
+      const rec = p.addressable_customers as Record<string, unknown>;
+      const total_addressable_count = typeof rec.total_addressable_count === "number" && Number.isInteger(rec.total_addressable_count) && rec.total_addressable_count >= 0 ? rec.total_addressable_count : null;
+      if (total_addressable_count !== null) {
+        const rawSegments = Array.isArray(rec.segments) ? (rec.segments as unknown[]).slice(0, 5) : [];
+        const segments: { name: string; count: number }[] = [];
+        for (const item of rawSegments) {
+          if (typeof item !== "object" || item === null) continue;
+          const srec = item as Record<string, unknown>;
+          const name = str(srec.name);
+          if (!name) continue;
+          const count = typeof srec.count === "number" && Number.isInteger(srec.count) && srec.count >= 0 ? srec.count : null;
+          if (count === null) continue;
+          segments.push({ name, count });
+        }
+        addressable_customers = { total_addressable_count, segments };
+      }
+    }
+    if (!addressable_customers) return { ok: false, reason: "bad_addressable_customers" };
+
+    const market_growth_rate_pct = numOrNull(p.market_growth_rate_pct);
+    if (market_growth_rate_pct === NUM_INVALID || market_growth_rate_pct === null) return { ok: false, reason: "bad_market_growth_rate_pct" };
+
+    const DENSITIES = ["fragmented", "consolidated", "duopoly", "monopoly", "emerging"];
+    if (typeof p.competitive_density !== "string" || !DENSITIES.includes(p.competitive_density)) return { ok: false, reason: "bad_competitive_density" };
+
+    const market_opportunity_summary = str(p.market_opportunity_summary);
+    if (!market_opportunity_summary) return { ok: false, reason: "missing_market_opportunity_summary" };
+
+    const assumptions_and_caveats = strArray(p.assumptions_and_caveats, 10, MAX_STR);
+    if (assumptions_and_caveats.length === 0) return { ok: false, reason: "empty_assumptions_and_caveats" };
+
+    return {
+      ok: true,
+      kind: "analyze_market_sizing",
+      payload: { market_definition, tam_estimate, sam_estimate, som_estimate, sizing_methodology: p.sizing_methodology, current_market_share_pct, addressable_customers, market_growth_rate_pct, competitive_density: p.competitive_density, market_opportunity_summary, assumptions_and_caveats },
+    };
+  }
+
+  if (kind === "extract_invoice_data") {
+    const INVOICE_STATUSES = ["extracted", "partial", "unclear"];
+    const rawInv = Array.isArray(p.invoices_extracted) ? (p.invoices_extracted as unknown[]).slice(0, 500) : [];
+    const invoices_extracted: { invoice_number: string; vendor_or_customer: string; invoice_date: string; due_date: string | null; amount: number; currency: string; line_items: unknown[]; status: string }[] = [];
+    for (const item of rawInv) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const invoice_number = str(rec.invoice_number);
+      if (!invoice_number) continue;
+      const amount = numOrNull(rec.amount);
+      if (amount === NUM_INVALID || amount === null) continue;
+      if (typeof rec.status !== "string" || !INVOICE_STATUSES.includes(rec.status)) continue;
+      const due_date = rec.due_date === null ? null : str(rec.due_date);
+      const line_items = Array.isArray(rec.line_items) ? (rec.line_items as unknown[]).slice(0, 20) : [];
+      invoices_extracted.push({
+        invoice_number,
+        vendor_or_customer: str(rec.vendor_or_customer) ?? "",
+        invoice_date: str(rec.invoice_date) ?? "",
+        due_date,
+        amount,
+        currency: str(rec.currency) ?? "",
+        line_items,
+        status: rec.status,
+      });
+    }
+    if (invoices_extracted.length === 0) return { ok: false, reason: "empty_invoices_extracted" };
+
+    let extraction_summary: { total_invoices: number; fully_extracted: number; partially_extracted: number; unclear: number; total_amount: number } | null = null;
+    if (typeof p.extraction_summary === "object" && p.extraction_summary !== null) {
+      const rec = p.extraction_summary as Record<string, unknown>;
+      const total_invoices = typeof rec.total_invoices === "number" && Number.isInteger(rec.total_invoices) && rec.total_invoices >= 0 ? rec.total_invoices : null;
+      const fully_extracted = typeof rec.fully_extracted === "number" && Number.isInteger(rec.fully_extracted) && rec.fully_extracted >= 0 ? rec.fully_extracted : null;
+      const partially_extracted = typeof rec.partially_extracted === "number" && Number.isInteger(rec.partially_extracted) && rec.partially_extracted >= 0 ? rec.partially_extracted : null;
+      const unclear = typeof rec.unclear === "number" && Number.isInteger(rec.unclear) && rec.unclear >= 0 ? rec.unclear : null;
+      const total_amount = numOrNull(rec.total_amount, 0);
+      if (total_invoices !== null && fully_extracted !== null && partially_extracted !== null && unclear !== null &&
+          total_amount !== NUM_INVALID && total_amount !== null) {
+        extraction_summary = { total_invoices, fully_extracted, partially_extracted, unclear, total_amount };
+      }
+    }
+    if (!extraction_summary) return { ok: false, reason: "bad_extraction_summary" };
+
+    const rawField = Array.isArray(p.field_completeness) ? (p.field_completeness as unknown[]).slice(0, 10) : [];
+    const field_completeness: { field_name: string; completeness_pct: number }[] = [];
+    for (const item of rawField) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const field_name = str(rec.field_name);
+      if (!field_name) continue;
+      const completeness_pct = numOrNull(rec.completeness_pct, 0, 100);
+      if (completeness_pct === NUM_INVALID || completeness_pct === null) continue;
+      field_completeness.push({ field_name, completeness_pct });
+    }
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawIssues = Array.isArray(p.validation_issues) ? (p.validation_issues as unknown[]).slice(0, 30) : [];
+    const validation_issues: { invoice_reference: string; issue_type: string; description: string; severity: string }[] = [];
+    for (const item of rawIssues) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const invoice_reference = str(rec.invoice_reference);
+      if (!invoice_reference) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      validation_issues.push({ invoice_reference, issue_type: str(rec.issue_type) ?? "", description: str(rec.description) ?? "", severity: rec.severity });
+    }
+
+    const rawDup = Array.isArray(p.duplicate_flags) ? (p.duplicate_flags as unknown[]).slice(0, 20) : [];
+    const duplicate_flags: { invoice_reference_a: string; invoice_reference_b: string; similarity_reason: string }[] = [];
+    for (const item of rawDup) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const invoice_reference_a = str(rec.invoice_reference_a);
+      if (!invoice_reference_a) continue;
+      duplicate_flags.push({ invoice_reference_a, invoice_reference_b: str(rec.invoice_reference_b) ?? "", similarity_reason: str(rec.similarity_reason) ?? "" });
+    }
+
+    if (typeof p.ready_for_posting !== "boolean") return { ok: false, reason: "bad_ready_for_posting" };
+
+    return {
+      ok: true,
+      kind: "extract_invoice_data",
+      payload: { invoices_extracted, extraction_summary, field_completeness, validation_issues, duplicate_flags, ready_for_posting: p.ready_for_posting },
+    };
+  }
 
   // store_report
   const title = str(p.title);

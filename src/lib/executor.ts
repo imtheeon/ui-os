@@ -3719,6 +3719,141 @@ export async function applyAction(
   }
 
 
+  if (v.kind === "analyze_stock_based_compensation") {
+    const { data, error } = await db
+      .from("stock_based_compensation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        total_sbc_expense: v.payload.total_sbc_expense,
+        sbc_as_pct_of_revenue: v.payload.sbc_as_pct_of_revenue,
+        sbc_as_pct_of_opex: v.payload.sbc_as_pct_of_opex,
+        sbc_by_function: v.payload.sbc_by_function,
+        unvested_overhang: v.payload.unvested_overhang,
+        dilution_analysis: v.payload.dilution_analysis,
+        cash_vs_gaap_earnings_bridge: v.payload.cash_vs_gaap_earnings_bridge,
+        sbc_quality_flags: v.payload.sbc_quality_flags,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "stock_based_compensation_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "assess_gaap_compliance") {
+    const { data, error } = await db
+      .from("gaap_compliance_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        standards_applicable: v.payload.standards_applicable,
+        compliance_assessments: v.payload.compliance_assessments,
+        critical_findings: v.payload.critical_findings,
+        disclosure_gaps: v.payload.disclosure_gaps,
+        accounting_policy_notes: v.payload.accounting_policy_notes,
+        overall_compliance_rating: v.payload.overall_compliance_rating,
+        remediation_plan: v.payload.remediation_plan,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "gaap_compliance_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "reconcile_tax_rate") {
+    const { data, error } = await db
+      .from("tax_rate_reconciliation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        statutory_rate_pct: v.payload.statutory_rate_pct,
+        effective_tax_rate_pct: v.payload.effective_tax_rate_pct,
+        rate_difference_pct: v.payload.rate_difference_pct,
+        pre_tax_income: v.payload.pre_tax_income,
+        tax_provision: v.payload.tax_provision,
+        reconciling_items: v.payload.reconciling_items,
+        deferred_tax_analysis: v.payload.deferred_tax_analysis,
+        tax_risk_flags: v.payload.tax_risk_flags,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "tax_rate_reconciliation_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "build_due_diligence_checklist") {
+    const { data, error } = await db
+      .from("due_diligence_checklist_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        transaction_type: v.payload.transaction_type,
+        checklist_categories: v.payload.checklist_categories,
+        total_items: v.payload.total_items,
+        critical_items: v.payload.critical_items,
+        items_evidenced_in_data: v.payload.items_evidenced_in_data,
+        open_items: v.payload.open_items,
+        risk_summary: v.payload.risk_summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "due_diligence_checklist_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_market_sizing") {
+    const { data, error } = await db
+      .from("market_sizing_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        market_definition: v.payload.market_definition,
+        tam_estimate: v.payload.tam_estimate,
+        sam_estimate: v.payload.sam_estimate,
+        som_estimate: v.payload.som_estimate,
+        sizing_methodology: v.payload.sizing_methodology,
+        current_market_share_pct: v.payload.current_market_share_pct,
+        addressable_customers: v.payload.addressable_customers,
+        market_growth_rate_pct: v.payload.market_growth_rate_pct,
+        competitive_density: v.payload.competitive_density,
+        market_opportunity_summary: v.payload.market_opportunity_summary,
+        assumptions_and_caveats: v.payload.assumptions_and_caveats,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "market_sizing_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "extract_invoice_data") {
+    const { data, error } = await db
+      .from("invoice_extraction_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        invoices_extracted: v.payload.invoices_extracted,
+        extraction_summary: v.payload.extraction_summary,
+        field_completeness: v.payload.field_completeness,
+        validation_issues: v.payload.validation_issues,
+        duplicate_flags: v.payload.duplicate_flags,
+        ready_for_posting: v.payload.ready_for_posting,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "invoice_extraction_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
