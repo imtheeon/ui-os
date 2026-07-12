@@ -3314,6 +3314,149 @@ export async function applyAction(
     return { ok: true, recordTable: "expansion_opportunity_runs", recordId: data.id as string };
   }
 
+
+  if (v.kind === "analyze_attrition") {
+    const { data, error } = await db
+      .from("attrition_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        total_headcount: v.payload.total_headcount,
+        voluntary_exits: v.payload.voluntary_exits,
+        involuntary_exits: v.payload.involuntary_exits,
+        voluntary_attrition_rate_pct: v.payload.voluntary_attrition_rate_pct,
+        annualized_attrition_rate_pct: v.payload.annualized_attrition_rate_pct,
+        attrition_by_department: v.payload.attrition_by_department,
+        attrition_by_tenure: v.payload.attrition_by_tenure,
+        attrition_by_level: v.payload.attrition_by_level,
+        flight_risk_flags: v.payload.flight_risk_flags,
+        cost_of_attrition: v.payload.cost_of_attrition,
+        retention_recommendations: v.payload.retention_recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "attrition_analysis_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "plan_headcount") {
+    const { data, error } = await db
+      .from("headcount_planning_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        planning_period: v.payload.planning_period,
+        current_headcount: v.payload.current_headcount,
+        planned_headcount: v.payload.planned_headcount,
+        net_change: v.payload.net_change,
+        department_plans: v.payload.department_plans,
+        hiring_timeline: v.payload.hiring_timeline,
+        cost_impact: v.payload.cost_impact,
+        capacity_gaps: v.payload.capacity_gaps,
+        hiring_risks: v.payload.hiring_risks,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "headcount_planning_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "forecast_demand") {
+    const { data, error } = await db
+      .from("demand_forecasting_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        metric_forecasted: v.payload.metric_forecasted,
+        forecast_horizon: v.payload.forecast_horizon,
+        historical_data_summary: v.payload.historical_data_summary,
+        forecast_periods: v.payload.forecast_periods,
+        methodology: v.payload.methodology,
+        seasonality_detected: v.payload.seasonality_detected,
+        trend_direction: v.payload.trend_direction,
+        forecast_confidence: v.payload.forecast_confidence,
+        key_assumptions: v.payload.key_assumptions,
+        risk_scenarios: v.payload.risk_scenarios,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "demand_forecasting_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "plan_capacity") {
+    const { data, error } = await db
+      .from("capacity_planning_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        capacity_dimension: v.payload.capacity_dimension,
+        planning_horizon: v.payload.planning_horizon,
+        current_capacity: v.payload.current_capacity,
+        demand_forecast: v.payload.demand_forecast,
+        capacity_gaps: v.payload.capacity_gaps,
+        utilization_analysis: v.payload.utilization_analysis,
+        constraint_analysis: v.payload.constraint_analysis,
+        investment_options: v.payload.investment_options,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "capacity_planning_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_sla") {
+    const { data, error } = await db
+      .from("sla_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        sla_metrics: v.payload.sla_metrics,
+        overall_compliance_pct: v.payload.overall_compliance_pct,
+        breach_summary: v.payload.breach_summary,
+        worst_performing_categories: v.payload.worst_performing_categories,
+        trend_assessment: v.payload.trend_assessment,
+        customer_impact_assessment: v.payload.customer_impact_assessment,
+        improvement_actions: v.payload.improvement_actions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "sla_analysis_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_compensation") {
+    const { data, error } = await db
+      .from("compensation_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_compensation_cost: v.payload.total_compensation_cost,
+        avg_total_comp: v.payload.avg_total_comp,
+        compensation_by_level: v.payload.compensation_by_level,
+        compensation_by_department: v.payload.compensation_by_department,
+        pay_equity_flags: v.payload.pay_equity_flags,
+        market_benchmarking: v.payload.market_benchmarking,
+        comp_ratio_distribution: v.payload.comp_ratio_distribution,
+        budget_impact: v.payload.budget_impact,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "compensation_analysis_runs", recordId: data.id as string };
+  }
+
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
