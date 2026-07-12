@@ -3937,6 +3937,264 @@ export async function applyAction(
     }
   }
 
+  if (v.kind === "position_cash") {
+    const { data, error } = await db
+      .from("cash_positioning_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        as_of_date: v.payload.as_of_date,
+        total_cash_balance: v.payload.total_cash_balance,
+        cash_by_account: v.payload.cash_by_account,
+        inflows_next_7d: v.payload.inflows_next_7d,
+        outflows_next_7d: v.payload.outflows_next_7d,
+        inflows_next_30d: v.payload.inflows_next_30d,
+        outflows_next_30d: v.payload.outflows_next_30d,
+        projected_balance_7d: v.payload.projected_balance_7d,
+        projected_balance_30d: v.payload.projected_balance_30d,
+        minimum_operating_cash: v.payload.minimum_operating_cash,
+        cash_cushion_days: v.payload.cash_cushion_days,
+        liquidity_status: v.payload.liquidity_status,
+        alerts: v.payload.alerts,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "cash_positioning_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "build_debt_schedule") {
+    const { data, error } = await db
+      .from("debt_schedule_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        as_of_date: v.payload.as_of_date,
+        total_debt: v.payload.total_debt,
+        debt_facilities: v.payload.debt_facilities,
+        total_annual_interest: v.payload.total_annual_interest,
+        total_annual_principal: v.payload.total_annual_principal,
+        weighted_avg_interest_rate: v.payload.weighted_avg_interest_rate,
+        debt_service_coverage_ratio: v.payload.debt_service_coverage_ratio,
+        interest_coverage_ratio: v.payload.interest_coverage_ratio,
+        maturity_schedule: v.payload.maturity_schedule,
+        covenant_headroom: v.payload.covenant_headroom,
+        refinancing_risk: v.payload.refinancing_risk,
+        summary_notes: v.payload.summary_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "debt_schedule_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "model_equity_waterfall") {
+    const { data, error } = await db
+      .from("equity_waterfall_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        exit_scenarios: v.payload.exit_scenarios,
+        share_classes: v.payload.share_classes,
+        total_invested_capital: v.payload.total_invested_capital,
+        total_option_pool_shares: v.payload.total_option_pool_shares,
+        fully_diluted_shares: v.payload.fully_diluted_shares,
+        waterfall_notes: v.payload.waterfall_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "equity_waterfall_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_payroll") {
+    const { data, error } = await db
+      .from("payroll_analytics_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        pay_period: v.payload.pay_period,
+        total_gross_payroll: v.payload.total_gross_payroll,
+        total_employer_burden: v.payload.total_employer_burden,
+        total_fully_loaded_cost: v.payload.total_fully_loaded_cost,
+        employee_count: v.payload.employee_count,
+        avg_salary_per_employee: v.payload.avg_salary_per_employee,
+        payroll_by_department: v.payload.payroll_by_department,
+        payroll_by_type: v.payload.payroll_by_type,
+        burden_rate_pct: v.payload.burden_rate_pct,
+        payroll_as_pct_revenue: v.payload.payroll_as_pct_revenue,
+        salary_band_analysis: v.payload.salary_band_analysis,
+        overtime_cost: v.payload.overtime_cost,
+        period_over_period_change_pct: v.payload.period_over_period_change_pct,
+        flags: v.payload.flags,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "payroll_analytics_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_vendor_concentration") {
+    const { data, error } = await db
+      .from("vendor_concentration_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        analysis_period: v.payload.analysis_period,
+        total_vendor_spend: v.payload.total_vendor_spend,
+        vendor_count: v.payload.vendor_count,
+        top_vendors: v.payload.top_vendors,
+        spend_by_category: v.payload.spend_by_category,
+        concentration_hhi: v.payload.concentration_hhi,
+        top3_spend_pct: v.payload.top3_spend_pct,
+        top10_spend_pct: v.payload.top10_spend_pct,
+        single_source_vendors: v.payload.single_source_vendors,
+        at_risk_spend: v.payload.at_risk_spend,
+        concentration_risk_level: v.payload.concentration_risk_level,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "vendor_concentration_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "compute_investor_metrics") {
+    const { data, error } = await db
+      .from("investor_metrics_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        as_of_period: v.payload.as_of_period,
+        arr: v.payload.arr,
+        mrr: v.payload.mrr,
+        arr_growth_rate_yoy: v.payload.arr_growth_rate_yoy,
+        net_revenue_retention: v.payload.net_revenue_retention,
+        gross_revenue_retention: v.payload.gross_revenue_retention,
+        rule_of_40_score: v.payload.rule_of_40_score,
+        magic_number: v.payload.magic_number,
+        burn_multiple: v.payload.burn_multiple,
+        ltv_cac_ratio: v.payload.ltv_cac_ratio,
+        payback_period_months: v.payload.payback_period_months,
+        arr_per_fte: v.payload.arr_per_fte,
+        gross_margin_pct: v.payload.gross_margin_pct,
+        operating_margin_pct: v.payload.operating_margin_pct,
+        net_magic_number: v.payload.net_magic_number,
+        quick_ratio: v.payload.quick_ratio,
+        summary: v.payload.summary,
+        rating: v.payload.rating,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "investor_metrics_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "compute_clv") {
+    const { data, error } = await db
+      .from("clv_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        analysis_period: v.payload.analysis_period,
+        avg_ltv: v.payload.avg_ltv,
+        avg_cac: v.payload.avg_cac,
+        ltv_cac_ratio: v.payload.ltv_cac_ratio,
+        avg_revenue_per_customer_per_month: v.payload.avg_revenue_per_customer_per_month,
+        avg_gross_margin_pct: v.payload.avg_gross_margin_pct,
+        avg_customer_lifespan_months: v.payload.avg_customer_lifespan_months,
+        monthly_churn_rate: v.payload.monthly_churn_rate,
+        payback_period_months: v.payload.payback_period_months,
+        clv_by_segment: v.payload.clv_by_segment,
+        top_clv_customers: v.payload.top_clv_customers,
+        bottom_clv_customers: v.payload.bottom_clv_customers,
+        methodology_notes: v.payload.methodology_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "clv_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_payment_terms") {
+    const { data, error } = await db
+      .from("payment_terms_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        analysis_period: v.payload.analysis_period,
+        customer_terms_analysis: v.payload.customer_terms_analysis,
+        vendor_terms_analysis: v.payload.vendor_terms_analysis,
+        avg_dso_days: v.payload.avg_dso_days,
+        avg_dpo_days: v.payload.avg_dpo_days,
+        working_capital_impact: v.payload.working_capital_impact,
+        early_payment_discount_opportunities: v.payload.early_payment_discount_opportunities,
+        late_payment_flags: v.payload.late_payment_flags,
+        optimization_opportunities: v.payload.optimization_opportunities,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "payment_terms_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_sensitivity") {
+    const { data, error } = await db
+      .from("sensitivity_analysis_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        base_case_metric: v.payload.base_case_metric,
+        base_case_value: v.payload.base_case_value,
+        sensitivity_variables: v.payload.sensitivity_variables,
+        tornado_chart_data: v.payload.tornado_chart_data,
+        scenario_matrix: v.payload.scenario_matrix,
+        key_drivers: v.payload.key_drivers,
+        break_even_points: v.payload.break_even_points,
+        methodology_notes: v.payload.methodology_notes,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "sensitivity_analysis_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "optimize_working_capital") {
+    const { data, error } = await db
+      .from("working_capital_optimization_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        analysis_period: v.payload.analysis_period,
+        current_ccc_days: v.payload.current_ccc_days,
+        target_ccc_days: v.payload.target_ccc_days,
+        current_dso: v.payload.current_dso,
+        current_dpo: v.payload.current_dpo,
+        current_dio: v.payload.current_dio,
+        cash_release_opportunity: v.payload.cash_release_opportunity,
+        ar_optimization: v.payload.ar_optimization,
+        ap_optimization: v.payload.ap_optimization,
+        inventory_optimization: v.payload.inventory_optimization,
+        priority_actions: v.payload.priority_actions,
+        twelve_month_impact: v.payload.twelve_month_impact,
+        implementation_complexity: v.payload.implementation_complexity,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "working_capital_optimization_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
