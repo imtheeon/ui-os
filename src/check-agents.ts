@@ -168,8 +168,8 @@ async function main() {
   const finPayload = await makePayload(orgD); // extracted_json has 'amount' column
   const enq: UiEvent[] = [];
   const route = await routePayload({ orgId: orgD, payloadId: finPayload }, { db, enqueue: (e) => enq.push(e) });
-  ok("financial routes to [data_quality_agent, schema_detection_agent, document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, professional_services_agent, headcount_analysis_agent, competitive_benchmarking_agent, data_reshape_agent, date_normalization_agent, string_normalization_agent, currency_normalization_agent, join_quality_agent, data_validation_rules_agent, distribution_agent, correlation_agent, regression_agent, hypothesis_testing_agent, pareto_agent, clustering_agent, funnel_analysis_agent, retention_analysis_agent, ab_test_agent, nps_analysis_agent, feature_adoption_agent, customer_health_score_agent, expansion_opportunity_agent, attrition_analysis_agent, headcount_planning_agent, demand_forecasting_agent, capacity_planning_agent, sla_analysis_agent, metric_tree_agent, text_analytics_agent, data_freshness_agent, narrative_diff_agent, alert_threshold_agent, data_annotation_agent, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, revenue_recognition_agent, churn_risk_agent, customer_segmentation_agent, sales_pipeline_agent, pricing_optimization_agent, contract_analysis_agent, marketing_roi_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, liquidity_risk_agent, covenant_tracking_agent, transaction_classifier, expense_policy_agent, subscription_tracker, commission_calculator, overtime_analysis_agent, unit_economics_agent, valuation_agent, cap_table_agent, lease_analysis_agent, asset_register_agent, price_volume_mix_agent, bridge_analysis_agent, discount_analysis_agent, maverick_spend_agent, collections_priority_agent, bad_debt_provision_agent, credit_scoring_agent, fx_exposure_agent, consolidation_agent, nonprofit_agent, healthcare_agent, legal_billing_agent, hospitality_agent, construction_agent, revenue_quality_agent, cohort_analysis_agent, variance_analysis_agent, cash_flow_forecast_agent, expense_forecast_agent, debt_covenant_agent, tax_provision_agent, collections_agent, board_narrative_agent, investor_update_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, quota_attainment_agent, win_loss_agent, forecast_accuracy_agent, attribution_agent, price_elasticity_agent, compensation_analysis_agent, report_generator, orchestrator_agent, confidence_reviewer_agent, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality_agent", "schema_detection_agent", "document_classifier", "schema_evolution_agent", "column_profiler", "data_dictionary_agent", "missing_data_agent", "headcount_analytics_agent", "productivity_agent", "growth_rate_agent", "data_privacy_agent", "data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "kpi_extractor", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "outlier_explanation_agent", "time_series_decomp_agent", "failure_risk_agent", "run_rate_agent", "spend_analysis_agent", "investor_memo_agent", "okr_tracker_agent", "swot_agent", "query_builder_agent", "esg_reporting_agent", "seasonality_agent", "benchmark_agent", "professional_services_agent", "headcount_analysis_agent", "competitive_benchmarking_agent", "data_reshape_agent", "date_normalization_agent", "string_normalization_agent", "currency_normalization_agent", "join_quality_agent", "data_validation_rules_agent", "distribution_agent", "correlation_agent", "regression_agent", "hypothesis_testing_agent", "pareto_agent", "clustering_agent", "funnel_analysis_agent", "retention_analysis_agent", "ab_test_agent", "nps_analysis_agent", "feature_adoption_agent", "customer_health_score_agent", "expansion_opportunity_agent", "attrition_analysis_agent", "headcount_planning_agent", "demand_forecasting_agent", "capacity_planning_agent", "sla_analysis_agent", "metric_tree_agent", "text_analytics_agent", "data_freshness_agent", "narrative_diff_agent", "alert_threshold_agent", "data_annotation_agent", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "working_capital_agent", "break_even_agent", "cogs_analysis_agent", "revenue_recognition_agent", "churn_risk_agent", "customer_segmentation_agent", "sales_pipeline_agent", "pricing_optimization_agent", "contract_analysis_agent", "marketing_roi_agent", "fraud_detection_agent", "concentration_risk_agent", "scenario_agent", "liquidity_risk_agent", "covenant_tracking_agent", "transaction_classifier", "expense_policy_agent", "subscription_tracker", "commission_calculator", "overtime_analysis_agent", "unit_economics_agent", "valuation_agent", "cap_table_agent", "lease_analysis_agent", "asset_register_agent", "price_volume_mix_agent", "bridge_analysis_agent", "discount_analysis_agent", "maverick_spend_agent", "collections_priority_agent", "bad_debt_provision_agent", "credit_scoring_agent", "fx_exposure_agent", "consolidation_agent", "nonprofit_agent", "healthcare_agent", "legal_billing_agent", "hospitality_agent", "construction_agent", "revenue_quality_agent", "cohort_analysis_agent", "variance_analysis_agent", "cash_flow_forecast_agent", "expense_forecast_agent", "debt_covenant_agent", "tax_provision_agent", "collections_agent", "board_narrative_agent", "investor_update_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "quota_attainment_agent", "win_loss_agent", "forecast_accuracy_agent", "attribution_agent", "price_elasticity_agent", "compensation_analysis_agent", "report_generator", "orchestrator_agent", "confidence_reviewer_agent", "exec_summarizer", "insight_synthesis_agent", "conflict_detection_agent", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst", "action_priority_agent"]));
-  ok("onehundredsixtyfour agent/run events enqueued", enq.length === 164 && enq.every((e) => e.name === "agent/run"));
+  ok("financial routes to [data_quality_agent, schema_detection_agent, document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, professional_services_agent, headcount_analysis_agent, competitive_benchmarking_agent, data_reshape_agent, date_normalization_agent, string_normalization_agent, currency_normalization_agent, join_quality_agent, data_validation_rules_agent, distribution_agent, correlation_agent, regression_agent, hypothesis_testing_agent, pareto_agent, clustering_agent, funnel_analysis_agent, retention_analysis_agent, ab_test_agent, nps_analysis_agent, feature_adoption_agent, customer_health_score_agent, expansion_opportunity_agent, attrition_analysis_agent, headcount_planning_agent, demand_forecasting_agent, capacity_planning_agent, sla_analysis_agent, metric_tree_agent, text_analytics_agent, data_freshness_agent, narrative_diff_agent, alert_threshold_agent, data_annotation_agent, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, revenue_recognition_agent, churn_risk_agent, customer_segmentation_agent, sales_pipeline_agent, pricing_optimization_agent, contract_analysis_agent, marketing_roi_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, liquidity_risk_agent, covenant_tracking_agent, transaction_classifier, expense_policy_agent, subscription_tracker, commission_calculator, overtime_analysis_agent, unit_economics_agent, valuation_agent, cap_table_agent, lease_analysis_agent, asset_register_agent, price_volume_mix_agent, bridge_analysis_agent, discount_analysis_agent, maverick_spend_agent, collections_priority_agent, bad_debt_provision_agent, credit_scoring_agent, fx_exposure_agent, consolidation_agent, nonprofit_agent, healthcare_agent, legal_billing_agent, hospitality_agent, construction_agent, revenue_quality_agent, cohort_analysis_agent, variance_analysis_agent, cash_flow_forecast_agent, expense_forecast_agent, debt_covenant_agent, tax_provision_agent, collections_agent, board_narrative_agent, investor_update_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, quota_attainment_agent, win_loss_agent, forecast_accuracy_agent, attribution_agent, price_elasticity_agent, compensation_analysis_agent, financial_statement_normalizer_agent, three_statement_model_agent, quality_of_earnings_agent, deferred_revenue_agent, earnings_quality_agent, intercompany_elimination_agent, report_generator, orchestrator_agent, confidence_reviewer_agent, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]", route.ok && JSON.stringify(route.plan) === JSON.stringify(["data_quality_agent", "schema_detection_agent", "document_classifier", "schema_evolution_agent", "column_profiler", "data_dictionary_agent", "missing_data_agent", "headcount_analytics_agent", "productivity_agent", "growth_rate_agent", "data_privacy_agent", "data_quality", "compliance_agent", "onboarding_agent", "clarification_agent", "multi_period", "audit_summarizer", "kpi_extractor", "sql_analyst", "anomaly_detector", "categorizer", "data_cleaner", "unit_normalizer", "duplicate_detector", "outlier_explanation_agent", "time_series_decomp_agent", "failure_risk_agent", "run_rate_agent", "spend_analysis_agent", "investor_memo_agent", "okr_tracker_agent", "swot_agent", "query_builder_agent", "esg_reporting_agent", "seasonality_agent", "benchmark_agent", "professional_services_agent", "headcount_analysis_agent", "competitive_benchmarking_agent", "data_reshape_agent", "date_normalization_agent", "string_normalization_agent", "currency_normalization_agent", "join_quality_agent", "data_validation_rules_agent", "distribution_agent", "correlation_agent", "regression_agent", "hypothesis_testing_agent", "pareto_agent", "clustering_agent", "funnel_analysis_agent", "retention_analysis_agent", "ab_test_agent", "nps_analysis_agent", "feature_adoption_agent", "customer_health_score_agent", "expansion_opportunity_agent", "attrition_analysis_agent", "headcount_planning_agent", "demand_forecasting_agent", "capacity_planning_agent", "sla_analysis_agent", "metric_tree_agent", "text_analytics_agent", "data_freshness_agent", "narrative_diff_agent", "alert_threshold_agent", "data_annotation_agent", "reconciler", "invoice_matcher", "cash_flow_agent", "tax_categorizer", "budget_analyst", "saas_metrics_agent", "burn_rate_agent", "cohort_agent", "ar_aging_agent", "ap_agent", "bank_recon_agent", "ratio_analysis_agent", "profitability_agent", "working_capital_agent", "break_even_agent", "cogs_analysis_agent", "revenue_recognition_agent", "churn_risk_agent", "customer_segmentation_agent", "sales_pipeline_agent", "pricing_optimization_agent", "contract_analysis_agent", "marketing_roi_agent", "fraud_detection_agent", "concentration_risk_agent", "scenario_agent", "liquidity_risk_agent", "covenant_tracking_agent", "transaction_classifier", "expense_policy_agent", "subscription_tracker", "commission_calculator", "overtime_analysis_agent", "unit_economics_agent", "valuation_agent", "cap_table_agent", "lease_analysis_agent", "asset_register_agent", "price_volume_mix_agent", "bridge_analysis_agent", "discount_analysis_agent", "maverick_spend_agent", "collections_priority_agent", "bad_debt_provision_agent", "credit_scoring_agent", "fx_exposure_agent", "consolidation_agent", "nonprofit_agent", "healthcare_agent", "legal_billing_agent", "hospitality_agent", "construction_agent", "revenue_quality_agent", "cohort_analysis_agent", "variance_analysis_agent", "cash_flow_forecast_agent", "expense_forecast_agent", "debt_covenant_agent", "tax_provision_agent", "collections_agent", "board_narrative_agent", "investor_update_agent", "vendor_risk", "trend_detector", "period_comparator", "health_scorer", "email_drafter", "recommender", "pattern_memory", "accountant", "forecaster", "quota_attainment_agent", "win_loss_agent", "forecast_accuracy_agent", "attribution_agent", "price_elasticity_agent", "compensation_analysis_agent", "financial_statement_normalizer_agent", "three_statement_model_agent", "quality_of_earnings_agent", "deferred_revenue_agent", "earnings_quality_agent", "intercompany_elimination_agent", "report_generator", "orchestrator_agent", "confidence_reviewer_agent", "exec_summarizer", "insight_synthesis_agent", "conflict_detection_agent", "alert_agent", "client_reporter", "narrator", "meeting_prepper", "board_deck_builder", "viz_recommender", "chart_config_agent", "kpi_card_agent", "dashboard_spec_agent", "validator", "analyst", "action_priority_agent"]));
+  ok("onehundredseventy agent/run events enqueued", enq.length === 170 && enq.every((e) => e.name === "agent/run"));
 
   // non-financial → analyst only
   const { data: plainPayload } = await db.from("inbound_payloads").insert({
@@ -197,12 +197,12 @@ async function main() {
   // (drainQueue's agent/run case would use the real claudeBrain).
   const captured: UiEvent[] = [];
   await route3({ orgId: orgE, payloadId: payloadE }, { db, enqueue: (e) => captured.push(e) });
-  ok("manager enqueued data_quality_agent+schema_detection_agent+document_classifier+schema_evolution_agent+column_profiler+data_dictionary_agent+missing_data_agent+headcount_analytics_agent+productivity_agent+growth_rate_agent+data_privacy_agent+data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+kpi_extractor+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+outlier_explanation_agent+time_series_decomp_agent+failure_risk_agent+run_rate_agent+spend_analysis_agent+investor_memo_agent+okr_tracker_agent+swot_agent+query_builder_agent+esg_reporting_agent+seasonality_agent+benchmark_agent+professional_services_agent+headcount_analysis_agent+competitive_benchmarking_agent+data_reshape_agent+date_normalization_agent+string_normalization_agent+currency_normalization_agent+join_quality_agent+data_validation_rules_agent+distribution_agent+correlation_agent+regression_agent+hypothesis_testing_agent+pareto_agent+clustering_agent+funnel_analysis_agent+retention_analysis_agent+ab_test_agent+nps_analysis_agent+feature_adoption_agent+customer_health_score_agent+expansion_opportunity_agent+attrition_analysis_agent+headcount_planning_agent+demand_forecasting_agent+capacity_planning_agent+sla_analysis_agent+metric_tree_agent+text_analytics_agent+data_freshness_agent+narrative_diff_agent+alert_threshold_agent+data_annotation_agent+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+revenue_recognition_agent+churn_risk_agent+customer_segmentation_agent+sales_pipeline_agent+pricing_optimization_agent+contract_analysis_agent+marketing_roi_agent+fraud_detection_agent+concentration_risk_agent+scenario_agent+liquidity_risk_agent+covenant_tracking_agent+transaction_classifier+expense_policy_agent+subscription_tracker+commission_calculator+overtime_analysis_agent+unit_economics_agent+valuation_agent+cap_table_agent+lease_analysis_agent+asset_register_agent+price_volume_mix_agent+bridge_analysis_agent+discount_analysis_agent+maverick_spend_agent+collections_priority_agent+bad_debt_provision_agent+credit_scoring_agent+fx_exposure_agent+consolidation_agent+nonprofit_agent+healthcare_agent+legal_billing_agent+hospitality_agent+construction_agent+revenue_quality_agent+cohort_analysis_agent+variance_analysis_agent+cash_flow_forecast_agent+expense_forecast_agent+debt_covenant_agent+tax_provision_agent+collections_agent+board_narrative_agent+investor_update_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+quota_attainment_agent+win_loss_agent+forecast_accuracy_agent+attribution_agent+price_elasticity_agent+compensation_analysis_agent+report_generator+orchestrator_agent+confidence_reviewer_agent+exec_summarizer+insight_synthesis_agent+conflict_detection_agent+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst+action_priority_agent", captured.length === 164);
+  ok("manager enqueued data_quality_agent+schema_detection_agent+document_classifier+schema_evolution_agent+column_profiler+data_dictionary_agent+missing_data_agent+headcount_analytics_agent+productivity_agent+growth_rate_agent+data_privacy_agent+data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+kpi_extractor+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+outlier_explanation_agent+time_series_decomp_agent+failure_risk_agent+run_rate_agent+spend_analysis_agent+investor_memo_agent+okr_tracker_agent+swot_agent+query_builder_agent+esg_reporting_agent+seasonality_agent+benchmark_agent+professional_services_agent+headcount_analysis_agent+competitive_benchmarking_agent+data_reshape_agent+date_normalization_agent+string_normalization_agent+currency_normalization_agent+join_quality_agent+data_validation_rules_agent+distribution_agent+correlation_agent+regression_agent+hypothesis_testing_agent+pareto_agent+clustering_agent+funnel_analysis_agent+retention_analysis_agent+ab_test_agent+nps_analysis_agent+feature_adoption_agent+customer_health_score_agent+expansion_opportunity_agent+attrition_analysis_agent+headcount_planning_agent+demand_forecasting_agent+capacity_planning_agent+sla_analysis_agent+metric_tree_agent+text_analytics_agent+data_freshness_agent+narrative_diff_agent+alert_threshold_agent+data_annotation_agent+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+revenue_recognition_agent+churn_risk_agent+customer_segmentation_agent+sales_pipeline_agent+pricing_optimization_agent+contract_analysis_agent+marketing_roi_agent+fraud_detection_agent+concentration_risk_agent+scenario_agent+liquidity_risk_agent+covenant_tracking_agent+transaction_classifier+expense_policy_agent+subscription_tracker+commission_calculator+overtime_analysis_agent+unit_economics_agent+valuation_agent+cap_table_agent+lease_analysis_agent+asset_register_agent+price_volume_mix_agent+bridge_analysis_agent+discount_analysis_agent+maverick_spend_agent+collections_priority_agent+bad_debt_provision_agent+credit_scoring_agent+fx_exposure_agent+consolidation_agent+nonprofit_agent+healthcare_agent+legal_billing_agent+hospitality_agent+construction_agent+revenue_quality_agent+cohort_analysis_agent+variance_analysis_agent+cash_flow_forecast_agent+expense_forecast_agent+debt_covenant_agent+tax_provision_agent+collections_agent+board_narrative_agent+investor_update_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+quota_attainment_agent+win_loss_agent+forecast_accuracy_agent+attribution_agent+price_elasticity_agent+compensation_analysis_agent+financial_statement_normalizer_agent+three_statement_model_agent+quality_of_earnings_agent+deferred_revenue_agent+earnings_quality_agent+intercompany_elimination_agent+report_generator+orchestrator_agent+confidence_reviewer_agent+exec_summarizer+insight_synthesis_agent+conflict_detection_agent+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst+action_priority_agent", captured.length === 170);
   for (const e of captured) {
     if (e.name === "agent/run") await runAgent2(e.data, { db, brain: sb2 });
   }
   const { data: chainProps } = await db.from("proposed_actions").select("kind").eq("org_id", orgE);
-  ok("chain produced 164 proposals (data quality assessment + schema detection + document classification + schema evolution + column profiling + data dictionary + missing data analysis + headcount analytics + productivity analysis + growth rate calculation + outlier explanation + time series decomposition + failure risk assessment + run rate calculation + spend analysis + investor memo drafting + okr tracking + swot analysis + query building + esg reporting + seasonality analysis + benchmarking + professional services analysis + headcount analysis + competitive benchmarking + data reshape + date normalization + string normalization + currency normalization + join quality assessment + data validation rules + distribution analysis + correlation analysis + regression analysis + hypothesis testing + pareto analysis + clustering + funnel analysis + retention analysis + ab test analysis + nps analysis + feature adoption analysis + customer health scoring + expansion opportunity analysis + attrition analysis + headcount planning + demand forecasting + capacity planning + sla analysis + metric tree + text analytics + data freshness assessment + narrative diff + alert threshold configuration + data annotation + data privacy assessment + data quality + compliance + onboarding + clarification + multi period + audit summary + kpi extraction + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + working capital analysis + break even analysis + cogs analysis + revenue recognition analysis + churn risk analysis + customer segmentation + sales pipeline + pricing optimization + contract analysis + marketing roi + fraud detection + concentration risk + scenario modeling + liquidity risk + covenant tracking + transaction classification + expense policy check + subscription tracking + commission calculation + overtime analysis + unit economics analysis + valuation estimation + cap table analysis + lease analysis + asset register analysis + price volume mix analysis + bridge analysis + discount analysis + maverick spend detection + collections prioritization + bad debt provision + credit scoring + fx exposure analysis + consolidation + nonprofit financial analysis + healthcare financial analysis + legal billing analysis + hospitality financial analysis + construction financial analysis + revenue quality analysis + cohort analysis + variance analysis + cash flow forecast + expense forecast + debt covenant analysis + tax provision analysis + collections management + board narrative drafting + investor update drafting + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + insight synthesis + conflict detection + forecast + quota attainment analysis + win loss analysis + forecast accuracy analysis + attribution analysis + price elasticity analysis + compensation analysis + report + orchestration + confidence review + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report + action prioritization)", chainProps?.length === 164);
+  ok("chain produced 170 proposals (data quality assessment + schema detection + document classification + schema evolution + column profiling + data dictionary + missing data analysis + headcount analytics + productivity analysis + growth rate calculation + outlier explanation + time series decomposition + failure risk assessment + run rate calculation + spend analysis + investor memo drafting + okr tracking + swot analysis + query building + esg reporting + seasonality analysis + benchmarking + professional services analysis + headcount analysis + competitive benchmarking + data reshape + date normalization + string normalization + currency normalization + join quality assessment + data validation rules + distribution analysis + correlation analysis + regression analysis + hypothesis testing + pareto analysis + clustering + funnel analysis + retention analysis + ab test analysis + nps analysis + feature adoption analysis + customer health scoring + expansion opportunity analysis + attrition analysis + headcount planning + demand forecasting + capacity planning + sla analysis + metric tree + text analytics + data freshness assessment + narrative diff + alert threshold configuration + data annotation + data privacy assessment + data quality + compliance + onboarding + clarification + multi period + audit summary + kpi extraction + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + profitability analysis + working capital analysis + break even analysis + cogs analysis + revenue recognition analysis + churn risk analysis + customer segmentation + sales pipeline + pricing optimization + contract analysis + marketing roi + fraud detection + concentration risk + scenario modeling + liquidity risk + covenant tracking + transaction classification + expense policy check + subscription tracking + commission calculation + overtime analysis + unit economics analysis + valuation estimation + cap table analysis + lease analysis + asset register analysis + price volume mix analysis + bridge analysis + discount analysis + maverick spend detection + collections prioritization + bad debt provision + credit scoring + fx exposure analysis + consolidation + nonprofit financial analysis + healthcare financial analysis + legal billing analysis + hospitality financial analysis + construction financial analysis + revenue quality analysis + cohort analysis + variance analysis + cash flow forecast + expense forecast + debt covenant analysis + tax provision analysis + collections management + board narrative drafting + investor update drafting + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + insight synthesis + conflict detection + forecast + quota attainment analysis + win loss analysis + forecast accuracy analysis + attribution analysis + price elasticity analysis + compensation analysis + financial statement normalization + three statement model + quality of earnings + deferred revenue analysis + earnings quality assessment + intercompany elimination + report + orchestration + confidence review + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report + action prioritization)", chainProps?.length === 170);
   await db.from("organizations").delete().eq("id", orgE);
   resetQueue();
 
@@ -8952,6 +8952,322 @@ async function main() {
     routeCheckDanFin.ok && routeCheckDanFin.plan.includes("data_annotation_agent") &&
     routeCheckDanNonFin.ok && routeCheckDanNonFin.plan.includes("data_annotation_agent"));
   await db.from("organizations").delete().eq("id", orgDan);
+
+
+  console.log("== financial statement normalizer agent ==");
+  ok("normalize_financial_statements accepts good", validateProposal("normalize_financial_statements", {
+    statement_type: "income_statement", accounting_standard_detected: "gaap",
+    periods_detected: [{ period_label: "FY 2023", period_type: "annual", is_audited: true }],
+    normalized_line_items: [{ standard_label: "Net Revenue", reported_label: "Total Net Sales", value: 4820000, period_label: "FY 2023", category: "Revenue" }],
+    reclassifications: [{ from_label: "Other Income", to_label: "Non-Operating Income", amount: 42000, reason: "x" }],
+    normalization_issues: [{ issue: "x", severity: "high", recommendation: "y" }],
+    comparability_assessment: "Comparable after adjustments.",
+  }).ok);
+  ok("normalize_financial_statements rejects bad statement_type", !validateProposal("normalize_financial_statements", {
+    statement_type: "profit_loss", accounting_standard_detected: "gaap",
+    periods_detected: [{ period_label: "FY 2023", period_type: "annual", is_audited: true }],
+    normalized_line_items: [{ standard_label: "x", reported_label: "y", value: 1, period_label: "FY 2023", category: "z" }],
+    reclassifications: [], normalization_issues: [], comparability_assessment: "x",
+  }).ok);
+  ok("normalize_financial_statements rejects bad accounting_standard_detected", !validateProposal("normalize_financial_statements", {
+    statement_type: "income_statement", accounting_standard_detected: "gasp",
+    periods_detected: [{ period_label: "FY 2023", period_type: "annual", is_audited: true }],
+    normalized_line_items: [{ standard_label: "x", reported_label: "y", value: 1, period_label: "FY 2023", category: "z" }],
+    reclassifications: [], normalization_issues: [], comparability_assessment: "x",
+  }).ok);
+  ok("normalize_financial_statements rejects empty normalized_line_items array", !validateProposal("normalize_financial_statements", {
+    statement_type: "income_statement", accounting_standard_detected: "gaap",
+    periods_detected: [{ period_label: "FY 2023", period_type: "annual", is_audited: true }],
+    normalized_line_items: [], reclassifications: [], normalization_issues: [], comparability_assessment: "x",
+  }).ok);
+  ok("financial_statement_normalizer_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("financial_statement_normalizer_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentFsn } = await import("./lib/run-agent");
+  const { stubBrain: sbFsn } = await import("./lib/agent-brain");
+  const { approveAction: approveFsn, listPending: listFsn } = await import("./lib/actions-service");
+  const orgFsn = await makeOrg("pro");
+  const payloadFsn = await makePayload(orgFsn);
+  const rFsn = await runAgentFsn({ orgId: orgFsn, payloadId: payloadFsn, role: "financial_statement_normalizer_agent" }, { db, brain: sbFsn });
+  ok("financial_statement_normalizer_agent run produced an analysis", rFsn.ok && rFsn.proposalCount === 1);
+  const pendFsn = await listFsn(orgFsn, { db });
+  ok("stub proposal passes validateProposal and returns normalize_financial_statements", pendFsn.length === 1 && pendFsn[0].kind === "normalize_financial_statements");
+  const apprFsn = await approveFsn(orgFsn, pendFsn[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes financial_statement_normalizer_runs", apprFsn.ok && apprFsn.recordTable === "financial_statement_normalizer_runs", JSON.stringify(apprFsn));
+  const { data: fsnRows } = await db.from("financial_statement_normalizer_runs").select("org_id").eq("org_id", orgFsn);
+  ok("financial statement normalizer record org-stamped", fsnRows?.length === 1 && fsnRows[0].org_id === orgFsn);
+  const { routePayload: routeFsn } = await import("./lib/manager");
+  const routeCheckFsn = await routeFsn({ orgId: orgFsn, payloadId: payloadFsn }, { db, enqueue: () => {} });
+  ok("financial_statement_normalizer_agent routes on the financial route", routeCheckFsn.ok && routeCheckFsn.plan.includes("financial_statement_normalizer_agent"));
+  await db.from("organizations").delete().eq("id", orgFsn);
+
+  console.log("== three statement model agent ==");
+  ok("build_three_statement_model accepts good", validateProposal("build_three_statement_model", {
+    base_period: "FY 2023",
+    income_statement: { revenue: 4820000, cost_of_revenue: 1928000, gross_profit: 2892000, operating_expenses: 2168000, ebitda: 724000, ebit: 518000, net_income: 342000 },
+    balance_sheet: { total_assets: 3847000, total_liabilities: 1920000, total_equity: 1927000, check_assets_eq_liabilities_plus_equity: true },
+    cash_flow_statement: { operating_cash_flow: 481000, investing_cash_flow: -320000, financing_cash_flow: -85000, net_change_in_cash: 76000, ending_cash_balance: 847000 },
+    model_integrity_checks: [{ check_name: "x", passed: true, detail: "y" }],
+    key_assumptions: [{ assumption: "Revenue", value_or_description: "x", sensitivity: "high" }],
+    model_completeness: "partial", gaps_and_caveats: ["x"],
+  }).ok);
+  ok("build_three_statement_model rejects empty base_period", !validateProposal("build_three_statement_model", {
+    base_period: "",
+    income_statement: { revenue: 4820000, cost_of_revenue: 1928000, gross_profit: 2892000, operating_expenses: 2168000, ebitda: 724000, ebit: 518000, net_income: 342000 },
+    balance_sheet: { total_assets: 3847000, total_liabilities: 1920000, total_equity: 1927000, check_assets_eq_liabilities_plus_equity: true },
+    cash_flow_statement: { operating_cash_flow: 481000, investing_cash_flow: -320000, financing_cash_flow: -85000, net_change_in_cash: 76000, ending_cash_balance: 847000 },
+    model_integrity_checks: [], key_assumptions: [{ assumption: "x", value_or_description: "y", sensitivity: "high" }], model_completeness: "partial", gaps_and_caveats: [],
+  }).ok);
+  ok("build_three_statement_model rejects bad model_completeness", !validateProposal("build_three_statement_model", {
+    base_period: "FY 2023",
+    income_statement: { revenue: 4820000, cost_of_revenue: 1928000, gross_profit: 2892000, operating_expenses: 2168000, ebitda: 724000, ebit: 518000, net_income: 342000 },
+    balance_sheet: { total_assets: 3847000, total_liabilities: 1920000, total_equity: 1927000, check_assets_eq_liabilities_plus_equity: true },
+    cash_flow_statement: { operating_cash_flow: 481000, investing_cash_flow: -320000, financing_cash_flow: -85000, net_change_in_cash: 76000, ending_cash_balance: 847000 },
+    model_integrity_checks: [], key_assumptions: [{ assumption: "x", value_or_description: "y", sensitivity: "high" }], model_completeness: "fictional", gaps_and_caveats: [],
+  }).ok);
+  ok("build_three_statement_model filters out key_assumptions item with bad sensitivity", (() => {
+    const r = validateProposal("build_three_statement_model", {
+      base_period: "FY 2023",
+      income_statement: { revenue: 4820000, cost_of_revenue: 1928000, gross_profit: 2892000, operating_expenses: 2168000, ebitda: 724000, ebit: 518000, net_income: 342000 },
+      balance_sheet: { total_assets: 3847000, total_liabilities: 1920000, total_equity: 1927000, check_assets_eq_liabilities_plus_equity: true },
+      cash_flow_statement: { operating_cash_flow: 481000, investing_cash_flow: -320000, financing_cash_flow: -85000, net_change_in_cash: 76000, ending_cash_balance: 847000 },
+      model_integrity_checks: [],
+      key_assumptions: [
+        { assumption: "Revenue", value_or_description: "x", sensitivity: "high" },
+        { assumption: "Weird", value_or_description: "y", sensitivity: "extreme" },
+      ],
+      model_completeness: "partial", gaps_and_caveats: [],
+    });
+    return r.ok && (r.payload.key_assumptions as unknown[]).length === 1;
+  })());
+  ok("three_statement_model_agent → opus model",
+    (await import("./lib/agent-brain")).modelForRole("three_statement_model_agent") === "claude-opus-4-8");
+
+  const { runAgent: runAgentTsm } = await import("./lib/run-agent");
+  const { stubBrain: sbTsm } = await import("./lib/agent-brain");
+  const { approveAction: approveTsm, listPending: listTsm } = await import("./lib/actions-service");
+  const orgTsm = await makeOrg("pro");
+  const payloadTsm = await makePayload(orgTsm);
+  const rTsm = await runAgentTsm({ orgId: orgTsm, payloadId: payloadTsm, role: "three_statement_model_agent" }, { db, brain: sbTsm });
+  ok("three_statement_model_agent run produced an analysis", rTsm.ok && rTsm.proposalCount === 1);
+  const pendTsm = await listTsm(orgTsm, { db });
+  ok("stub proposal passes validateProposal and returns build_three_statement_model", pendTsm.length === 1 && pendTsm[0].kind === "build_three_statement_model");
+  const apprTsm = await approveTsm(orgTsm, pendTsm[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes three_statement_model_runs", apprTsm.ok && apprTsm.recordTable === "three_statement_model_runs", JSON.stringify(apprTsm));
+  const { data: tsmRows } = await db.from("three_statement_model_runs").select("org_id").eq("org_id", orgTsm);
+  ok("three statement model record org-stamped", tsmRows?.length === 1 && tsmRows[0].org_id === orgTsm);
+  const { routePayload: routeTsm } = await import("./lib/manager");
+  const routeCheckTsm = await routeTsm({ orgId: orgTsm, payloadId: payloadTsm }, { db, enqueue: () => {} });
+  ok("three_statement_model_agent routes on the financial route", routeCheckTsm.ok && routeCheckTsm.plan.includes("three_statement_model_agent"));
+  await db.from("organizations").delete().eq("id", orgTsm);
+
+  console.log("== quality of earnings agent ==");
+  ok("assess_quality_of_earnings accepts good", validateProposal("assess_quality_of_earnings", {
+    reported_ebitda: 724000, adjusted_ebitda: 612000,
+    adjustments: [{ description: "PPP forgiveness", amount: -42000, direction: "deduct", category: "non_recurring" }],
+    recurring_revenue_pct: 78.4,
+    revenue_quality_flags: [{ flag: "Customer concentration", severity: "high", detail: "x" }],
+    expense_quality_flags: [{ flag: "Below-market comp", severity: "high", detail: "y" }],
+    one_time_items: [{ description: "PPP", amount: 42000, income_or_expense: "income" }],
+    qoe_rating: "medium",
+    key_risks: [{ risk: "Concentration", materiality: "high", detail: "z" }],
+    due_diligence_questions: ["What are the contract terms?"],
+  }).ok);
+  ok("assess_quality_of_earnings rejects recurring_revenue_pct > 100", !validateProposal("assess_quality_of_earnings", {
+    reported_ebitda: 724000, adjusted_ebitda: 612000, adjustments: [], recurring_revenue_pct: 150,
+    revenue_quality_flags: [], expense_quality_flags: [], one_time_items: [], qoe_rating: "medium", key_risks: [], due_diligence_questions: ["x"],
+  }).ok);
+  ok("assess_quality_of_earnings rejects bad qoe_rating", !validateProposal("assess_quality_of_earnings", {
+    reported_ebitda: 724000, adjusted_ebitda: 612000, adjustments: [], recurring_revenue_pct: 78.4,
+    revenue_quality_flags: [], expense_quality_flags: [], one_time_items: [], qoe_rating: "excellent", key_risks: [], due_diligence_questions: ["x"],
+  }).ok);
+  ok("assess_quality_of_earnings filters out adjustments item with bad direction", (() => {
+    const r = validateProposal("assess_quality_of_earnings", {
+      reported_ebitda: 724000, adjusted_ebitda: 612000,
+      adjustments: [
+        { description: "Good", amount: -42000, direction: "deduct", category: "non_recurring" },
+        { description: "Bad", amount: 10000, direction: "sideways", category: "non_recurring" },
+      ],
+      recurring_revenue_pct: 78.4, revenue_quality_flags: [], expense_quality_flags: [], one_time_items: [], qoe_rating: "medium", key_risks: [], due_diligence_questions: ["x"],
+    });
+    return r.ok && (r.payload.adjustments as unknown[]).length === 1;
+  })());
+  ok("quality_of_earnings_agent → opus model",
+    (await import("./lib/agent-brain")).modelForRole("quality_of_earnings_agent") === "claude-opus-4-8");
+
+  const { runAgent: runAgentQoe } = await import("./lib/run-agent");
+  const { stubBrain: sbQoe } = await import("./lib/agent-brain");
+  const { approveAction: approveQoe, listPending: listQoe } = await import("./lib/actions-service");
+  const orgQoe = await makeOrg("pro");
+  const payloadQoe = await makePayload(orgQoe);
+  const rQoe = await runAgentQoe({ orgId: orgQoe, payloadId: payloadQoe, role: "quality_of_earnings_agent" }, { db, brain: sbQoe });
+  ok("quality_of_earnings_agent run produced an analysis", rQoe.ok && rQoe.proposalCount === 1);
+  const pendQoe = await listQoe(orgQoe, { db });
+  ok("stub proposal passes validateProposal and returns assess_quality_of_earnings", pendQoe.length === 1 && pendQoe[0].kind === "assess_quality_of_earnings");
+  const apprQoe = await approveQoe(orgQoe, pendQoe[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes quality_of_earnings_runs", apprQoe.ok && apprQoe.recordTable === "quality_of_earnings_runs", JSON.stringify(apprQoe));
+  const { data: qoeRows } = await db.from("quality_of_earnings_runs").select("org_id").eq("org_id", orgQoe);
+  ok("quality of earnings record org-stamped", qoeRows?.length === 1 && qoeRows[0].org_id === orgQoe);
+  const { routePayload: routeQoe } = await import("./lib/manager");
+  const routeCheckQoe = await routeQoe({ orgId: orgQoe, payloadId: payloadQoe }, { db, enqueue: () => {} });
+  ok("quality_of_earnings_agent routes on the financial route", routeCheckQoe.ok && routeCheckQoe.plan.includes("quality_of_earnings_agent"));
+  await db.from("organizations").delete().eq("id", orgQoe);
+
+  console.log("== deferred revenue agent ==");
+  ok("analyze_deferred_revenue accepts good", validateProposal("analyze_deferred_revenue", {
+    period: "Q1 2024", opening_deferred_revenue: 1240000, new_billings: 485000, revenue_recognized: 312000, closing_deferred_revenue: 1413000,
+    waterfall_schedule: [{ period_label: "Q2 2024", expected_revenue_recognition: 318000, cumulative_recognized: 318000 }],
+    cohort_analysis: [{ cohort_label: "Q4 2023", original_billings: 420000, still_deferred: 285000, pct_recognized: 32.1 }],
+    revenue_visibility_score: 82, recognition_pattern: "ratable",
+    anomalies: [{ anomaly: "x", severity: "medium", impact: "y" }],
+    recommendations: ["Verify billings"],
+  }).ok);
+  ok("analyze_deferred_revenue rejects empty period", !validateProposal("analyze_deferred_revenue", {
+    period: "", opening_deferred_revenue: 1240000, new_billings: 485000, revenue_recognized: 312000, closing_deferred_revenue: 1413000,
+    waterfall_schedule: [{ period_label: "Q2 2024", expected_revenue_recognition: 318000, cumulative_recognized: 318000 }],
+    cohort_analysis: [], revenue_visibility_score: 82, recognition_pattern: "ratable", anomalies: [], recommendations: [],
+  }).ok);
+  ok("analyze_deferred_revenue rejects bad recognition_pattern", !validateProposal("analyze_deferred_revenue", {
+    period: "Q1 2024", opening_deferred_revenue: 1240000, new_billings: 485000, revenue_recognized: 312000, closing_deferred_revenue: 1413000,
+    waterfall_schedule: [{ period_label: "Q2 2024", expected_revenue_recognition: 318000, cumulative_recognized: 318000 }],
+    cohort_analysis: [], revenue_visibility_score: 82, recognition_pattern: "instant", anomalies: [], recommendations: [],
+  }).ok);
+  ok("analyze_deferred_revenue rejects revenue_visibility_score > 100", !validateProposal("analyze_deferred_revenue", {
+    period: "Q1 2024", opening_deferred_revenue: 1240000, new_billings: 485000, revenue_recognized: 312000, closing_deferred_revenue: 1413000,
+    waterfall_schedule: [{ period_label: "Q2 2024", expected_revenue_recognition: 318000, cumulative_recognized: 318000 }],
+    cohort_analysis: [], revenue_visibility_score: 150, recognition_pattern: "ratable", anomalies: [], recommendations: [],
+  }).ok);
+  ok("deferred_revenue_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("deferred_revenue_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentDrv } = await import("./lib/run-agent");
+  const { stubBrain: sbDrv } = await import("./lib/agent-brain");
+  const { approveAction: approveDrv, listPending: listDrv } = await import("./lib/actions-service");
+  const orgDrv = await makeOrg("pro");
+  const payloadDrv = await makePayload(orgDrv);
+  const rDrv = await runAgentDrv({ orgId: orgDrv, payloadId: payloadDrv, role: "deferred_revenue_agent" }, { db, brain: sbDrv });
+  ok("deferred_revenue_agent run produced an analysis", rDrv.ok && rDrv.proposalCount === 1);
+  const pendDrv = await listDrv(orgDrv, { db });
+  ok("stub proposal passes validateProposal and returns analyze_deferred_revenue", pendDrv.length === 1 && pendDrv[0].kind === "analyze_deferred_revenue");
+  const apprDrv = await approveDrv(orgDrv, pendDrv[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes deferred_revenue_runs", apprDrv.ok && apprDrv.recordTable === "deferred_revenue_runs", JSON.stringify(apprDrv));
+  const { data: drvRows } = await db.from("deferred_revenue_runs").select("org_id").eq("org_id", orgDrv);
+  ok("deferred revenue record org-stamped", drvRows?.length === 1 && drvRows[0].org_id === orgDrv);
+  const { routePayload: routeDrv } = await import("./lib/manager");
+  const routeCheckDrv = await routeDrv({ orgId: orgDrv, payloadId: payloadDrv }, { db, enqueue: () => {} });
+  ok("deferred_revenue_agent routes on the financial route", routeCheckDrv.ok && routeCheckDrv.plan.includes("deferred_revenue_agent"));
+  await db.from("organizations").delete().eq("id", orgDrv);
+
+  console.log("== earnings quality agent ==");
+  ok("assess_earnings_quality accepts good", validateProposal("assess_earnings_quality", {
+    accrual_ratio: 0.082, cash_conversion_ratio: 0.71, earnings_persistence_assessment: "persistent",
+    accruals_analysis: { total_accruals: 315000, operating_accruals: 287000, financing_accruals: 28000, accrual_direction: "increasing" },
+    revenue_vs_cash_reconciliation: { reported_revenue: 4820000, cash_collected: 4512000, ar_change: 308000, gap_explanation: "x" },
+    red_flags: [{ flag: "Cash conversion below threshold", severity: "medium", evidence: "y" }],
+    green_flags: [{ flag: "Clean reconciliation", evidence: "z" }],
+    overall_quality_rating: "medium",
+    forensic_indicators: [{ indicator: "DSO trend", beneish_m_score_component: "DSR Index", interpretation: "x" }],
+  }).ok);
+  ok("assess_earnings_quality rejects bad earnings_persistence_assessment", !validateProposal("assess_earnings_quality", {
+    accrual_ratio: 0.082, cash_conversion_ratio: 0.71, earnings_persistence_assessment: "chaotic",
+    accruals_analysis: { total_accruals: 315000, operating_accruals: 287000, financing_accruals: 28000, accrual_direction: "increasing" },
+    revenue_vs_cash_reconciliation: { reported_revenue: 4820000, cash_collected: 4512000, ar_change: 308000, gap_explanation: "x" },
+    red_flags: [], green_flags: [], overall_quality_rating: "medium", forensic_indicators: [],
+  }).ok);
+  ok("assess_earnings_quality rejects bad overall_quality_rating", !validateProposal("assess_earnings_quality", {
+    accrual_ratio: 0.082, cash_conversion_ratio: 0.71, earnings_persistence_assessment: "persistent",
+    accruals_analysis: { total_accruals: 315000, operating_accruals: 287000, financing_accruals: 28000, accrual_direction: "increasing" },
+    revenue_vs_cash_reconciliation: { reported_revenue: 4820000, cash_collected: 4512000, ar_change: 308000, gap_explanation: "x" },
+    red_flags: [], green_flags: [], overall_quality_rating: "superb", forensic_indicators: [],
+  }).ok);
+  ok("assess_earnings_quality filters out red_flags item with bad severity", (() => {
+    const r = validateProposal("assess_earnings_quality", {
+      accrual_ratio: 0.082, cash_conversion_ratio: 0.71, earnings_persistence_assessment: "persistent",
+      accruals_analysis: { total_accruals: 315000, operating_accruals: 287000, financing_accruals: 28000, accrual_direction: "increasing" },
+      revenue_vs_cash_reconciliation: { reported_revenue: 4820000, cash_collected: 4512000, ar_change: 308000, gap_explanation: "x" },
+      red_flags: [
+        { flag: "Good", severity: "medium", evidence: "y" },
+        { flag: "Bad", severity: "extreme", evidence: "z" },
+      ],
+      green_flags: [], overall_quality_rating: "medium", forensic_indicators: [],
+    });
+    return r.ok && (r.payload.red_flags as unknown[]).length === 1;
+  })());
+  ok("earnings_quality_agent → opus model",
+    (await import("./lib/agent-brain")).modelForRole("earnings_quality_agent") === "claude-opus-4-8");
+
+  const { runAgent: runAgentEqy } = await import("./lib/run-agent");
+  const { stubBrain: sbEqy } = await import("./lib/agent-brain");
+  const { approveAction: approveEqy, listPending: listEqy } = await import("./lib/actions-service");
+  const orgEqy = await makeOrg("pro");
+  const payloadEqy = await makePayload(orgEqy);
+  const rEqy = await runAgentEqy({ orgId: orgEqy, payloadId: payloadEqy, role: "earnings_quality_agent" }, { db, brain: sbEqy });
+  ok("earnings_quality_agent run produced an analysis", rEqy.ok && rEqy.proposalCount === 1);
+  const pendEqy = await listEqy(orgEqy, { db });
+  ok("stub proposal passes validateProposal and returns assess_earnings_quality", pendEqy.length === 1 && pendEqy[0].kind === "assess_earnings_quality");
+  const apprEqy = await approveEqy(orgEqy, pendEqy[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes earnings_quality_runs", apprEqy.ok && apprEqy.recordTable === "earnings_quality_runs", JSON.stringify(apprEqy));
+  const { data: eqyRows } = await db.from("earnings_quality_runs").select("org_id").eq("org_id", orgEqy);
+  ok("earnings quality record org-stamped", eqyRows?.length === 1 && eqyRows[0].org_id === orgEqy);
+  const { routePayload: routeEqy } = await import("./lib/manager");
+  const routeCheckEqy = await routeEqy({ orgId: orgEqy, payloadId: payloadEqy }, { db, enqueue: () => {} });
+  ok("earnings_quality_agent routes on the financial route", routeCheckEqy.ok && routeCheckEqy.plan.includes("earnings_quality_agent"));
+  await db.from("organizations").delete().eq("id", orgEqy);
+
+  console.log("== intercompany elimination agent ==");
+  ok("eliminate_intercompany accepts good", validateProposal("eliminate_intercompany", {
+    entities_identified: [{ entity_name: "HoldCo USA LLC", entity_type: "parent", currency: "USD" }],
+    intercompany_transactions: [{ from_entity: "Services Co", to_entity: "OpCo", transaction_type: "management_fee", amount: 120000, currency: "GBP", period: "FY 2023" }],
+    elimination_schedule: [{ description: "Eliminate IC fee", debit_account: "Revenue", credit_account: "Expense", amount: 120000, period: "FY 2023" }],
+    consolidated_summary: { consolidated_revenue: 8420000, intercompany_revenue_eliminated: 148000, net_revenue: 8272000, elimination_pct: 1.76 },
+    unreconciled_differences: [{ description: "FX timing", amount: 15000, likely_cause: "x" }],
+    elimination_completeness: "substantially_complete",
+    recommendations: ["Standardize FX policy"],
+  }).ok);
+  ok("eliminate_intercompany rejects empty entities_identified array", !validateProposal("eliminate_intercompany", {
+    entities_identified: [], intercompany_transactions: [], elimination_schedule: [],
+    consolidated_summary: { consolidated_revenue: 8420000, intercompany_revenue_eliminated: 148000, net_revenue: 8272000, elimination_pct: 1.76 },
+    unreconciled_differences: [], elimination_completeness: "substantially_complete", recommendations: [],
+  }).ok);
+  ok("eliminate_intercompany rejects bad elimination_completeness", !validateProposal("eliminate_intercompany", {
+    entities_identified: [{ entity_name: "HoldCo", entity_type: "parent", currency: "USD" }],
+    intercompany_transactions: [], elimination_schedule: [],
+    consolidated_summary: { consolidated_revenue: 8420000, intercompany_revenue_eliminated: 148000, net_revenue: 8272000, elimination_pct: 1.76 },
+    unreconciled_differences: [], elimination_completeness: "flawless", recommendations: [],
+  }).ok);
+  ok("eliminate_intercompany filters out intercompany_transactions item with bad transaction_type", (() => {
+    const r = validateProposal("eliminate_intercompany", {
+      entities_identified: [{ entity_name: "HoldCo", entity_type: "parent", currency: "USD" }],
+      intercompany_transactions: [
+        { from_entity: "A", to_entity: "B", transaction_type: "loan", amount: 500000, currency: "USD", period: "FY 2023" },
+        { from_entity: "A", to_entity: "B", transaction_type: "gift", amount: 1000, currency: "USD", period: "FY 2023" },
+      ],
+      elimination_schedule: [],
+      consolidated_summary: { consolidated_revenue: 8420000, intercompany_revenue_eliminated: 148000, net_revenue: 8272000, elimination_pct: 1.76 },
+      unreconciled_differences: [], elimination_completeness: "substantially_complete", recommendations: [],
+    });
+    return r.ok && (r.payload.intercompany_transactions as unknown[]).length === 1;
+  })());
+  ok("intercompany_elimination_agent → sonnet model",
+    (await import("./lib/agent-brain")).modelForRole("intercompany_elimination_agent") === "claude-sonnet-4-6");
+
+  const { runAgent: runAgentIce } = await import("./lib/run-agent");
+  const { stubBrain: sbIce } = await import("./lib/agent-brain");
+  const { approveAction: approveIce, listPending: listIce } = await import("./lib/actions-service");
+  const orgIce = await makeOrg("pro");
+  const payloadIce = await makePayload(orgIce);
+  const rIce = await runAgentIce({ orgId: orgIce, payloadId: payloadIce, role: "intercompany_elimination_agent" }, { db, brain: sbIce });
+  ok("intercompany_elimination_agent run produced an analysis", rIce.ok && rIce.proposalCount === 1);
+  const pendIce = await listIce(orgIce, { db });
+  ok("stub proposal passes validateProposal and returns eliminate_intercompany", pendIce.length === 1 && pendIce[0].kind === "eliminate_intercompany");
+  const apprIce = await approveIce(orgIce, pendIce[0].id, "00000000-0000-0000-0000-000000000000", { db });
+  ok("approve writes intercompany_elimination_runs", apprIce.ok && apprIce.recordTable === "intercompany_elimination_runs", JSON.stringify(apprIce));
+  const { data: iceRows } = await db.from("intercompany_elimination_runs").select("org_id").eq("org_id", orgIce);
+  ok("intercompany elimination record org-stamped", iceRows?.length === 1 && iceRows[0].org_id === orgIce);
+  const { routePayload: routeIce } = await import("./lib/manager");
+  const routeCheckIce = await routeIce({ orgId: orgIce, payloadId: payloadIce }, { db, enqueue: () => {} });
+  ok("intercompany_elimination_agent routes on the financial route", routeCheckIce.ok && routeCheckIce.plan.includes("intercompany_elimination_agent"));
+  await db.from("organizations").delete().eq("id", orgIce);
 
 
   console.log("== org context ==");

@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation", "build_metric_tree", "analyze_text", "assess_data_freshness", "diff_narratives", "configure_alert_thresholds", "annotate_data"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation", "build_metric_tree", "analyze_text", "assess_data_freshness", "diff_narratives", "configure_alert_thresholds", "annotate_data", "normalize_financial_statements", "build_three_statement_model", "assess_quality_of_earnings", "analyze_deferred_revenue", "assess_earnings_quality", "eliminate_intercompany"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -8540,6 +8540,476 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "annotate_data",
       payload: { column_annotations, row_annotations, business_context_notes, glossary_terms, data_lineage_notes, total_annotations },
+    };
+  }
+
+
+  if (kind === "normalize_financial_statements") {
+    const STATEMENT_TYPES = ["income_statement", "balance_sheet", "cash_flow", "combined", "unknown"];
+    if (typeof p.statement_type !== "string" || !STATEMENT_TYPES.includes(p.statement_type)) return { ok: false, reason: "bad_statement_type" };
+    const STANDARDS = ["gaap", "ifrs", "cash_basis", "tax_basis", "unknown"];
+    if (typeof p.accounting_standard_detected !== "string" || !STANDARDS.includes(p.accounting_standard_detected)) return { ok: false, reason: "bad_accounting_standard_detected" };
+
+    const PERIOD_TYPES = ["annual", "quarterly", "monthly", "ytd"];
+    const rawPeriods = Array.isArray(p.periods_detected) ? (p.periods_detected as unknown[]).slice(0, 8) : [];
+    const periods_detected: { period_label: string; period_type: string; is_audited: boolean }[] = [];
+    for (const item of rawPeriods) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const period_label = str(rec.period_label);
+      if (!period_label) continue;
+      if (typeof rec.period_type !== "string" || !PERIOD_TYPES.includes(rec.period_type)) continue;
+      if (typeof rec.is_audited !== "boolean") continue;
+      periods_detected.push({ period_label, period_type: rec.period_type, is_audited: rec.is_audited });
+    }
+    if (periods_detected.length === 0) return { ok: false, reason: "empty_periods_detected" };
+
+    const rawItems = Array.isArray(p.normalized_line_items) ? (p.normalized_line_items as unknown[]).slice(0, 50) : [];
+    const normalized_line_items: { standard_label: string; reported_label: string; value: number; period_label: string; category: string }[] = [];
+    for (const item of rawItems) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const standard_label = str(rec.standard_label);
+      if (!standard_label) continue;
+      const value = numOrNull(rec.value);
+      if (value === NUM_INVALID || value === null) continue;
+      normalized_line_items.push({ standard_label, reported_label: str(rec.reported_label) ?? "", value, period_label: str(rec.period_label) ?? "", category: str(rec.category) ?? "" });
+    }
+    if (normalized_line_items.length === 0) return { ok: false, reason: "empty_normalized_line_items" };
+
+    const rawReclass = Array.isArray(p.reclassifications) ? (p.reclassifications as unknown[]).slice(0, 20) : [];
+    const reclassifications: { from_label: string; to_label: string; amount: number; reason: string }[] = [];
+    for (const item of rawReclass) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const from_label = str(rec.from_label);
+      if (!from_label) continue;
+      const amount = numOrNull(rec.amount);
+      if (amount === NUM_INVALID || amount === null) continue;
+      reclassifications.push({ from_label, to_label: str(rec.to_label) ?? "", amount, reason: str(rec.reason) ?? "" });
+    }
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawIssues = Array.isArray(p.normalization_issues) ? (p.normalization_issues as unknown[]).slice(0, 15) : [];
+    const normalization_issues: { issue: string; severity: string; recommendation: string }[] = [];
+    for (const item of rawIssues) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const issue = str(rec.issue);
+      if (!issue) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      normalization_issues.push({ issue, severity: rec.severity, recommendation: str(rec.recommendation) ?? "" });
+    }
+
+    const comparability_assessment = str(p.comparability_assessment);
+    if (!comparability_assessment) return { ok: false, reason: "missing_comparability_assessment" };
+
+    return {
+      ok: true,
+      kind: "normalize_financial_statements",
+      payload: { statement_type: p.statement_type, accounting_standard_detected: p.accounting_standard_detected, periods_detected, normalized_line_items, reclassifications, normalization_issues, comparability_assessment },
+    };
+  }
+
+  if (kind === "build_three_statement_model") {
+    const base_period = str(p.base_period);
+    if (!base_period) return { ok: false, reason: "missing_base_period" };
+
+    let income_statement: { revenue: number; cost_of_revenue: number; gross_profit: number; operating_expenses: number; ebitda: number; ebit: number; net_income: number } | null = null;
+    if (typeof p.income_statement === "object" && p.income_statement !== null) {
+      const rec = p.income_statement as Record<string, unknown>;
+      const revenue = numOrNull(rec.revenue);
+      const cost_of_revenue = numOrNull(rec.cost_of_revenue);
+      const gross_profit = numOrNull(rec.gross_profit);
+      const operating_expenses = numOrNull(rec.operating_expenses);
+      const ebitda = numOrNull(rec.ebitda);
+      const ebit = numOrNull(rec.ebit);
+      const net_income = numOrNull(rec.net_income);
+      if ([revenue, cost_of_revenue, gross_profit, operating_expenses, ebitda, ebit, net_income].every((v) => v !== NUM_INVALID && v !== null)) {
+        income_statement = { revenue: revenue as number, cost_of_revenue: cost_of_revenue as number, gross_profit: gross_profit as number, operating_expenses: operating_expenses as number, ebitda: ebitda as number, ebit: ebit as number, net_income: net_income as number };
+      }
+    }
+    if (!income_statement) return { ok: false, reason: "bad_income_statement" };
+
+    let balance_sheet: { total_assets: number; total_liabilities: number; total_equity: number; check_assets_eq_liabilities_plus_equity: boolean } | null = null;
+    if (typeof p.balance_sheet === "object" && p.balance_sheet !== null) {
+      const rec = p.balance_sheet as Record<string, unknown>;
+      const total_assets = numOrNull(rec.total_assets, 0);
+      const total_liabilities = numOrNull(rec.total_liabilities, 0);
+      const total_equity = numOrNull(rec.total_equity);
+      if (total_assets !== NUM_INVALID && total_assets !== null &&
+          total_liabilities !== NUM_INVALID && total_liabilities !== null &&
+          total_equity !== NUM_INVALID && total_equity !== null &&
+          typeof rec.check_assets_eq_liabilities_plus_equity === "boolean") {
+        balance_sheet = { total_assets, total_liabilities, total_equity, check_assets_eq_liabilities_plus_equity: rec.check_assets_eq_liabilities_plus_equity };
+      }
+    }
+    if (!balance_sheet) return { ok: false, reason: "bad_balance_sheet" };
+
+    let cash_flow_statement: { operating_cash_flow: number; investing_cash_flow: number; financing_cash_flow: number; net_change_in_cash: number; ending_cash_balance: number } | null = null;
+    if (typeof p.cash_flow_statement === "object" && p.cash_flow_statement !== null) {
+      const rec = p.cash_flow_statement as Record<string, unknown>;
+      const operating_cash_flow = numOrNull(rec.operating_cash_flow);
+      const investing_cash_flow = numOrNull(rec.investing_cash_flow);
+      const financing_cash_flow = numOrNull(rec.financing_cash_flow);
+      const net_change_in_cash = numOrNull(rec.net_change_in_cash);
+      const ending_cash_balance = numOrNull(rec.ending_cash_balance, 0);
+      if ([operating_cash_flow, investing_cash_flow, financing_cash_flow, net_change_in_cash, ending_cash_balance].every((v) => v !== NUM_INVALID && v !== null)) {
+        cash_flow_statement = { operating_cash_flow: operating_cash_flow as number, investing_cash_flow: investing_cash_flow as number, financing_cash_flow: financing_cash_flow as number, net_change_in_cash: net_change_in_cash as number, ending_cash_balance: ending_cash_balance as number };
+      }
+    }
+    if (!cash_flow_statement) return { ok: false, reason: "bad_cash_flow_statement" };
+
+    const rawChecks = Array.isArray(p.model_integrity_checks) ? (p.model_integrity_checks as unknown[]).slice(0, 10) : [];
+    const model_integrity_checks: { check_name: string; passed: boolean; detail: string }[] = [];
+    for (const item of rawChecks) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const check_name = str(rec.check_name);
+      if (!check_name) continue;
+      if (typeof rec.passed !== "boolean") continue;
+      model_integrity_checks.push({ check_name, passed: rec.passed, detail: str(rec.detail) ?? "" });
+    }
+
+    const SENSITIVITIES = ["high", "medium", "low"];
+    const rawAssumptions = Array.isArray(p.key_assumptions) ? (p.key_assumptions as unknown[]).slice(0, 15) : [];
+    const key_assumptions: { assumption: string; value_or_description: string; sensitivity: string }[] = [];
+    for (const item of rawAssumptions) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const assumption = str(rec.assumption);
+      if (!assumption) continue;
+      if (typeof rec.sensitivity !== "string" || !SENSITIVITIES.includes(rec.sensitivity)) continue;
+      key_assumptions.push({ assumption, value_or_description: str(rec.value_or_description) ?? "", sensitivity: rec.sensitivity });
+    }
+    if (key_assumptions.length === 0) return { ok: false, reason: "empty_key_assumptions" };
+
+    const COMPLETENESS = ["complete", "partial", "skeleton"];
+    if (typeof p.model_completeness !== "string" || !COMPLETENESS.includes(p.model_completeness)) return { ok: false, reason: "bad_model_completeness" };
+
+    const gaps_and_caveats = strArray(p.gaps_and_caveats, 15, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "build_three_statement_model",
+      payload: { base_period, income_statement, balance_sheet, cash_flow_statement, model_integrity_checks, key_assumptions, model_completeness: p.model_completeness, gaps_and_caveats },
+    };
+  }
+
+  if (kind === "assess_quality_of_earnings") {
+    const reported_ebitda = numOrNull(p.reported_ebitda);
+    if (reported_ebitda === NUM_INVALID || reported_ebitda === null) return { ok: false, reason: "bad_reported_ebitda" };
+    const adjusted_ebitda = numOrNull(p.adjusted_ebitda);
+    if (adjusted_ebitda === NUM_INVALID || adjusted_ebitda === null) return { ok: false, reason: "bad_adjusted_ebitda" };
+
+    const DIRECTIONS = ["add_back", "deduct"];
+    const CATEGORIES = ["non_recurring", "non_cash", "owner_related", "pro_forma", "normalization"];
+    const rawAdj = Array.isArray(p.adjustments) ? (p.adjustments as unknown[]).slice(0, 20) : [];
+    const adjustments: { description: string; amount: number; direction: string; category: string }[] = [];
+    for (const item of rawAdj) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const description = str(rec.description);
+      if (!description) continue;
+      const amount = numOrNull(rec.amount);
+      if (amount === NUM_INVALID || amount === null) continue;
+      if (typeof rec.direction !== "string" || !DIRECTIONS.includes(rec.direction)) continue;
+      if (typeof rec.category !== "string" || !CATEGORIES.includes(rec.category)) continue;
+      adjustments.push({ description, amount, direction: rec.direction, category: rec.category });
+    }
+
+    const recurring_revenue_pct = numOrNull(p.recurring_revenue_pct, 0, 100);
+    if (recurring_revenue_pct === NUM_INVALID || recurring_revenue_pct === null) return { ok: false, reason: "bad_recurring_revenue_pct" };
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawRevFlags = Array.isArray(p.revenue_quality_flags) ? (p.revenue_quality_flags as unknown[]).slice(0, 10) : [];
+    const revenue_quality_flags: { flag: string; severity: string; detail: string }[] = [];
+    for (const item of rawRevFlags) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      revenue_quality_flags.push({ flag, severity: rec.severity, detail: str(rec.detail) ?? "" });
+    }
+
+    const rawExpFlags = Array.isArray(p.expense_quality_flags) ? (p.expense_quality_flags as unknown[]).slice(0, 10) : [];
+    const expense_quality_flags: { flag: string; severity: string; detail: string }[] = [];
+    for (const item of rawExpFlags) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      expense_quality_flags.push({ flag, severity: rec.severity, detail: str(rec.detail) ?? "" });
+    }
+
+    const INC_OR_EXP = ["income", "expense"];
+    const rawOneTime = Array.isArray(p.one_time_items) ? (p.one_time_items as unknown[]).slice(0, 15) : [];
+    const one_time_items: { description: string; amount: number; income_or_expense: string }[] = [];
+    for (const item of rawOneTime) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const description = str(rec.description);
+      if (!description) continue;
+      const amount = numOrNull(rec.amount);
+      if (amount === NUM_INVALID || amount === null) continue;
+      if (typeof rec.income_or_expense !== "string" || !INC_OR_EXP.includes(rec.income_or_expense)) continue;
+      one_time_items.push({ description, amount, income_or_expense: rec.income_or_expense });
+    }
+
+    const QOE_RATINGS = ["high", "medium", "low", "very_low"];
+    if (typeof p.qoe_rating !== "string" || !QOE_RATINGS.includes(p.qoe_rating)) return { ok: false, reason: "bad_qoe_rating" };
+
+    const MATERIALITIES = ["high", "medium", "low"];
+    const rawRisks = Array.isArray(p.key_risks) ? (p.key_risks as unknown[]).slice(0, 10) : [];
+    const key_risks: { risk: string; materiality: string; detail: string }[] = [];
+    for (const item of rawRisks) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const risk = str(rec.risk);
+      if (!risk) continue;
+      if (typeof rec.materiality !== "string" || !MATERIALITIES.includes(rec.materiality)) continue;
+      key_risks.push({ risk, materiality: rec.materiality, detail: str(rec.detail) ?? "" });
+    }
+
+    const due_diligence_questions = strArray(p.due_diligence_questions, 15, MAX_STR);
+    if (due_diligence_questions.length === 0) return { ok: false, reason: "empty_due_diligence_questions" };
+
+    return {
+      ok: true,
+      kind: "assess_quality_of_earnings",
+      payload: { reported_ebitda, adjusted_ebitda, adjustments, recurring_revenue_pct, revenue_quality_flags, expense_quality_flags, one_time_items, qoe_rating: p.qoe_rating, key_risks, due_diligence_questions },
+    };
+  }
+
+  if (kind === "analyze_deferred_revenue") {
+    const period = str(p.period);
+    if (!period) return { ok: false, reason: "missing_period" };
+    const opening_deferred_revenue = numOrNull(p.opening_deferred_revenue, 0);
+    if (opening_deferred_revenue === NUM_INVALID || opening_deferred_revenue === null) return { ok: false, reason: "bad_opening_deferred_revenue" };
+    const new_billings = numOrNull(p.new_billings, 0);
+    if (new_billings === NUM_INVALID || new_billings === null) return { ok: false, reason: "bad_new_billings" };
+    const revenue_recognized = numOrNull(p.revenue_recognized, 0);
+    if (revenue_recognized === NUM_INVALID || revenue_recognized === null) return { ok: false, reason: "bad_revenue_recognized" };
+    const closing_deferred_revenue = numOrNull(p.closing_deferred_revenue, 0);
+    if (closing_deferred_revenue === NUM_INVALID || closing_deferred_revenue === null) return { ok: false, reason: "bad_closing_deferred_revenue" };
+
+    const rawWaterfall = Array.isArray(p.waterfall_schedule) ? (p.waterfall_schedule as unknown[]).slice(0, 12) : [];
+    const waterfall_schedule: { period_label: string; expected_revenue_recognition: number; cumulative_recognized: number }[] = [];
+    for (const item of rawWaterfall) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const period_label = str(rec.period_label);
+      if (!period_label) continue;
+      const expected_revenue_recognition = numOrNull(rec.expected_revenue_recognition, 0);
+      if (expected_revenue_recognition === NUM_INVALID || expected_revenue_recognition === null) continue;
+      const cumulative_recognized = numOrNull(rec.cumulative_recognized, 0);
+      if (cumulative_recognized === NUM_INVALID || cumulative_recognized === null) continue;
+      waterfall_schedule.push({ period_label, expected_revenue_recognition, cumulative_recognized });
+    }
+    if (waterfall_schedule.length === 0) return { ok: false, reason: "empty_waterfall_schedule" };
+
+    const rawCohorts = Array.isArray(p.cohort_analysis) ? (p.cohort_analysis as unknown[]).slice(0, 12) : [];
+    const cohort_analysis: { cohort_label: string; original_billings: number; still_deferred: number; pct_recognized: number }[] = [];
+    for (const item of rawCohorts) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const cohort_label = str(rec.cohort_label);
+      if (!cohort_label) continue;
+      const original_billings = numOrNull(rec.original_billings, 0);
+      if (original_billings === NUM_INVALID || original_billings === null) continue;
+      const still_deferred = numOrNull(rec.still_deferred, 0);
+      if (still_deferred === NUM_INVALID || still_deferred === null) continue;
+      const pct_recognized = numOrNull(rec.pct_recognized, 0, 100);
+      if (pct_recognized === NUM_INVALID || pct_recognized === null) continue;
+      cohort_analysis.push({ cohort_label, original_billings, still_deferred, pct_recognized });
+    }
+
+    const revenue_visibility_score = typeof p.revenue_visibility_score === "number" && Number.isInteger(p.revenue_visibility_score) && p.revenue_visibility_score >= 0 && p.revenue_visibility_score <= 100 ? p.revenue_visibility_score : null;
+    if (revenue_visibility_score === null) return { ok: false, reason: "bad_revenue_visibility_score" };
+
+    const RECOGNITION_PATTERNS = ["ratable", "milestone", "usage_based", "front_loaded", "back_loaded", "mixed"];
+    if (typeof p.recognition_pattern !== "string" || !RECOGNITION_PATTERNS.includes(p.recognition_pattern)) return { ok: false, reason: "bad_recognition_pattern" };
+
+    const SEVERITIES = ["high", "medium", "low"];
+    const rawAnom = Array.isArray(p.anomalies) ? (p.anomalies as unknown[]).slice(0, 10) : [];
+    const anomalies: { anomaly: string; severity: string; impact: string }[] = [];
+    for (const item of rawAnom) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const anomaly = str(rec.anomaly);
+      if (!anomaly) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      anomalies.push({ anomaly, severity: rec.severity, impact: str(rec.impact) ?? "" });
+    }
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "analyze_deferred_revenue",
+      payload: { period, opening_deferred_revenue, new_billings, revenue_recognized, closing_deferred_revenue, waterfall_schedule, cohort_analysis, revenue_visibility_score, recognition_pattern: p.recognition_pattern, anomalies, recommendations },
+    };
+  }
+
+  if (kind === "assess_earnings_quality") {
+    const accrual_ratio = numOrNull(p.accrual_ratio);
+    if (accrual_ratio === NUM_INVALID || accrual_ratio === null) return { ok: false, reason: "bad_accrual_ratio" };
+    const cash_conversion_ratio = numOrNull(p.cash_conversion_ratio, 0);
+    if (cash_conversion_ratio === NUM_INVALID || cash_conversion_ratio === null) return { ok: false, reason: "bad_cash_conversion_ratio" };
+
+    const PERSISTENCE = ["highly_persistent", "persistent", "transitory", "volatile"];
+    if (typeof p.earnings_persistence_assessment !== "string" || !PERSISTENCE.includes(p.earnings_persistence_assessment)) return { ok: false, reason: "bad_earnings_persistence_assessment" };
+
+    let accruals_analysis: { total_accruals: number; operating_accruals: number; financing_accruals: number; accrual_direction: string } | null = null;
+    const ACCRUAL_DIRECTIONS = ["increasing", "decreasing", "stable"];
+    if (typeof p.accruals_analysis === "object" && p.accruals_analysis !== null) {
+      const rec = p.accruals_analysis as Record<string, unknown>;
+      const total_accruals = numOrNull(rec.total_accruals);
+      const operating_accruals = numOrNull(rec.operating_accruals);
+      const financing_accruals = numOrNull(rec.financing_accruals);
+      if (total_accruals !== NUM_INVALID && total_accruals !== null &&
+          operating_accruals !== NUM_INVALID && operating_accruals !== null &&
+          financing_accruals !== NUM_INVALID && financing_accruals !== null &&
+          typeof rec.accrual_direction === "string" && ACCRUAL_DIRECTIONS.includes(rec.accrual_direction)) {
+        accruals_analysis = { total_accruals, operating_accruals, financing_accruals, accrual_direction: rec.accrual_direction };
+      }
+    }
+    if (!accruals_analysis) return { ok: false, reason: "bad_accruals_analysis" };
+
+    let revenue_vs_cash_reconciliation: { reported_revenue: number; cash_collected: number; ar_change: number; gap_explanation: string } | null = null;
+    if (typeof p.revenue_vs_cash_reconciliation === "object" && p.revenue_vs_cash_reconciliation !== null) {
+      const rec = p.revenue_vs_cash_reconciliation as Record<string, unknown>;
+      const reported_revenue = numOrNull(rec.reported_revenue, 0);
+      const cash_collected = numOrNull(rec.cash_collected, 0);
+      const ar_change = numOrNull(rec.ar_change);
+      if (reported_revenue !== NUM_INVALID && reported_revenue !== null &&
+          cash_collected !== NUM_INVALID && cash_collected !== null &&
+          ar_change !== NUM_INVALID && ar_change !== null) {
+        revenue_vs_cash_reconciliation = { reported_revenue, cash_collected, ar_change, gap_explanation: str(rec.gap_explanation) ?? "" };
+      }
+    }
+    if (!revenue_vs_cash_reconciliation) return { ok: false, reason: "bad_revenue_vs_cash_reconciliation" };
+
+    const RF_SEVERITIES = ["critical", "high", "medium"];
+    const rawRed = Array.isArray(p.red_flags) ? (p.red_flags as unknown[]).slice(0, 15) : [];
+    const red_flags: { flag: string; severity: string; evidence: string }[] = [];
+    for (const item of rawRed) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      if (typeof rec.severity !== "string" || !RF_SEVERITIES.includes(rec.severity)) continue;
+      red_flags.push({ flag, severity: rec.severity, evidence: str(rec.evidence) ?? "" });
+    }
+
+    const rawGreen = Array.isArray(p.green_flags) ? (p.green_flags as unknown[]).slice(0, 10) : [];
+    const green_flags: { flag: string; evidence: string }[] = [];
+    for (const item of rawGreen) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const flag = str(rec.flag);
+      if (!flag) continue;
+      green_flags.push({ flag, evidence: str(rec.evidence) ?? "" });
+    }
+
+    const QUALITY_RATINGS = ["high", "medium", "low", "very_low"];
+    if (typeof p.overall_quality_rating !== "string" || !QUALITY_RATINGS.includes(p.overall_quality_rating)) return { ok: false, reason: "bad_overall_quality_rating" };
+
+    const rawForensic = Array.isArray(p.forensic_indicators) ? (p.forensic_indicators as unknown[]).slice(0, 10) : [];
+    const forensic_indicators: { indicator: string; beneish_m_score_component: string | null; interpretation: string }[] = [];
+    for (const item of rawForensic) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const indicator = str(rec.indicator);
+      if (!indicator) continue;
+      const beneish_m_score_component = rec.beneish_m_score_component === null ? null : str(rec.beneish_m_score_component);
+      forensic_indicators.push({ indicator, beneish_m_score_component, interpretation: str(rec.interpretation) ?? "" });
+    }
+
+    return {
+      ok: true,
+      kind: "assess_earnings_quality",
+      payload: { accrual_ratio, cash_conversion_ratio, earnings_persistence_assessment: p.earnings_persistence_assessment, accruals_analysis, revenue_vs_cash_reconciliation, red_flags, green_flags, overall_quality_rating: p.overall_quality_rating, forensic_indicators },
+    };
+  }
+
+  if (kind === "eliminate_intercompany") {
+    const ENTITY_TYPES = ["parent", "subsidiary", "joint_venture"];
+    const rawEntities = Array.isArray(p.entities_identified) ? (p.entities_identified as unknown[]).slice(0, 20) : [];
+    const entities_identified: { entity_name: string; entity_type: string; currency: string }[] = [];
+    for (const item of rawEntities) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const entity_name = str(rec.entity_name);
+      if (!entity_name) continue;
+      if (typeof rec.entity_type !== "string" || !ENTITY_TYPES.includes(rec.entity_type)) continue;
+      entities_identified.push({ entity_name, entity_type: rec.entity_type, currency: str(rec.currency) ?? "" });
+    }
+    if (entities_identified.length === 0) return { ok: false, reason: "empty_entities_identified" };
+
+    const TXN_TYPES = ["revenue", "expense", "loan", "dividend", "transfer", "management_fee"];
+    const rawTxns = Array.isArray(p.intercompany_transactions) ? (p.intercompany_transactions as unknown[]).slice(0, 50) : [];
+    const intercompany_transactions: { from_entity: string; to_entity: string; transaction_type: string; amount: number; currency: string; period: string }[] = [];
+    for (const item of rawTxns) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      if (typeof rec.transaction_type !== "string" || !TXN_TYPES.includes(rec.transaction_type)) continue;
+      const amount = numOrNull(rec.amount, 0);
+      if (amount === NUM_INVALID || amount === null) continue;
+      intercompany_transactions.push({ from_entity: str(rec.from_entity) ?? "", to_entity: str(rec.to_entity) ?? "", transaction_type: rec.transaction_type, amount, currency: str(rec.currency) ?? "", period: str(rec.period) ?? "" });
+    }
+
+    const rawSchedule = Array.isArray(p.elimination_schedule) ? (p.elimination_schedule as unknown[]).slice(0, 30) : [];
+    const elimination_schedule: { description: string; debit_account: string; credit_account: string; amount: number; period: string }[] = [];
+    for (const item of rawSchedule) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const description = str(rec.description);
+      if (!description) continue;
+      const amount = numOrNull(rec.amount, 0);
+      if (amount === NUM_INVALID || amount === null) continue;
+      elimination_schedule.push({ description, debit_account: str(rec.debit_account) ?? "", credit_account: str(rec.credit_account) ?? "", amount, period: str(rec.period) ?? "" });
+    }
+
+    let consolidated_summary: { consolidated_revenue: number; intercompany_revenue_eliminated: number; net_revenue: number; elimination_pct: number } | null = null;
+    if (typeof p.consolidated_summary === "object" && p.consolidated_summary !== null) {
+      const rec = p.consolidated_summary as Record<string, unknown>;
+      const consolidated_revenue = numOrNull(rec.consolidated_revenue, 0);
+      const intercompany_revenue_eliminated = numOrNull(rec.intercompany_revenue_eliminated, 0);
+      const net_revenue = numOrNull(rec.net_revenue, 0);
+      const elimination_pct = numOrNull(rec.elimination_pct, 0, 100);
+      if (consolidated_revenue !== NUM_INVALID && consolidated_revenue !== null &&
+          intercompany_revenue_eliminated !== NUM_INVALID && intercompany_revenue_eliminated !== null &&
+          net_revenue !== NUM_INVALID && net_revenue !== null &&
+          elimination_pct !== NUM_INVALID && elimination_pct !== null) {
+        consolidated_summary = { consolidated_revenue, intercompany_revenue_eliminated, net_revenue, elimination_pct };
+      }
+    }
+    if (!consolidated_summary) return { ok: false, reason: "bad_consolidated_summary" };
+
+    const rawDiffs = Array.isArray(p.unreconciled_differences) ? (p.unreconciled_differences as unknown[]).slice(0, 10) : [];
+    const unreconciled_differences: { description: string; amount: number; likely_cause: string }[] = [];
+    for (const item of rawDiffs) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const description = str(rec.description);
+      if (!description) continue;
+      const amount = numOrNull(rec.amount);
+      if (amount === NUM_INVALID || amount === null) continue;
+      unreconciled_differences.push({ description, amount, likely_cause: str(rec.likely_cause) ?? "" });
+    }
+
+    const COMPLETENESS = ["complete", "substantially_complete", "partial", "incomplete"];
+    if (typeof p.elimination_completeness !== "string" || !COMPLETENESS.includes(p.elimination_completeness)) return { ok: false, reason: "bad_elimination_completeness" };
+
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "eliminate_intercompany",
+      payload: { entities_identified, intercompany_transactions, elimination_schedule, consolidated_summary, unreconciled_differences, elimination_completeness: p.elimination_completeness, recommendations },
     };
   }
 

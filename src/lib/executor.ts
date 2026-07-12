@@ -3582,6 +3582,143 @@ export async function applyAction(
   }
 
 
+  if (v.kind === "normalize_financial_statements") {
+    const { data, error } = await db
+      .from("financial_statement_normalizer_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        statement_type: v.payload.statement_type,
+        accounting_standard_detected: v.payload.accounting_standard_detected,
+        periods_detected: v.payload.periods_detected,
+        normalized_line_items: v.payload.normalized_line_items,
+        reclassifications: v.payload.reclassifications,
+        normalization_issues: v.payload.normalization_issues,
+        comparability_assessment: v.payload.comparability_assessment,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "financial_statement_normalizer_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "build_three_statement_model") {
+    const { data, error } = await db
+      .from("three_statement_model_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        base_period: v.payload.base_period,
+        income_statement: v.payload.income_statement,
+        balance_sheet: v.payload.balance_sheet,
+        cash_flow_statement: v.payload.cash_flow_statement,
+        model_integrity_checks: v.payload.model_integrity_checks,
+        key_assumptions: v.payload.key_assumptions,
+        model_completeness: v.payload.model_completeness,
+        gaps_and_caveats: v.payload.gaps_and_caveats,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "three_statement_model_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "assess_quality_of_earnings") {
+    const { data, error } = await db
+      .from("quality_of_earnings_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        reported_ebitda: v.payload.reported_ebitda,
+        adjusted_ebitda: v.payload.adjusted_ebitda,
+        adjustments: v.payload.adjustments,
+        recurring_revenue_pct: v.payload.recurring_revenue_pct,
+        revenue_quality_flags: v.payload.revenue_quality_flags,
+        expense_quality_flags: v.payload.expense_quality_flags,
+        one_time_items: v.payload.one_time_items,
+        qoe_rating: v.payload.qoe_rating,
+        key_risks: v.payload.key_risks,
+        due_diligence_questions: v.payload.due_diligence_questions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "quality_of_earnings_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_deferred_revenue") {
+    const { data, error } = await db
+      .from("deferred_revenue_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period: v.payload.period,
+        opening_deferred_revenue: v.payload.opening_deferred_revenue,
+        new_billings: v.payload.new_billings,
+        revenue_recognized: v.payload.revenue_recognized,
+        closing_deferred_revenue: v.payload.closing_deferred_revenue,
+        waterfall_schedule: v.payload.waterfall_schedule,
+        cohort_analysis: v.payload.cohort_analysis,
+        revenue_visibility_score: v.payload.revenue_visibility_score,
+        recognition_pattern: v.payload.recognition_pattern,
+        anomalies: v.payload.anomalies,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "deferred_revenue_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "assess_earnings_quality") {
+    const { data, error } = await db
+      .from("earnings_quality_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        accrual_ratio: v.payload.accrual_ratio,
+        cash_conversion_ratio: v.payload.cash_conversion_ratio,
+        earnings_persistence_assessment: v.payload.earnings_persistence_assessment,
+        accruals_analysis: v.payload.accruals_analysis,
+        revenue_vs_cash_reconciliation: v.payload.revenue_vs_cash_reconciliation,
+        red_flags: v.payload.red_flags,
+        green_flags: v.payload.green_flags,
+        overall_quality_rating: v.payload.overall_quality_rating,
+        forensic_indicators: v.payload.forensic_indicators,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "earnings_quality_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "eliminate_intercompany") {
+    const { data, error } = await db
+      .from("intercompany_elimination_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        entities_identified: v.payload.entities_identified,
+        intercompany_transactions: v.payload.intercompany_transactions,
+        elimination_schedule: v.payload.elimination_schedule,
+        consolidated_summary: v.payload.consolidated_summary,
+        unreconciled_differences: v.payload.unreconciled_differences,
+        elimination_completeness: v.payload.elimination_completeness,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "intercompany_elimination_runs", recordId: data.id as string };
+  }
+
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
