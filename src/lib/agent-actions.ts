@@ -5,7 +5,7 @@
  * supplies content; code decides whether it is a legal, bounded action of a
  * known kind before any row is ever written. Unknown kind / bad shape → reject.
  */
-export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation"] as const;
+export const ACTION_KINDS = ["record_ledger_entry", "store_report", "flag_anomaly", "categorize_items", "clean_data", "merge_datasets", "normalize_units", "reconcile_records", "match_invoices", "project_cash_flow", "categorize_tax_items", "flag_duplicates", "compare_budget_actual", "track_inventory", "flag_reorders", "analyze_suppliers", "process_purchase_orders", "detect_trends", "compare_periods", "generate_exec_summary", "generate_forecast", "generate_report", "assess_data_quality", "flag_compliance_issues", "assess_vendor_risk", "generate_onboarding_guidance", "request_clarification", "analyze_multi_period", "summarize_audit_trail", "review_code", "generate_tests", "analyze_sql", "validate_analysis", "generate_health_score", "draft_email", "generate_recommendations", "extract_patterns", "generate_alerts", "generate_client_report", "generate_narrative", "prepare_meeting", "build_board_deck", "recommend_visualizations", "generate_chart_configs", "extract_kpi_cards", "generate_dashboard_spec", "calculate_saas_metrics", "calculate_burn_rate", "analyze_cohorts", "analyze_ar_aging", "analyze_accounts_payable", "reconcile_bank", "analyze_financial_ratios", "analyze_profitability", "analyze_working_capital", "calculate_break_even", "analyze_cogs", "analyze_revenue_recognition", "analyze_churn_risk", "segment_customers", "analyze_sales_pipeline", "analyze_pricing", "analyze_contracts", "analyze_marketing_roi", "detect_fraud_signals", "analyze_concentration_risk", "model_scenarios", "analyze_liquidity_risk", "track_covenants", "classify_document", "detect_schema_evolution", "extract_kpis", "synthesize_insights", "detect_conflicts", "prioritize_actions", "profile_columns", "build_data_dictionary", "analyze_missing_data", "assess_data_privacy", "classify_transactions", "check_expense_policy", "track_subscriptions", "analyze_headcount_analytics", "calculate_commissions", "analyze_productivity", "analyze_overtime", "calculate_growth_rates", "explain_outliers", "decompose_time_series", "assess_failure_risk", "analyze_unit_economics", "estimate_valuation", "analyze_cap_table", "analyze_leases", "analyze_asset_register", "analyze_price_volume_mix", "build_bridge_analysis", "calculate_run_rate", "analyze_spend", "analyze_discounts", "detect_maverick_spend", "prioritize_collections", "calculate_bad_debt_provision", "score_credit_risk", "analyze_fx_exposure", "draft_investor_memo", "track_okrs", "conduct_swot", "build_queries", "generate_esg_report", "analyze_seasonality", "benchmark_performance", "consolidate_entities", "analyze_ecommerce", "analyze_professional_services", "analyze_nonprofit_financials", "analyze_healthcare_financials", "analyze_legal_billing", "analyze_hospitality_financials", "analyze_retail_performance", "analyze_construction_financials", "analyze_revenue_quality", "analyze_customer_cohorts", "analyze_variances", "forecast_cash_flow", "forecast_expenses", "analyze_headcount", "analyze_debt_covenants", "analyze_tax_provision", "manage_collections", "benchmark_competitive", "evaluate_data_quality", "detect_schema", "draft_board_narrative", "draft_investor_update", "orchestrate_agents", "review_confidence", "reshape_data", "normalize_dates", "normalize_strings", "normalize_currency", "assess_join_quality", "validate_data_rules", "analyze_distribution", "analyze_correlation", "analyze_regression", "test_hypothesis", "analyze_pareto", "cluster_data", "analyze_funnel", "analyze_retention", "analyze_ab_test", "analyze_nps", "analyze_feature_adoption", "score_customer_health", "analyze_quota_attainment", "analyze_win_loss", "analyze_forecast_accuracy", "analyze_attribution", "analyze_price_elasticity", "analyze_expansion_opportunity", "analyze_attrition", "plan_headcount", "forecast_demand", "plan_capacity", "analyze_sla", "analyze_compensation", "build_metric_tree", "analyze_text", "assess_data_freshness", "diff_narratives", "configure_alert_thresholds", "annotate_data"] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 const MAX_STR = 2_000; // clamp every string field (DoS + bounded storage)
@@ -8169,6 +8169,377 @@ export function validateProposal(kind: string, payload: unknown): Ok | Err {
       ok: true,
       kind: "analyze_compensation",
       payload: { total_compensation_cost, avg_total_comp, compensation_by_level, compensation_by_department, pay_equity_flags, market_benchmarking, comp_ratio_distribution, budget_impact, recommendations },
+    };
+  }
+
+
+  if (kind === "build_metric_tree") {
+    const root_metric = str(p.root_metric);
+    if (!root_metric) return { ok: false, reason: "missing_root_metric" };
+
+    const rawTree = Array.isArray(p.metric_tree) ? (p.metric_tree as unknown[]).slice(0, 30) : [];
+    const metric_tree: { metric_name: string; level: number; parent_metric: string | null; formula: string; current_value: number; unit: string }[] = [];
+    for (const item of rawTree) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const metric_name = str(rec.metric_name);
+      if (!metric_name) continue;
+      const level = typeof rec.level === "number" && Number.isInteger(rec.level) && rec.level >= 0 && rec.level <= 5 ? rec.level : null;
+      if (level === null) continue;
+      const parent_metric = rec.parent_metric === null ? null : str(rec.parent_metric);
+      const formula = str(rec.formula) ?? "";
+      const current_value = numOrNull(rec.current_value);
+      if (current_value === NUM_INVALID || current_value === null) continue;
+      metric_tree.push({ metric_name, level, parent_metric, formula, current_value, unit: str(rec.unit) ?? "" });
+    }
+    if (metric_tree.length === 0) return { ok: false, reason: "empty_metric_tree" };
+
+    const DIRECTIONS = ["positive", "negative"];
+    const rawDrivers = Array.isArray(p.key_drivers) ? (p.key_drivers as unknown[]).slice(0, 10) : [];
+    const key_drivers: { driver_metric: string; impact_direction: string; estimated_contribution_pct: number; explanation: string }[] = [];
+    for (const item of rawDrivers) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const driver_metric = str(rec.driver_metric);
+      if (!driver_metric) continue;
+      if (typeof rec.impact_direction !== "string" || !DIRECTIONS.includes(rec.impact_direction)) continue;
+      const estimated_contribution_pct = numOrNull(rec.estimated_contribution_pct, 0, 100);
+      if (estimated_contribution_pct === NUM_INVALID || estimated_contribution_pct === null) continue;
+      key_drivers.push({ driver_metric, impact_direction: rec.impact_direction, estimated_contribution_pct, explanation: str(rec.explanation) ?? "" });
+    }
+    if (key_drivers.length === 0) return { ok: false, reason: "empty_key_drivers" };
+
+    const rawVariance = Array.isArray(p.driver_variance_analysis) ? (p.driver_variance_analysis as unknown[]).slice(0, 10) : [];
+    const driver_variance_analysis: { metric_name: string; expected_value: number; actual_value: number; variance_pct: number; variance_explanation: string }[] = [];
+    for (const item of rawVariance) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const metric_name = str(rec.metric_name);
+      if (!metric_name) continue;
+      const expected_value = numOrNull(rec.expected_value);
+      if (expected_value === NUM_INVALID || expected_value === null) continue;
+      const actual_value = numOrNull(rec.actual_value);
+      if (actual_value === NUM_INVALID || actual_value === null) continue;
+      const variance_pct = numOrNull(rec.variance_pct);
+      if (variance_pct === NUM_INVALID || variance_pct === null) continue;
+      driver_variance_analysis.push({ metric_name, expected_value, actual_value, variance_pct, variance_explanation: str(rec.variance_explanation) ?? "" });
+    }
+
+    const diagnostic_questions = strArray(p.diagnostic_questions, 10, MAX_STR);
+    if (diagnostic_questions.length === 0) return { ok: false, reason: "empty_diagnostic_questions" };
+
+    return {
+      ok: true,
+      kind: "build_metric_tree",
+      payload: { root_metric, metric_tree, key_drivers, driver_variance_analysis, diagnostic_questions },
+    };
+  }
+
+  if (kind === "analyze_text") {
+    const rawCols = Array.isArray(p.text_columns_analyzed) ? (p.text_columns_analyzed as unknown[]).slice(0, 10) : [];
+    const text_columns_analyzed: { column_name: string; row_count: number; avg_length_chars: number; language_detected: string }[] = [];
+    for (const item of rawCols) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      if (!column_name) continue;
+      const row_count = typeof rec.row_count === "number" && Number.isInteger(rec.row_count) && rec.row_count >= 0 ? rec.row_count : null;
+      if (row_count === null) continue;
+      const avg_length_chars = numOrNull(rec.avg_length_chars, 0);
+      if (avg_length_chars === NUM_INVALID || avg_length_chars === null) continue;
+      text_columns_analyzed.push({ column_name, row_count, avg_length_chars, language_detected: str(rec.language_detected) ?? "" });
+    }
+    if (text_columns_analyzed.length === 0) return { ok: false, reason: "empty_text_columns_analyzed" };
+
+    const SENTIMENTS = ["positive", "negative", "neutral", "mixed"];
+    const rawThemes = Array.isArray(p.top_themes) ? (p.top_themes as unknown[]).slice(0, 15) : [];
+    const top_themes: { theme: string; mention_count: number; sentiment: string; representative_quote: string }[] = [];
+    for (const item of rawThemes) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const theme = str(rec.theme);
+      if (!theme) continue;
+      const mention_count = typeof rec.mention_count === "number" && Number.isInteger(rec.mention_count) && rec.mention_count >= 0 ? rec.mention_count : null;
+      if (mention_count === null) continue;
+      if (typeof rec.sentiment !== "string" || !SENTIMENTS.includes(rec.sentiment)) continue;
+      top_themes.push({ theme, mention_count, sentiment: rec.sentiment, representative_quote: str(rec.representative_quote) ?? "" });
+    }
+    if (top_themes.length === 0) return { ok: false, reason: "empty_top_themes" };
+
+    let sentiment_summary: { overall_sentiment: string; positive_pct: number; negative_pct: number; neutral_pct: number; mixed_pct: number } | null = null;
+    if (typeof p.sentiment_summary === "object" && p.sentiment_summary !== null) {
+      const rec = p.sentiment_summary as Record<string, unknown>;
+      const positive_pct = numOrNull(rec.positive_pct, 0, 100);
+      const negative_pct = numOrNull(rec.negative_pct, 0, 100);
+      const neutral_pct = numOrNull(rec.neutral_pct, 0, 100);
+      const mixed_pct = numOrNull(rec.mixed_pct, 0, 100);
+      if (typeof rec.overall_sentiment === "string" && SENTIMENTS.includes(rec.overall_sentiment) &&
+          positive_pct !== NUM_INVALID && positive_pct !== null &&
+          negative_pct !== NUM_INVALID && negative_pct !== null &&
+          neutral_pct !== NUM_INVALID && neutral_pct !== null &&
+          mixed_pct !== NUM_INVALID && mixed_pct !== null) {
+        sentiment_summary = { overall_sentiment: rec.overall_sentiment, positive_pct, negative_pct, neutral_pct, mixed_pct };
+      }
+    }
+    if (!sentiment_summary) return { ok: false, reason: "bad_sentiment_summary" };
+
+    const rawKw = Array.isArray(p.keyword_frequency) ? (p.keyword_frequency as unknown[]).slice(0, 30) : [];
+    const keyword_frequency: { keyword: string; count: number; context: string }[] = [];
+    for (const item of rawKw) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const keyword = str(rec.keyword);
+      if (!keyword) continue;
+      const count = typeof rec.count === "number" && Number.isInteger(rec.count) && rec.count >= 0 ? rec.count : null;
+      if (count === null) continue;
+      keyword_frequency.push({ keyword, count, context: str(rec.context) ?? "" });
+    }
+
+    const rawAnom = Array.isArray(p.anomalous_entries) ? (p.anomalous_entries as unknown[]).slice(0, 10) : [];
+    const anomalous_entries: { content_preview: string; anomaly_type: string; row_index: number }[] = [];
+    for (const item of rawAnom) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const content_preview = str(rec.content_preview);
+      if (!content_preview) continue;
+      const row_index = typeof rec.row_index === "number" && Number.isInteger(rec.row_index) && rec.row_index >= 0 ? rec.row_index : null;
+      if (row_index === null) continue;
+      anomalous_entries.push({ content_preview, anomaly_type: str(rec.anomaly_type) ?? "", row_index });
+    }
+
+    const actionable_insights = strArray(p.actionable_insights, 10, MAX_STR);
+    if (actionable_insights.length === 0) return { ok: false, reason: "empty_actionable_insights" };
+
+    return {
+      ok: true,
+      kind: "analyze_text",
+      payload: { text_columns_analyzed, top_themes, sentiment_summary, keyword_frequency, anomalous_entries, actionable_insights },
+    };
+  }
+
+  if (kind === "assess_data_freshness") {
+    const assessed_at = str(p.assessed_at);
+    if (!assessed_at) return { ok: false, reason: "missing_assessed_at" };
+
+    const rawCols = Array.isArray(p.date_columns_found) ? (p.date_columns_found as unknown[]).slice(0, 20) : [];
+    const date_columns_found: { column_name: string; most_recent_value: string; oldest_value: string; null_count: number; distinct_date_count: number }[] = [];
+    for (const item of rawCols) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      if (!column_name) continue;
+      const null_count = typeof rec.null_count === "number" && Number.isInteger(rec.null_count) && rec.null_count >= 0 ? rec.null_count : null;
+      if (null_count === null) continue;
+      const distinct_date_count = typeof rec.distinct_date_count === "number" && Number.isInteger(rec.distinct_date_count) && rec.distinct_date_count >= 0 ? rec.distinct_date_count : null;
+      if (distinct_date_count === null) continue;
+      date_columns_found.push({ column_name, most_recent_value: str(rec.most_recent_value) ?? "", oldest_value: str(rec.oldest_value) ?? "", null_count, distinct_date_count });
+    }
+
+    const most_recent_record_date = str(p.most_recent_record_date);
+    if (!most_recent_record_date) return { ok: false, reason: "missing_most_recent_record_date" };
+    const oldest_record_date = str(p.oldest_record_date);
+    if (!oldest_record_date) return { ok: false, reason: "missing_oldest_record_date" };
+    const data_age_days = typeof p.data_age_days === "number" && Number.isInteger(p.data_age_days) && p.data_age_days >= 0 ? p.data_age_days : null;
+    if (data_age_days === null) return { ok: false, reason: "bad_data_age_days" };
+
+    const FRESHNESS = ["real_time", "daily", "weekly", "monthly", "stale", "unknown"];
+    if (typeof p.freshness_rating !== "string" || !FRESHNESS.includes(p.freshness_rating)) return { ok: false, reason: "bad_freshness_rating" };
+
+    const GAP_TYPES = ["missing_dates", "sparse_records", "sudden_stop"];
+    const rawGaps = Array.isArray(p.coverage_gaps) ? (p.coverage_gaps as unknown[]).slice(0, 20) : [];
+    const coverage_gaps: { period: string; gap_type: string; description: string }[] = [];
+    for (const item of rawGaps) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const period = str(rec.period);
+      if (!period) continue;
+      if (typeof rec.gap_type !== "string" || !GAP_TYPES.includes(rec.gap_type)) continue;
+      coverage_gaps.push({ period, gap_type: rec.gap_type, description: str(rec.description) ?? "" });
+    }
+
+    const rawStale = Array.isArray(p.stale_columns) ? (p.stale_columns as unknown[]).slice(0, 10) : [];
+    const stale_columns: { column_name: string; last_updated: string; staleness_concern: string }[] = [];
+    for (const item of rawStale) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      if (!column_name) continue;
+      stale_columns.push({ column_name, last_updated: str(rec.last_updated) ?? "", staleness_concern: str(rec.staleness_concern) ?? "" });
+    }
+
+    const reliability_flags = strArray(p.reliability_flags, 10, MAX_STR);
+    const recommendations = strArray(p.recommendations, 10, MAX_STR);
+
+    return {
+      ok: true,
+      kind: "assess_data_freshness",
+      payload: { assessed_at, date_columns_found, most_recent_record_date, oldest_record_date, data_age_days, freshness_rating: p.freshness_rating, coverage_gaps, stale_columns, reliability_flags, recommendations },
+    };
+  }
+
+  if (kind === "diff_narratives") {
+    const period_a_label = str(p.period_a_label);
+    if (!period_a_label) return { ok: false, reason: "missing_period_a_label" };
+    const period_b_label = str(p.period_b_label);
+    if (!period_b_label) return { ok: false, reason: "missing_period_b_label" };
+
+    const DIRECTIONS = ["improved", "declined", "unchanged"];
+    const MATERIALITIES = ["high", "medium", "low"];
+    const rawChanges = Array.isArray(p.metric_changes) ? (p.metric_changes as unknown[]).slice(0, 30) : [];
+    const metric_changes: { metric_name: string; period_a_value: number; period_b_value: number; change_pct: number; direction: string; materiality: string }[] = [];
+    for (const item of rawChanges) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const metric_name = str(rec.metric_name);
+      if (!metric_name) continue;
+      const period_a_value = numOrNull(rec.period_a_value);
+      if (period_a_value === NUM_INVALID || period_a_value === null) continue;
+      const period_b_value = numOrNull(rec.period_b_value);
+      if (period_b_value === NUM_INVALID || period_b_value === null) continue;
+      const change_pct = numOrNull(rec.change_pct);
+      if (change_pct === NUM_INVALID || change_pct === null) continue;
+      if (typeof rec.direction !== "string" || !DIRECTIONS.includes(rec.direction)) continue;
+      if (typeof rec.materiality !== "string" || !MATERIALITIES.includes(rec.materiality)) continue;
+      metric_changes.push({ metric_name, period_a_value, period_b_value, change_pct, direction: rec.direction, materiality: rec.materiality });
+    }
+    if (metric_changes.length === 0) return { ok: false, reason: "empty_metric_changes" };
+
+    const rawSig = Array.isArray(p.significant_changes) ? (p.significant_changes as unknown[]).slice(0, 10) : [];
+    const significant_changes: { metric_name: string; change_pct: number; plain_english_explanation: string; likely_cause: string }[] = [];
+    for (const item of rawSig) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const metric_name = str(rec.metric_name);
+      if (!metric_name) continue;
+      const change_pct = numOrNull(rec.change_pct);
+      if (change_pct === NUM_INVALID || change_pct === null) continue;
+      significant_changes.push({ metric_name, change_pct, plain_english_explanation: str(rec.plain_english_explanation) ?? "", likely_cause: str(rec.likely_cause) ?? "" });
+    }
+
+    const unchanged_areas = strArray(p.unchanged_areas, 10, MAX_STR);
+
+    const narrative_summary = str(p.narrative_summary);
+    if (!narrative_summary) return { ok: false, reason: "missing_narrative_summary" };
+
+    const STORY_ARCS = ["turnaround", "growth_acceleration", "growth_deceleration", "stable", "mixed", "crisis"];
+    if (typeof p.story_arc !== "string" || !STORY_ARCS.includes(p.story_arc)) return { ok: false, reason: "bad_story_arc" };
+
+    const executive_headline = str(p.executive_headline);
+    if (!executive_headline) return { ok: false, reason: "missing_executive_headline" };
+
+    return {
+      ok: true,
+      kind: "diff_narratives",
+      payload: { period_a_label, period_b_label, metric_changes, significant_changes, unchanged_areas, narrative_summary, story_arc: p.story_arc, executive_headline },
+    };
+  }
+
+  if (kind === "configure_alert_thresholds") {
+    const SEVERITIES = ["critical", "warning", "info"];
+    const rawAlerts = Array.isArray(p.recommended_alerts) ? (p.recommended_alerts as unknown[]).slice(0, 30) : [];
+    const recommended_alerts: { alert_name: string; metric: string; condition: string; threshold_value: number; threshold_unit: string; severity: string; rationale: string }[] = [];
+    for (const item of rawAlerts) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const alert_name = str(rec.alert_name);
+      if (!alert_name) continue;
+      const threshold_value = numOrNull(rec.threshold_value);
+      if (threshold_value === NUM_INVALID || threshold_value === null) continue;
+      if (typeof rec.severity !== "string" || !SEVERITIES.includes(rec.severity)) continue;
+      recommended_alerts.push({ alert_name, metric: str(rec.metric) ?? "", condition: str(rec.condition) ?? "", threshold_value, threshold_unit: str(rec.threshold_unit) ?? "", severity: rec.severity, rationale: str(rec.rationale) ?? "" });
+    }
+    if (recommended_alerts.length === 0) return { ok: false, reason: "empty_recommended_alerts" };
+
+    const rawBreached = Array.isArray(p.currently_breached_alerts) ? (p.currently_breached_alerts as unknown[]).slice(0, 20) : [];
+    const currently_breached_alerts: { alert_name: string; current_value: number; threshold_value: number; breach_magnitude_pct: number; recommended_action: string }[] = [];
+    for (const item of rawBreached) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const alert_name = str(rec.alert_name);
+      if (!alert_name) continue;
+      const current_value = numOrNull(rec.current_value);
+      if (current_value === NUM_INVALID || current_value === null) continue;
+      const threshold_value = numOrNull(rec.threshold_value);
+      if (threshold_value === NUM_INVALID || threshold_value === null) continue;
+      const breach_magnitude_pct = numOrNull(rec.breach_magnitude_pct);
+      if (breach_magnitude_pct === NUM_INVALID || breach_magnitude_pct === null) continue;
+      currently_breached_alerts.push({ alert_name, current_value, threshold_value, breach_magnitude_pct, recommended_action: str(rec.recommended_action) ?? "" });
+    }
+
+    const rawSuppress = Array.isArray(p.alert_suppression_suggestions) ? (p.alert_suppression_suggestions as unknown[]).slice(0, 10) : [];
+    const alert_suppression_suggestions: { existing_alert: string; reason_to_suppress: string }[] = [];
+    for (const item of rawSuppress) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const existing_alert = str(rec.existing_alert);
+      if (!existing_alert) continue;
+      alert_suppression_suggestions.push({ existing_alert, reason_to_suppress: str(rec.reason_to_suppress) ?? "" });
+    }
+
+    const alert_coverage_gaps = strArray(p.alert_coverage_gaps, 10, MAX_STR);
+
+    const summary = str(p.summary);
+    if (!summary) return { ok: false, reason: "missing_summary" };
+
+    return {
+      ok: true,
+      kind: "configure_alert_thresholds",
+      payload: { recommended_alerts, currently_breached_alerts, alert_suppression_suggestions, alert_coverage_gaps, summary },
+    };
+  }
+
+  if (kind === "annotate_data") {
+    const rawCols = Array.isArray(p.column_annotations) ? (p.column_annotations as unknown[]).slice(0, 50) : [];
+    const column_annotations: { column_name: string; business_definition: string; data_type_confirmed: string; calculation_method: string | null; known_issues: string[]; example_values: string[] }[] = [];
+    for (const item of rawCols) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const column_name = str(rec.column_name);
+      if (!column_name) continue;
+      const calculation_method = rec.calculation_method === null ? null : str(rec.calculation_method);
+      column_annotations.push({
+        column_name,
+        business_definition: str(rec.business_definition) ?? "",
+        data_type_confirmed: str(rec.data_type_confirmed) ?? "",
+        calculation_method,
+        known_issues: strArray(rec.known_issues, 20, MAX_STR),
+        example_values: strArray(rec.example_values, 3, MAX_STR),
+      });
+    }
+
+    const ANNOTATION_TYPES = ["outlier", "exception", "note", "flag"];
+    const rawRows = Array.isArray(p.row_annotations) ? (p.row_annotations as unknown[]).slice(0, 50) : [];
+    const row_annotations: { row_identifier: string; annotation_type: string; annotation_text: string }[] = [];
+    for (const item of rawRows) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const row_identifier = str(rec.row_identifier);
+      if (!row_identifier) continue;
+      if (typeof rec.annotation_type !== "string" || !ANNOTATION_TYPES.includes(rec.annotation_type)) continue;
+      row_annotations.push({ row_identifier, annotation_type: rec.annotation_type, annotation_text: str(rec.annotation_text) ?? "" });
+    }
+
+    const business_context_notes = strArray(p.business_context_notes, 20, MAX_STR);
+
+    const rawGlossary = Array.isArray(p.glossary_terms) ? (p.glossary_terms as unknown[]).slice(0, 30) : [];
+    const glossary_terms: { term: string; definition: string; related_columns: string[] }[] = [];
+    for (const item of rawGlossary) {
+      if (typeof item !== "object" || item === null) continue;
+      const rec = item as Record<string, unknown>;
+      const term = str(rec.term);
+      if (!term) continue;
+      glossary_terms.push({ term, definition: str(rec.definition) ?? "", related_columns: strArray(rec.related_columns, 20, MAX_STR) });
+    }
+
+    const data_lineage_notes = strArray(p.data_lineage_notes, 10, MAX_STR);
+
+    const total_annotations = typeof p.total_annotations === "number" && Number.isInteger(p.total_annotations) && p.total_annotations >= 0 ? p.total_annotations : null;
+    if (total_annotations === null) return { ok: false, reason: "bad_total_annotations" };
+
+    return {
+      ok: true,
+      kind: "annotate_data",
+      payload: { column_annotations, row_annotations, business_context_notes, glossary_terms, data_lineage_notes, total_annotations },
     };
   }
 

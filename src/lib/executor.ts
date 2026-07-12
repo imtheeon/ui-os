@@ -3457,6 +3457,131 @@ export async function applyAction(
   }
 
 
+  if (v.kind === "build_metric_tree") {
+    const { data, error } = await db
+      .from("metric_tree_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        root_metric: v.payload.root_metric,
+        metric_tree: v.payload.metric_tree,
+        key_drivers: v.payload.key_drivers,
+        driver_variance_analysis: v.payload.driver_variance_analysis,
+        diagnostic_questions: v.payload.diagnostic_questions,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "metric_tree_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "analyze_text") {
+    const { data, error } = await db
+      .from("text_analytics_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        text_columns_analyzed: v.payload.text_columns_analyzed,
+        top_themes: v.payload.top_themes,
+        sentiment_summary: v.payload.sentiment_summary,
+        keyword_frequency: v.payload.keyword_frequency,
+        anomalous_entries: v.payload.anomalous_entries,
+        actionable_insights: v.payload.actionable_insights,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "text_analytics_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "assess_data_freshness") {
+    const { data, error } = await db
+      .from("data_freshness_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        assessed_at: v.payload.assessed_at,
+        date_columns_found: v.payload.date_columns_found,
+        most_recent_record_date: v.payload.most_recent_record_date,
+        oldest_record_date: v.payload.oldest_record_date,
+        data_age_days: v.payload.data_age_days,
+        freshness_rating: v.payload.freshness_rating,
+        coverage_gaps: v.payload.coverage_gaps,
+        stale_columns: v.payload.stale_columns,
+        reliability_flags: v.payload.reliability_flags,
+        recommendations: v.payload.recommendations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "data_freshness_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "diff_narratives") {
+    const { data, error } = await db
+      .from("narrative_diff_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        period_a_label: v.payload.period_a_label,
+        period_b_label: v.payload.period_b_label,
+        metric_changes: v.payload.metric_changes,
+        significant_changes: v.payload.significant_changes,
+        unchanged_areas: v.payload.unchanged_areas,
+        narrative_summary: v.payload.narrative_summary,
+        story_arc: v.payload.story_arc,
+        executive_headline: v.payload.executive_headline,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "narrative_diff_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "configure_alert_thresholds") {
+    const { data, error } = await db
+      .from("alert_threshold_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        recommended_alerts: v.payload.recommended_alerts,
+        currently_breached_alerts: v.payload.currently_breached_alerts,
+        alert_suppression_suggestions: v.payload.alert_suppression_suggestions,
+        alert_coverage_gaps: v.payload.alert_coverage_gaps,
+        summary: v.payload.summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "alert_threshold_runs", recordId: data.id as string };
+  }
+
+  if (v.kind === "annotate_data") {
+    const { data, error } = await db
+      .from("data_annotation_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        column_annotations: v.payload.column_annotations,
+        row_annotations: v.payload.row_annotations,
+        business_context_notes: v.payload.business_context_notes,
+        glossary_terms: v.payload.glossary_terms,
+        data_lineage_notes: v.payload.data_lineage_notes,
+        total_annotations: v.payload.total_annotations,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "data_annotation_runs", recordId: data.id as string };
+  }
+
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
