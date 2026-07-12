@@ -3294,6 +3294,26 @@ export async function applyAction(
     return { ok: true, recordTable: "price_elasticity_runs", recordId: data.id as string };
   }
 
+  if (v.kind === "analyze_expansion_opportunity") {
+    const { data, error } = await db
+      .from("expansion_opportunity_runs")
+      .insert({
+        org_id: orgId, // CODE-OWNED
+        payload_id: action.payload_id,
+        proposed_action_id: action.id,
+        total_expansion_potential: v.payload.total_expansion_potential,
+        opportunity_accounts: v.payload.opportunity_accounts,
+        expansion_types: v.payload.expansion_types,
+        readiness_distribution: v.payload.readiness_distribution,
+        prioritized_plays: v.payload.prioritized_plays,
+        expansion_risk_flags: v.payload.expansion_risk_flags,
+      })
+      .select("id")
+      .single();
+    if (error) return { ok: false, code: "DB_ERROR", message: error.message };
+    return { ok: true, recordTable: "expansion_opportunity_runs", recordId: data.id as string };
+  }
+
   const { data, error } = await db
     .from("analyst_reports")
     .insert({
