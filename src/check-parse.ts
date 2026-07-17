@@ -15,8 +15,9 @@
  *      row count clipped, still 'completed'.
  *   4. CSV CORRECTNESS — quoted fields, embedded commas, embedded newline, and
  *      doubled-quote escaping parse correctly (not a naive split).
- *   5. PDF DEFERRAL — a clean PDF → outcome 'deferred_pdf', status STAYS
- *      'processing', extracted_json STAYS null, parse.deferred audit exists.
+ *   5. PDF EXTRACTION — a clean, real PDF → outcome 'parsed_pdf', status →
+ *      'completed', extracted_json = { kind:"pdf", pageCount, text, parser },
+ *      upload.parsed audit exists.
  *   6. IDEMPOTENCY — a second parseUpload → 'skipped', no double-audit,
  *      extracted_json unchanged.
  *
@@ -28,6 +29,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { config as loadEnv } from "dotenv";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import { createUploadSlot, finalizeUpload, INBOUND_BUCKET } from "./lib/uploads";
 import { parseUpload, type ParseLimits } from "./lib/parse-upload";
 import { enqueue, drainQueue, resetQueue } from "./lib/queue";
@@ -74,7 +76,7 @@ async function makeFreeOrg(tag: string): Promise<string> {
 async function setupFinalizedUpload(
   orgId: string,
   filename: string,
-  body: string,
+  body: string | Buffer,
   contentType = "text/csv"
 ): Promise<{ payloadId: string; path: string }> {
   const slot = await createUploadSlot(
@@ -88,7 +90,7 @@ async function setupFinalizedUpload(
   const put = await fetch(slot.signedUrl, {
     method: "PUT",
     headers: { "content-type": contentType, "x-upsert": "true" },
-    body,
+    body: typeof body === "string" ? body : new Uint8Array(body),
   });
   if (put.status !== 200) throw new Error(`raw PUT failed (${put.status}) for ${filename}`);
 
@@ -211,27 +213,26 @@ async function main(): Promise<void> {
       check(ej?.rowCount === 2, `rowCount = 2 (got ${ej?.rowCount})`);
     }
 
-    // ── 5. PDF DEFERRAL ──────────────────────────────────────────────────────
-    section("5. PDF DEFERRAL — held, not parsed in-process");
+    // ── 5. PDF EXTRACTION ─────────────────────────────────────────────────────
+    section("5. PDF EXTRACTION — real pdfjs-dist text extraction");
     {
-      const { payloadId } = await setupFinalizedUpload(
-        orgA,
-        "doc.pdf",
-        "%PDF-1.4 not really a pdf",
-        "application/pdf"
-      );
+      const pdfBytes = readFileSync(resolve(__dirname, "migrations", "test.pdf"));
+      const { payloadId } = await setupFinalizedUpload(orgA, "doc.pdf", pdfBytes, "application/pdf");
       await markClean(payloadId, orgA);
       const r = await parseUpload({ orgId: orgA, payloadId }, { db: service });
-      check(r.ok && r.outcome === "deferred_pdf", `outcome 'deferred_pdf' (got ${JSON.stringify(r)})`);
+      check(
+        r.ok && r.outcome === "parsed_pdf" && r.pageCount === 1,
+        `outcome 'parsed_pdf', pageCount 1 (got ${JSON.stringify(r)})`
+      );
 
       const row = await rowOf(payloadId, orgA);
-      check(row?.status === "processing", `status STAYS 'processing' (got ${row?.status})`);
-      check(row?.extracted_json === null, `extracted_json STAYS null (got ${JSON.stringify(row?.extracted_json)})`);
-      const audits = await auditRows(payloadId, orgA, "parse.deferred");
-      const reasonOk =
-        audits.length === 1 &&
-        (audits[0].log_meta as { reason?: string } | null)?.reason === "pdf_parsing_requires_sandbox";
-      check(reasonOk, "parse.deferred audit row with reason 'pdf_parsing_requires_sandbox'");
+      check(row?.status === "completed", `status → 'completed' (got ${row?.status})`);
+      const ej = row?.extracted_json as Record<string, unknown> | null;
+      check(ej?.kind === "pdf", `extracted_json.kind = 'pdf' (got ${ej?.kind})`);
+      check(ej?.parser === "pdfjs", `parser marker = 'pdfjs' (got ${ej?.parser})`);
+      check(typeof ej?.text === "string" && (ej.text as string).length > 0, "extracted text is non-empty");
+      const audits = await auditRows(payloadId, orgA, "upload.parsed");
+      check(audits.length === 1, "upload.parsed audit row exists");
     }
 
     // ── 6. IDEMPOTENCY ───────────────────────────────────────────────────────
@@ -269,7 +270,7 @@ async function main(): Promise<void> {
 
   console.log("\n==========================");
   if (failures === 0) {
-    console.log("RESULT: PASS — stage-5 parse: CSV extraction, truncation, correctness, PDF deferral, idempotency, full chain. ✓");
+    console.log("RESULT: PASS — stage-5 parse: CSV extraction, truncation, correctness, PDF extraction, idempotency, full chain. ✓");
     process.exit(0);
   } else {
     console.error(`RESULT: FAIL — ${failures} check(s) failed (see above).`);
