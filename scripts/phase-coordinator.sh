@@ -40,7 +40,7 @@ mkdir -p "$LOGS"
 # ---------------------------------------------------------------------------
 # Tuning knobs
 # ---------------------------------------------------------------------------
-USAGE_LIMIT_SLEEP=16200   # 4.5 hours = 16200s
+USAGE_LIMIT_SLEEP=7200    # 2 hours — covers typical session-limit resets
 MAX_RETRIES=6             # more retries now that self-correction burns attempts
 PHASE_COOLDOWN=90         # seconds between phases (phases are larger than batches)
 ERROR_LOG_LINES=150       # lines of failed log to feed back for self-correction
@@ -85,7 +85,7 @@ already_done() {
 is_usage_limit() {
   local log="$1"
   grep -qiE \
-    "usage limit|rate limit|too many requests|quota exceeded|overloaded|529|Claude\.ai usage" \
+    "usage limit|session limit|rate limit|too many requests|quota exceeded|overloaded|529|Claude\.ai usage|resets [0-9]" \
     "$log" 2>/dev/null
 }
 
