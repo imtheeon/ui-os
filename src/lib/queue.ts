@@ -59,7 +59,17 @@ const pending: UiEvent[] = [];
  * synchronous contract (finalize → 'processing', nothing downstream runs inline).
  */
 export function enqueue(event: UiEvent): void {
-  pending.push(event);
+  if (process.env.INNGEST_EVENT_KEY) {
+    // Production: send to Inngest durable queue (fire-and-forget).
+    import("./inngest")
+      .then(({ inngest }) => inngest.send(event))
+      .catch((err) =>
+        console.error("[queue] Inngest send failed:", (err as Error).message)
+      );
+  } else {
+    // Dev/test fallback: in-memory array (drained by drainQueue()).
+    pending.push(event);
+  }
 }
 
 /** Test/diagnostic helper: how many events are waiting. */
