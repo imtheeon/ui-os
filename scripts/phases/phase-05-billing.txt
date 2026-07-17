@@ -1,0 +1,292 @@
+═══════════════════════════════════════════════════════════════
+PHASE 5 — STRIPE BILLING
+Subscription management: free → pro → enterprise
+═══════════════════════════════════════════════════════════════
+
+You are adding Stripe billing. The tier gate already reads
+organizations.subscription_tier. This phase wires Stripe to update it.
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- STRIPE_SECRET_KEY must never appear in source files — env var only.
+- Branch: phase5-billing → merge to main.
+- Commit: "feat(billing): Stripe subscription management"
+
+PRE-CHECK: If STRIPE_SECRET_KEY is not in .env.local, add placeholder to
+.env.example and continue. Routes will return 500 gracefully if key is absent.
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH + INSTALL
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase5-billing
+  npm install stripe
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — MIGRATION 0206: stripe customer id
+═══════════════════════════════════════════════════════════════
+
+Apply via Supabase MCP (project zmntyhnmhzgtgwujhedf):
+
+ALTER TABLE organizations
+  ADD COLUMN IF NOT EXISTS stripe_customer_id text UNIQUE;
+
+CREATE INDEX IF NOT EXISTS organizations_stripe_customer_id_idx
+  ON organizations(stripe_customer_id)
+  WHERE stripe_customer_id IS NOT NULL;
+
+Save to src/migrations/0206_stripe_customer_id.sql.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — src/lib/stripe.ts
+═══════════════════════════════════════════════════════════════
+
+/**
+ * src/lib/stripe.ts
+ * Stripe client singleton + tier mapping.
+ */
+import Stripe from "stripe";
+
+const key = process.env.STRIPE_SECRET_KEY;
+if (!key) {
+  console.warn("[stripe] STRIPE_SECRET_KEY not set — billing routes will fail.");
+}
+
+export const stripe = key
+  ? new Stripe(key, { apiVersion: "2024-12-18.acacia" })
+  : null;
+
+/** Map Stripe price IDs to our tiers. Set in env. */
+export const PRICE_TO_TIER: Record<string, "pro" | "enterprise"> = {
+  [process.env.STRIPE_PRICE_PRO ?? ""]: "pro",
+  [process.env.STRIPE_PRICE_ENTERPRISE ?? ""]: "enterprise",
+};
+
+export function tierFromPriceId(priceId: string): "pro" | "enterprise" | null {
+  return PRICE_TO_TIER[priceId] ?? null;
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — app/api/billing/checkout/route.ts
+═══════════════════════════════════════════════════════════════
+
+POST /api/billing/checkout
+Auth: session → orgId
+Body: { tier: "pro" | "enterprise" }
+Creates Stripe checkout session → returns { url }
+
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+import { stripe } from "@/src/lib/stripe";
+
+const PRICE_IDS: Record<string, string> = {
+  pro: process.env.STRIPE_PRICE_PRO ?? "",
+  enterprise: process.env.STRIPE_PRICE_ENTERPRISE ?? "",
+};
+
+export async function POST(req: NextRequest) {
+  if (!stripe) return NextResponse.json({ error: "Billing not configured" }, { status: 503 });
+
+  const sbClient = await supabaseServer();
+  const { data: { session } } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  let body: { tier?: unknown };
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const tier = body.tier;
+  if (tier !== "pro" && tier !== "enterprise") {
+    return NextResponse.json({ error: "tier must be pro or enterprise" }, { status: 400 });
+  }
+
+  const priceId = PRICE_IDS[tier];
+  if (!priceId) return NextResponse.json({ error: "Price not configured" }, { status: 503 });
+
+  // Get or create Stripe customer for this org
+  const { supabase: db } = await import("@/src/db");
+  const { data: org } = await db
+    .from("organizations")
+    .select("stripe_customer_id, name")
+    .eq("id", orgId)
+    .maybeSingle();
+
+  let customerId = org?.stripe_customer_id as string | null;
+  if (!customerId) {
+    const customer = await stripe.customers.create({
+      name: org?.name as string ?? orgId,
+      metadata: { org_id: orgId },
+    });
+    customerId = customer.id;
+    await db.from("organizations").update({ stripe_customer_id: customerId }).eq("id", orgId);
+  }
+
+  const checkoutSession = await stripe.checkout.sessions.create({
+    customer: customerId,
+    mode: "subscription",
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
+    metadata: { org_id: orgId },
+  });
+
+  return NextResponse.json({ url: checkoutSession.url });
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — app/api/billing/portal/route.ts
+═══════════════════════════════════════════════════════════════
+
+POST /api/billing/portal → Stripe billing portal URL for managing subscription:
+
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+import { stripe } from "@/src/lib/stripe";
+
+export async function POST(req: NextRequest) {
+  if (!stripe) return NextResponse.json({ error: "Billing not configured" }, { status: 503 });
+
+  const sbClient = await supabaseServer();
+  const { data: { session } } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { supabase: db } = await import("@/src/db");
+  const { data: org } = await db
+    .from("organizations")
+    .select("stripe_customer_id")
+    .eq("id", orgId)
+    .maybeSingle();
+
+  if (!org?.stripe_customer_id) {
+    return NextResponse.json({ error: "No billing account found" }, { status: 404 });
+  }
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: org.stripe_customer_id as string,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
+  });
+
+  return NextResponse.json({ url: portalSession.url });
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — app/api/webhooks/stripe/route.ts
+═══════════════════════════════════════════════════════════════
+
+This is the most important route — it updates subscription_tier when
+Stripe sends subscription events.
+
+IMPORTANT: Must read raw body for Stripe signature verification.
+Use NextRequest.text() not .json().
+
+import { type NextRequest, NextResponse } from "next/server";
+import { stripe, tierFromPriceId } from "@/src/lib/stripe";
+
+const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+
+export async function POST(req: NextRequest) {
+  if (!stripe || !WEBHOOK_SECRET) {
+    return NextResponse.json({ error: "Not configured" }, { status: 503 });
+  }
+
+  const rawBody = await req.text();
+  const sig = req.headers.get("stripe-signature");
+  if (!sig) return NextResponse.json({ error: "No signature" }, { status: 400 });
+
+  let event: import("stripe").Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET);
+  } catch {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  const { supabase: db } = await import("@/src/db");
+
+  if (
+    event.type === "customer.subscription.created" ||
+    event.type === "customer.subscription.updated"
+  ) {
+    const sub = event.data.object as import("stripe").Stripe.Subscription;
+    const priceId = sub.items.data[0]?.price.id ?? "";
+    const tier = tierFromPriceId(priceId);
+    const customerId = sub.customer as string;
+
+    if (tier && sub.status === "active") {
+      await db
+        .from("organizations")
+        .update({ subscription_tier: tier })
+        .eq("stripe_customer_id", customerId);
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object as import("stripe").Stripe.Subscription;
+    const customerId = sub.customer as string;
+    await db
+      .from("organizations")
+      .update({ subscription_tier: "free" })
+      .eq("stripe_customer_id", customerId);
+  }
+
+  return NextResponse.json({ received: true });
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — app/(dashboard)/billing/page.tsx
+═══════════════════════════════════════════════════════════════
+
+"use client" billing page:
+- Show current tier (fetch GET /api/org/settings)
+- If free: show "Upgrade to Pro" and "Upgrade to Enterprise" buttons
+  → each calls POST /api/billing/checkout → redirect to Stripe checkout URL
+- If pro/enterprise: show "Manage Subscription" button
+  → calls POST /api/billing/portal → redirect to Stripe portal URL
+- Show success message if ?success=true in URL
+
+Add "Billing" to sidebar nav in app/(dashboard)/layout.tsx.
+
+═══════════════════════════════════════════════════════════════
+STEP 7 — .env.example additions
+═══════════════════════════════════════════════════════════════
+
+# Stripe (Phase 5 — billing)
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_PRO=
+STRIPE_PRICE_ENTERPRISE=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+═══════════════════════════════════════════════════════════════
+STEP 8 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(billing): Stripe subscription management"
+5. git checkout main && git merge phase5-billing --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/migrations/0206_stripe_customer_id.sql exists
+✓ src/lib/stripe.ts exists
+✓ app/api/billing/checkout/route.ts exists
+✓ app/api/billing/portal/route.ts exists
+✓ app/api/webhooks/stripe/route.ts exists
+✓ app/(dashboard)/billing/page.tsx exists
+✓ stripe in package.json dependencies
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

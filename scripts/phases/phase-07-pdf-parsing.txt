@@ -1,0 +1,127 @@
+═══════════════════════════════════════════════════════════════
+PHASE 7 — REAL PDF PARSING
+Replace the deferred_pdf stub with actual PDF text extraction
+═══════════════════════════════════════════════════════════════
+
+Currently parse-upload.ts returns { outcome: "deferred_pdf" } for PDFs.
+This phase replaces that with real text extraction using pdfjs-dist,
+running in a worker_thread for process isolation.
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Branch: phase7-pdf → merge to main.
+- Commit: "feat(parse): real PDF text extraction via pdfjs-dist"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH + INSTALL
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase7-pdf
+  npm install pdfjs-dist
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — src/lib/pdf-parser.ts
+═══════════════════════════════════════════════════════════════
+
+/**
+ * src/lib/pdf-parser.ts
+ *
+ * Extracts text from a PDF buffer using pdfjs-dist.
+ * Hard limits: max 500 pages, max 100k chars total extracted.
+ * Runs synchronously (called from a worker_thread — see parse-upload.ts).
+ */
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+
+export interface PdfParseResult {
+  kind: "pdf";
+  pageCount: number;
+  text: string;
+  truncated: boolean;
+  parser: "pdfjs";
+}
+
+const MAX_PAGES = 500;
+const MAX_CHARS = 100_000;
+
+export async function parsePdfBuffer(buffer: Buffer): Promise<PdfParseResult> {
+  const uint8 = new Uint8Array(buffer);
+  const loadingTask = pdfjs.getDocument({ data: uint8 });
+  const doc = await loadingTask.promise;
+  const pageCount = doc.numPages;
+  const pagesToProcess = Math.min(pageCount, MAX_PAGES);
+
+  let text = "";
+  let truncated = false;
+
+  for (let i = 1; i <= pagesToProcess; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .map((item: { str?: string }) => item.str ?? "")
+      .join(" ");
+
+    if (text.length + pageText.length > MAX_CHARS) {
+      text += pageText.slice(0, MAX_CHARS - text.length);
+      truncated = true;
+      break;
+    }
+    text += pageText + "\n";
+  }
+
+  if (pagesToProcess < pageCount) truncated = true;
+
+  return { kind: "pdf", pageCount, text, truncated, parser: "pdfjs" };
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — Update src/lib/parse-upload.ts
+═══════════════════════════════════════════════════════════════
+
+Read the current parse-upload.ts. Find the PDF deferral block:
+  if (fmt !== "csv") {
+    // ... returns { ok: true, outcome: "deferred_pdf" }
+  }
+
+Replace it with actual PDF parsing:
+- Download the PDF bytes from Supabase Storage (same pattern as CSV)
+- Call parsePdfBuffer(buffer) to extract text
+- Store the result in extracted_json as:
+  { kind: "pdf", pageCount, text, truncated, parser: "pdfjs" }
+- Advance status to 'completed'
+- Write audit log: action='upload.parsed', log_meta includes parser, pageCount, truncated
+- Enqueue 'payload/completed'
+- Return { ok: true, outcome: "parsed_pdf", pageCount, truncated }
+
+For the "other" format (not csv, not pdf): still return "deferred_other" (rename from deferred_pdf).
+
+Also update the ParseResult type to include:
+  | { ok: true; outcome: "parsed_pdf"; pageCount: number; truncated: boolean }
+  | { ok: true; outcome: "deferred_other" }
+
+Remove the "deferred_pdf" outcome entirely.
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(parse): real PDF text extraction via pdfjs-dist"
+5. git checkout main && git merge phase7-pdf --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/lib/pdf-parser.ts exists
+✓ parse-upload.ts no longer returns "deferred_pdf"
+✓ pdfjs-dist in package.json
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

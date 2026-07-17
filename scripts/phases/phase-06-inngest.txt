@@ -1,0 +1,210 @@
+═══════════════════════════════════════════════════════════════
+PHASE 6 — DURABLE QUEUE (INNGEST)
+Replace the in-memory queue stub with real Inngest job execution
+═══════════════════════════════════════════════════════════════
+
+You are replacing the in-memory queue.ts stub with Inngest so that agent
+pipeline events (scan → parse → route → run) are durable and survive process
+restarts. The existing library code (scan-upload.ts, parse-upload.ts,
+manager.ts, run-agent.ts) does NOT change. Only the queue seam and the
+Inngest wiring changes.
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions. Make the best decision and proceed.
+- TypeScript errors: fix and retry indefinitely until typecheck exits 0.
+- Secret scan must pass before any git push.
+- Branch: phase6-inngest → merge to main at the end.
+- Commit: "feat(queue): replace in-memory queue with Inngest"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH + INSTALL
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase6-inngest
+  npm install inngest
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — src/lib/inngest.ts
+═══════════════════════════════════════════════════════════════
+
+Create this file:
+
+/**
+ * src/lib/inngest.ts
+ * Inngest client singleton.
+ */
+import { Inngest } from "inngest";
+
+export const inngest = new Inngest({ id: "ui-os" });
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — src/lib/inngest-functions.ts
+═══════════════════════════════════════════════════════════════
+
+Create this file — one Inngest function per queue event type:
+
+/**
+ * src/lib/inngest-functions.ts
+ *
+ * Inngest function handlers — one per UiEvent type.
+ * These replace the switch cases in drainQueue().
+ *
+ * Each function receives the event, calls the existing handler,
+ * and returns. Inngest handles retries, timeouts, and observability.
+ */
+import { inngest } from "./inngest";
+
+export const handleUploadFinalized = inngest.createFunction(
+  { id: "upload-finalized", retries: 3 },
+  { event: "upload/finalized" },
+  async ({ event }) => {
+    const { scanUpload } = await import("./scan-upload");
+    const { supabase: db } = await import("../db");
+    await scanUpload(
+      { orgId: event.data.orgId, payloadId: event.data.payloadId },
+      { db }
+    );
+  }
+);
+
+export const handleUploadScanned = inngest.createFunction(
+  { id: "upload-scanned", retries: 3 },
+  { event: "upload/scanned" },
+  async ({ event }) => {
+    const { parseUpload } = await import("./parse-upload");
+    const { supabase: db } = await import("../db");
+    await parseUpload(
+      { orgId: event.data.orgId, payloadId: event.data.payloadId },
+      { db }
+    );
+  }
+);
+
+export const handlePayloadCompleted = inngest.createFunction(
+  { id: "payload-completed", retries: 3 },
+  { event: "payload/completed" },
+  async ({ event }) => {
+    const { routePayload } = await import("./manager");
+    const { supabase: db } = await import("../db");
+    const { enqueue } = await import("./queue");
+    await routePayload(
+      { orgId: event.data.orgId, payloadId: event.data.payloadId },
+      { db, enqueue }
+    );
+  }
+);
+
+export const handleAgentRun = inngest.createFunction(
+  { id: "agent-run", retries: 2, concurrency: { limit: 10 } },
+  { event: "agent/run" },
+  async ({ event }) => {
+    const { runAgent } = await import("./run-agent");
+    const { supabase: db } = await import("../db");
+    await runAgent(
+      {
+        orgId: event.data.orgId,
+        payloadId: event.data.payloadId,
+        role: event.data.role,
+      },
+      { db }
+    );
+  }
+);
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — Update src/lib/queue.ts
+═══════════════════════════════════════════════════════════════
+
+Update the enqueue() function so that:
+- In production (INNGEST_EVENT_KEY set): sends to Inngest (fire-and-forget,
+  errors logged but don't block the caller).
+- In dev/test (no INNGEST_EVENT_KEY): falls back to the in-memory array
+  so existing tests (drainQueue) continue to work unchanged.
+
+Keep the full existing file. Only modify the enqueue() function and add the
+inngest import at the top. drainQueue(), resetQueue(), pendingCount() are
+UNCHANGED — they still work for tests.
+
+The updated enqueue() function:
+
+export function enqueue(event: UiEvent): void {
+  if (process.env.INNGEST_EVENT_KEY) {
+    // Production: send to Inngest durable queue (fire-and-forget).
+    import("./inngest")
+      .then(({ inngest }) => inngest.send(event))
+      .catch((err) =>
+        console.error("[queue] Inngest send failed:", (err as Error).message)
+      );
+  } else {
+    // Dev/test fallback: in-memory array (drained by drainQueue()).
+    pending.push(event);
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — app/api/inngest/route.ts
+═══════════════════════════════════════════════════════════════
+
+Create the Inngest serve endpoint (required for Inngest to call our functions):
+
+/**
+ * app/api/inngest/route.ts
+ * Inngest serve handler — receives event delivery from Inngest Cloud.
+ * Register all functions here.
+ */
+import { serve } from "inngest/next";
+import { inngest } from "@/src/lib/inngest";
+import {
+  handleUploadFinalized,
+  handleUploadScanned,
+  handlePayloadCompleted,
+  handleAgentRun,
+} from "@/src/lib/inngest-functions";
+
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: [
+    handleUploadFinalized,
+    handleUploadScanned,
+    handlePayloadCompleted,
+    handleAgentRun,
+  ],
+});
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — .env.example: add Inngest vars
+═══════════════════════════════════════════════════════════════
+
+Add these lines to .env.example (do not add real values):
+
+# Inngest (Phase 6 — durable job queue)
+# Get from https://app.inngest.com → your app → Event Key + Signing Key
+INNGEST_EVENT_KEY=
+INNGEST_SIGNING_KEY=
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0. Fix any errors.
+2. npm run check:agents — must still pass (queue tests use in-memory fallback).
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(queue): replace in-memory queue with Inngest"
+5. git checkout main && git merge phase6-inngest --no-ff -m "feat(queue): merge Inngest phase"
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/lib/inngest.ts exists
+✓ src/lib/inngest-functions.ts exists
+✓ app/api/inngest/route.ts exists
+✓ queue.ts enqueue() checks INNGEST_EVENT_KEY
+✓ inngest in package.json dependencies
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

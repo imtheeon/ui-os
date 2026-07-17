@@ -1,0 +1,159 @@
+═══════════════════════════════════════════════════════════════
+PHASE 10 — LIVE AGENT EXECUTION
+End-to-end pipeline verification with real Anthropic API calls
+═══════════════════════════════════════════════════════════════
+
+You are verifying and hardening the full agent execution pipeline so that
+it works reliably with real Anthropic API calls (not stubBrain). The agent
+code, brain, executor, and manager already exist. This phase:
+1. Adds concurrency + rate-limit protection to runAgent
+2. Adds an execution timeout wrapper
+3. Adds a live smoke-test script (one real API call with a tiny CSV)
+4. Ensures the pipeline handles Anthropic errors gracefully (no crash)
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Secret scan must pass. ANTHROPIC_API_KEY must NOT appear in any source file.
+- Branch: phase10-live-agents → merge to main.
+- Commit: "feat(agents): live execution hardening + smoke test"
+
+PRE-CHECK: Verify ANTHROPIC_API_KEY is set in .env.local before starting.
+If it is not set, add a placeholder line to .env.example:
+  ANTHROPIC_API_KEY=
+Then continue — the smoke test will be skipped if the key is absent.
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase10-live-agents
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — src/lib/run-agent.ts: add timeout + error hardening
+═══════════════════════════════════════════════════════════════
+
+Read src/lib/run-agent.ts first. Then add:
+
+1. A 90-second timeout wrapper around the brain call. If the Anthropic API
+   takes longer, mark the agent_run as status='failed' with an error note
+   and return — do not crash the process.
+
+2. Catch Anthropic API errors (rate limits, overload, network errors) and:
+   - Log the error
+   - Update agent_runs.status to 'failed'
+   - Insert a system_audit_log entry: action='agent.error', log_meta includes
+     { role, payloadId, error: err.message }
+   - Return gracefully (no throw)
+
+3. Add a per-run concurrency guard: if an agent_run row for this
+   (payload_id, role) already exists with status='running' or 'completed',
+   skip (idempotency — Inngest may retry).
+
+The timeout wrapper pattern:
+  const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+    Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+      ),
+    ]);
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — src/check-live-smoke.ts
+═══════════════════════════════════════════════════════════════
+
+Create a smoke test that runs ONE real agent against a tiny in-memory CSV.
+Uses the cheapest model (Haiku). Does NOT upload to storage — injects data
+directly via the existing library seam.
+
+/**
+ * src/check-live-smoke.ts
+ *
+ * Smoke test: runs one real Anthropic API call through the agent pipeline.
+ * Uses stubBrain=false, real ANTHROPIC_API_KEY, minimal CSV data.
+ * Costs < $0.01 per run (Haiku model).
+ *
+ * Run with: npx tsx src/check-live-smoke.ts
+ * Skips automatically if ANTHROPIC_API_KEY is not set.
+ */
+import { config as loadEnv } from "dotenv";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+loadEnv({ path: resolve(__dirname, "..", ".env.local"), quiet: true });
+
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.log("SKIP: ANTHROPIC_API_KEY not set — skipping live smoke test.");
+  process.exit(0);
+}
+
+// Import after env is loaded
+const { runAgent } = await import("./lib/run-agent.js");
+const { supabase: db } = await import("./db.js");
+
+// Use a known Haiku agent (anomaly_detector is the simplest foundation agent)
+const TEST_ROLE = "anomaly_detector";
+const TEST_ORG_ID = process.env.SMOKE_TEST_ORG_ID;
+const TEST_PAYLOAD_ID = process.env.SMOKE_TEST_PAYLOAD_ID;
+
+if (!TEST_ORG_ID || !TEST_PAYLOAD_ID) {
+  console.log(
+    "SKIP: SMOKE_TEST_ORG_ID and SMOKE_TEST_PAYLOAD_ID not set.\n" +
+    "Set these in .env.local to a real org and completed payload to run the smoke test."
+  );
+  process.exit(0);
+}
+
+console.log(`Running live smoke test: ${TEST_ROLE} on payload ${TEST_PAYLOAD_ID}`);
+try {
+  const result = await runAgent(
+    { orgId: TEST_ORG_ID, payloadId: TEST_PAYLOAD_ID, role: TEST_ROLE },
+    { db }
+  );
+  console.log("✓ Smoke test passed:", JSON.stringify(result, null, 2));
+  process.exit(0);
+} catch (err) {
+  console.error("✗ Smoke test failed:", err);
+  process.exit(1);
+}
+
+Add to package.json scripts:
+  "check:smoke": "tsx src/check-live-smoke.ts"
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — .env.example: add smoke test vars
+═══════════════════════════════════════════════════════════════
+
+Add to .env.example:
+
+# Live smoke test (Phase 10) — set to a real org + completed payload to test
+SMOKE_TEST_ORG_ID=
+SMOKE_TEST_PAYLOAD_ID=
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — must still pass.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(agents): live execution hardening + smoke test"
+5. git checkout main && git merge phase10-live-agents --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ run-agent.ts has 90s timeout + graceful Anthropic error handling
+✓ run-agent.ts has idempotency guard (skip if already running/completed)
+✓ src/check-live-smoke.ts exists
+✓ package.json has "check:smoke" script
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

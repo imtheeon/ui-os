@@ -1,0 +1,1223 @@
+═══════════════════════════════════════════════════════════════
+PHASE 2 — API LAYER
+U-I-OS Next.js App Router routes + infrastructure
+═══════════════════════════════════════════════════════════════
+
+You are building the HTTP API layer for U-I-OS on top of the existing library
+code in src/lib/. The library code is COMPLETE. Your job is thin route
+handlers, one migration, and check scripts. Do not change any existing library
+files unless a TypeScript error forces it.
+
+Framework: Next.js 16.2.9 / React 19, App Router
+Path alias: @/* → ./ (project root)
+Auth: supabaseServer() from @/src/lib/supabaseServer (async, reads cookies)
+Org: resolveOrgFromSession() from @/src/lib/resolveOrgFromSession
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions. Make the best technical decision and proceed.
+- TypeScript errors: fix and retry indefinitely until typecheck exits 0.
+- Secret scan must pass before any git push.
+- After every file is created: npm run typecheck must exit 0.
+- Commit message format: "feat(api): <short description>"
+- All work goes on a branch named "phase2-api-layer", merged to main at the end.
+- Push to main after: typecheck 0, secret scan clean, check:agents still passing.
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH
+═══════════════════════════════════════════════════════════════
+
+  git checkout -b phase2-api-layer
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — MIGRATION 0204
+Apply via Supabase MCP (project zmntyhnmhzgtgwujhedf)
+═══════════════════════════════════════════════════════════════
+
+Migration name: 0204_api_keys_and_webhook_source
+
+SQL to apply:
+
+-- ── 1. org_api_keys ────────────────────────────────────────────────────────
+-- Stores hashed API keys used for webhook ingestion (Zapier / Make / direct).
+-- Raw keys are NEVER stored; only SHA-256 hex hash + the first 8 chars for display.
+CREATE TABLE IF NOT EXISTS org_api_keys (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id        uuid        NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  key_hash      text        NOT NULL UNIQUE,          -- SHA-256(raw_key) hex
+  key_prefix    text        NOT NULL,                 -- first 8 chars of raw key (display only)
+  name          text        NOT NULL,                 -- human label (e.g. "Zapier webhook")
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  last_used_at  timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS org_api_keys_org_id_idx ON org_api_keys(org_id);
+
+-- RLS
+ALTER TABLE org_api_keys ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_org_api_keys ON org_api_keys
+  USING (org_id::text = current_setting('app.current_org_id', true));
+
+-- ── 2. Extend inbound_payloads.source to include 'webhook' ─────────────────
+-- Current allowed values are 'email' and 'upload'. Add 'webhook'.
+ALTER TABLE inbound_payloads
+  DROP CONSTRAINT IF EXISTS inbound_payloads_source_check;
+
+ALTER TABLE inbound_payloads
+  ADD CONSTRAINT inbound_payloads_source_check
+  CHECK (source IN ('email', 'upload', 'webhook'));
+
+-- ── 3. webhook_ref column (nullable) ───────────────────────────────────────
+-- Stores the caller-supplied idempotency key for webhook payloads (like
+-- email_message_id for email). Nullable — upload rows leave it NULL.
+ALTER TABLE inbound_payloads
+  ADD COLUMN IF NOT EXISTS webhook_ref text;
+
+-- Partial unique index: one webhook_ref per org (deduplicate retries).
+CREATE UNIQUE INDEX IF NOT EXISTS inbound_payloads_webhook_ref_uniq
+  ON inbound_payloads(org_id, webhook_ref)
+  WHERE source = 'webhook' AND webhook_ref IS NOT NULL;
+
+Save the SQL to src/migrations/0204_api_keys_and_webhook_source.sql after applying.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — src/lib/api-key.ts
+═══════════════════════════════════════════════════════════════
+
+Create this file exactly:
+
+/**
+ * src/lib/api-key.ts
+ *
+ * API key utilities for webhook authentication.
+ *
+ * Key format: uios_wh_<43 base64url chars>  (32 random bytes → ~43 chars)
+ * Storage:    SHA-256 hex of the raw key is stored; raw key is never persisted.
+ * Display:    The first 8 chars of the raw key (the "prefix") are stored for UI.
+ *
+ * verifyApiKey: given a raw key from the Authorization header, hash it,
+ * look up the hash in org_api_keys, bump last_used_at, return orgId or null.
+ */
+
+import { createHash, randomBytes } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const KEY_PREFIX = "uios_wh_";
+
+/** Generate a fresh API key. Returns { rawKey, keyHash, keyPrefix }. */
+export function generateApiKey(): {
+  rawKey: string;
+  keyHash: string;
+  keyPrefix: string;
+} {
+  const raw = KEY_PREFIX + randomBytes(32).toString("base64url");
+  const hash = sha256hex(raw);
+  const prefix = raw.slice(0, 8 + KEY_PREFIX.length); // "uios_wh_" + 8 chars
+  return { rawKey: raw, keyHash: hash, keyPrefix: prefix };
+}
+
+export function sha256hex(input: string): string {
+  return createHash("sha256").update(input, "utf8").digest("hex");
+}
+
+export interface VerifyApiKeyResult {
+  orgId: string;
+  keyId: string;
+}
+
+/**
+ * Verify a raw key from the Authorization: Bearer header.
+ * Returns the org_id and key id if valid, null if invalid.
+ * Bumps last_used_at on success (best-effort — does not fail the request).
+ *
+ * Uses the SERVICE-ROLE client (src/db.ts) — looks up across all orgs by hash.
+ * This is correct: the hash lookup MUST be cross-tenant to find the org.
+ */
+export async function verifyApiKey(
+  rawKey: string,
+  deps?: { db?: SupabaseClient }
+): Promise<VerifyApiKeyResult | null> {
+  if (!rawKey || !rawKey.startsWith(KEY_PREFIX)) return null;
+
+  const db: SupabaseClient = deps?.db ?? (await import("../db")).supabase;
+  const hash = sha256hex(rawKey);
+
+  const { data, error } = await db
+    .from("org_api_keys")
+    .select("id, org_id")
+    .eq("key_hash", hash)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  // Bump last_used_at best-effort (ignore failure — don't block the request).
+  db.from("org_api_keys")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("id", data.id)
+    .then(() => {/* fire-and-forget */})
+    .catch(() => {/* ignore */});
+
+  return { orgId: data.org_id as string, keyId: data.id as string };
+}
+
+/**
+ * Extract the raw key from an Authorization: Bearer <key> header.
+ * Returns null if the header is absent or malformed.
+ */
+export function extractBearerKey(
+  authHeader: string | null | undefined
+): string | null {
+  if (!authHeader) return null;
+  const match = authHeader.match(/^Bearer\s+(\S+)$/i);
+  return match ? match[1] : null;
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — Next.js app shell (required for Next.js to work)
+═══════════════════════════════════════════════════════════════
+
+Create next.config.ts at project root:
+
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  // No special config needed yet. Placeholder for future options.
+};
+
+export default nextConfig;
+
+---
+
+Create app/layout.tsx:
+
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "U-I-OS",
+  description: "Unified Intelligence OS",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+
+---
+
+Create app/page.tsx:
+
+export default function Home() {
+  return (
+    <main>
+      <h1>U-I-OS API</h1>
+      <p>API server running. Use the /api/* endpoints.</p>
+    </main>
+  );
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — API ROUTES
+Each route is a thin wrapper. Auth is always first.
+═══════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────
+4a. app/api/uploads/slot/route.ts
+────────────────────────────────────────────────────────────────
+
+POST /api/uploads/slot
+Body: { filename: string; contentType: string; size: number }
+Auth: session cookie → resolveOrgFromSession → 401 if null
+Calls: createUploadSlot({ orgId, filename, contentType, declaredSize: size })
+Returns: 200 with SlotResult fields on success, or 4xx/5xx with { error }
+
+/**
+ * POST /api/uploads/slot
+ * Issues a presigned direct-upload URL for the authenticated org.
+ *
+ * Request body: { filename: string; contentType: string; size: number }
+ * Response 200: { payloadId, path, token, signedUrl }
+ * Response 401: { error: "Unauthorized" }
+ * Response 4xx/5xx: { error: <message> }
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+import { createUploadSlot } from "@/src/lib/uploads";
+
+export async function POST(req: NextRequest) {
+  // 1. Auth
+  const sbClient = await supabaseServer();
+  const {
+    data: { session },
+  } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 2. Parse body
+  let body: { filename?: unknown; contentType?: unknown; size?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const { filename, contentType, size } = body;
+  if (
+    typeof filename !== "string" ||
+    typeof contentType !== "string" ||
+    typeof size !== "number"
+  ) {
+    return NextResponse.json(
+      { error: "Body must include filename (string), contentType (string), size (number)" },
+      { status: 400 }
+    );
+  }
+
+  // 3. Create the slot
+  const result = await createUploadSlot({
+    orgId,
+    filename,
+    contentType,
+    declaredSize: size,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.message },
+      { status: result.httpStatus }
+    );
+  }
+
+  return NextResponse.json(result, { status: 200 });
+}
+
+────────────────────────────────────────────────────────────────
+4b. app/api/uploads/finalize/route.ts
+────────────────────────────────────────────────────────────────
+
+POST /api/uploads/finalize
+Body: { payloadId: string }
+Auth: session cookie → resolveOrgFromSession → 401 if null
+Calls: finalizeUpload({ orgId, payloadId })
+Returns: 200 { payloadId, status } or 4xx/5xx { error }
+
+/**
+ * POST /api/uploads/finalize
+ * Confirms the browser completed its direct upload and kicks off processing.
+ *
+ * Request body: { payloadId: string }
+ * Response 200: { payloadId, status: "processing" }
+ * Response 401: { error: "Unauthorized" }
+ * Response 4xx/5xx: { error: <message> }
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+import { finalizeUpload } from "@/src/lib/uploads";
+
+export async function POST(req: NextRequest) {
+  // 1. Auth
+  const sbClient = await supabaseServer();
+  const {
+    data: { session },
+  } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 2. Parse body
+  let body: { payloadId?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (typeof body.payloadId !== "string") {
+    return NextResponse.json(
+      { error: "Body must include payloadId (string)" },
+      { status: 400 }
+    );
+  }
+
+  // 3. Finalize
+  const result = await finalizeUpload({
+    orgId,
+    payloadId: body.payloadId,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json(
+      { error: result.message },
+      { status: result.httpStatus }
+    );
+  }
+
+  return NextResponse.json(result, { status: 200 });
+}
+
+────────────────────────────────────────────────────────────────
+4c. app/api/ingest/webhook/route.ts
+────────────────────────────────────────────────────────────────
+
+POST /api/ingest/webhook
+Auth: Authorization: Bearer <api_key> → verifyApiKey → 401 if null
+Body: any JSON (the caller's payload)
+Optional header: X-Webhook-Ref: <idempotency_key>
+Creates: inbound_payloads row (source='webhook', status='completed', extracted_json=body)
+Enqueues: 'payload/completed' event
+Returns: 202 { payloadId } or 4xx { error }
+
+No session cookies — this is machine-to-machine (Zapier/Make → U-I-OS).
+
+/**
+ * POST /api/ingest/webhook
+ * Receives a structured JSON payload from an external automation tool
+ * (Zapier, Make, direct API call) and queues it for agent processing.
+ *
+ * Auth: Authorization: Bearer <uios_wh_...> API key
+ * Optional: X-Webhook-Ref header for idempotency (deduplication)
+ *
+ * Request body: any JSON object
+ * Response 202: { payloadId }
+ * Response 401: { error: "Unauthorized" }
+ * Response 409: { error: "Duplicate", payloadId } — if webhook_ref already seen
+ * Response 4xx: { error: <message> }
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
+import { extractBearerKey, verifyApiKey } from "@/src/lib/api-key";
+import { enqueue } from "@/src/lib/queue";
+
+export async function POST(req: NextRequest) {
+  // 1. API key auth
+  const rawKey = extractBearerKey(req.headers.get("authorization"));
+  if (!rawKey) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const keyResult = await verifyApiKey(rawKey);
+  if (!keyResult) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { orgId } = keyResult;
+
+  // 2. Parse body (must be a JSON object, not a scalar/array)
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return NextResponse.json(
+      { error: "Body must be a JSON object" },
+      { status: 400 }
+    );
+  }
+
+  // 3. Optional idempotency key from X-Webhook-Ref header
+  const webhookRef = req.headers.get("x-webhook-ref") ?? null;
+
+  // 4. Persist as a completed payload (no upload/scan/parse pipeline needed —
+  //    the body IS the structured data).
+  const { supabase: db } = await import("@/src/db");
+  const payloadId = randomUUID();
+
+  const row: Record<string, unknown> = {
+    id: payloadId,
+    org_id: orgId,
+    source: "webhook",
+    status: "completed",
+    scan_status: "clean",
+    extracted_json: body,
+  };
+  if (webhookRef) row.webhook_ref = webhookRef;
+
+  const { error: insErr } = await db.from("inbound_payloads").insert(row);
+  if (insErr) {
+    // Unique constraint violation = duplicate webhook_ref
+    if (insErr.code === "23505" && webhookRef) {
+      // Look up the existing payload_id for this ref
+      const { data: existing } = await db
+        .from("inbound_payloads")
+        .select("id")
+        .eq("org_id", orgId)
+        .eq("webhook_ref", webhookRef)
+        .eq("source", "webhook")
+        .maybeSingle();
+      return NextResponse.json(
+        { error: "Duplicate", payloadId: existing?.id ?? null },
+        { status: 409 }
+      );
+    }
+    console.error("[webhook] insert failed:", insErr.message);
+    return NextResponse.json(
+      { error: "Internal error" },
+      { status: 500 }
+    );
+  }
+
+  // 5. Audit log
+  await db.from("system_audit_logs").insert({
+    org_id: orgId,
+    action: "webhook.ingested",
+    log_meta: { payloadId, hasRef: !!webhookRef },
+  });
+
+  // 6. Queue for the Ruflo swarm
+  enqueue({ name: "payload/completed", data: { orgId, payloadId } });
+
+  return NextResponse.json({ payloadId }, { status: 202 });
+}
+
+────────────────────────────────────────────────────────────────
+4d. app/api/ingest/email/route.ts
+────────────────────────────────────────────────────────────────
+
+POST /api/ingest/email
+Receives Resend inbound-email webhooks.
+Auth: HMAC-SHA256 signature verification (Svix style)
+Org: extracted from recipient address local part = org_id
+
+Env vars used:
+  RESEND_WEBHOOK_SECRET — the webhook signing secret from Resend dashboard
+  INBOUND_EMAIL_DOMAIN  — e.g. "inbound.uios.app"
+
+Resend webhook body shape (simplified):
+{
+  "type": "email.received",
+  "data": {
+    "email_id": "<message-id>",
+    "from": "sender@example.com",
+    "to": ["<org_id>@inbound.uios.app"],
+    "subject": "...",
+    "text": "...",
+    "html": "..."
+  }
+}
+
+Svix signature verification algorithm:
+  signed_content = `${svix-id}.${svix-timestamp}.${rawBody}`
+  expected = HMAC-SHA256(signed_content, RESEND_WEBHOOK_SECRET) → base64
+  svix-signature header = "v1,<base64>" (may have multiple comma-separated)
+  Accept if any of the "v1,<b64>" values match.
+
+Timestamp tolerance: reject if |now - svix-timestamp| > 300 seconds (5 min).
+
+/**
+ * POST /api/ingest/email
+ * Receives Resend inbound-email webhooks. Verifies the Svix signature,
+ * extracts the org_id from the recipient address, and queues the email
+ * for agent processing.
+ *
+ * Required env:
+ *   RESEND_WEBHOOK_SECRET — signing secret from Resend dashboard
+ *   INBOUND_EMAIL_DOMAIN  — e.g. "inbound.uios.app"
+ *
+ * Response 200: { received: true, payloadId }
+ * Response 400: { error: <reason> }
+ * Response 401: { error: "Invalid signature" }
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { createHmac } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import { enqueue } from "@/src/lib/queue";
+
+const TIMESTAMP_TOLERANCE_SECONDS = 300;
+
+function verifyResendSignature(
+  svixId: string,
+  svixTimestamp: string,
+  svixSignature: string,
+  rawBody: string,
+  secret: string
+): boolean {
+  // 1. Timestamp freshness check
+  const ts = parseInt(svixTimestamp, 10);
+  if (!Number.isFinite(ts)) return false;
+  const ageSec = Math.abs(Date.now() / 1000 - ts);
+  if (ageSec > TIMESTAMP_TOLERANCE_SECONDS) return false;
+
+  // 2. Compute expected HMAC
+  const signedContent = `${svixId}.${svixTimestamp}.${rawBody}`;
+  const expectedBytes = createHmac("sha256", secret)
+    .update(signedContent, "utf8")
+    .digest("base64");
+
+  // 3. svix-signature may be "v1,<b64> v1,<b64>" (space-separated per Svix spec)
+  const sigs = svixSignature.split(" ").map((s) => s.trim()).filter(Boolean);
+  return sigs.some((sig) => {
+    const parts = sig.split(",");
+    if (parts[0] !== "v1" || parts.length < 2) return false;
+    return parts.slice(1).join(",") === expectedBytes;
+  });
+}
+
+function extractOrgIdFromTo(
+  toAddresses: unknown,
+  domain: string
+): string | null {
+  if (!Array.isArray(toAddresses)) return null;
+  for (const addr of toAddresses) {
+    if (typeof addr !== "string") continue;
+    // strip display name if present: "Name <local@domain>" → "local@domain"
+    const match = addr.match(/<([^>]+)>/) ?? [null, addr];
+    const email = (match[1] ?? addr).trim().toLowerCase();
+    if (email.endsWith("@" + domain.toLowerCase())) {
+      const localPart = email.slice(0, email.indexOf("@"));
+      // Validate it looks like a UUID (org_id format)
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(localPart)) {
+        return localPart;
+      }
+    }
+  }
+  return null;
+}
+
+export async function POST(req: NextRequest) {
+  const secret = process.env.RESEND_WEBHOOK_SECRET;
+  const domain = process.env.INBOUND_EMAIL_DOMAIN;
+
+  if (!secret || !domain) {
+    console.error("[email-ingest] RESEND_WEBHOOK_SECRET or INBOUND_EMAIL_DOMAIN not set");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
+
+  // 1. Read raw body (needed for signature verification)
+  const rawBody = await req.text();
+
+  // 2. Verify signature
+  const svixId = req.headers.get("svix-id") ?? "";
+  const svixTimestamp = req.headers.get("svix-timestamp") ?? "";
+  const svixSignature = req.headers.get("svix-signature") ?? "";
+
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  if (!verifyResendSignature(svixId, svixTimestamp, svixSignature, rawBody, secret)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
+  // 3. Parse body
+  let body: unknown;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    (body as Record<string, unknown>).type !== "email.received"
+  ) {
+    // Silently accept other event types (Resend may send other events)
+    return NextResponse.json({ received: true }, { status: 200 });
+  }
+
+  const data = (body as Record<string, unknown>).data as Record<string, unknown>;
+  const emailId = (data?.email_id as string) ?? null;
+  const toAddresses = data?.to;
+
+  // 4. Extract org_id from recipient
+  const orgId = extractOrgIdFromTo(toAddresses, domain);
+  if (!orgId) {
+    console.warn("[email-ingest] no matching org address in to:", toAddresses);
+    return NextResponse.json(
+      { error: "Recipient address does not match any known org" },
+      { status: 422 }
+    );
+  }
+
+  // 5. Verify org exists (code-owned check — orgId came from our own routing,
+  //    but we still validate it against the DB before creating a payload row).
+  const { supabase: db } = await import("@/src/db");
+  const { data: org, error: orgErr } = await db
+    .from("organizations")
+    .select("id")
+    .eq("id", orgId)
+    .maybeSingle();
+
+  if (orgErr || !org) {
+    console.warn("[email-ingest] org not found:", orgId);
+    return NextResponse.json({ error: "Unknown organization" }, { status: 422 });
+  }
+
+  // 6. Idempotency: skip if email_id already ingested for this org
+  if (emailId) {
+    const { data: existing } = await db
+      .from("inbound_payloads")
+      .select("id")
+      .eq("org_id", orgId)
+      .eq("email_message_id", emailId)
+      .eq("source", "email")
+      .maybeSingle();
+    if (existing) {
+      return NextResponse.json(
+        { received: true, payloadId: existing.id, duplicate: true },
+        { status: 200 }
+      );
+    }
+  }
+
+  // 7. Persist
+  const payloadId = randomUUID();
+  const row: Record<string, unknown> = {
+    id: payloadId,
+    org_id: orgId,
+    source: "email",
+    status: "completed",
+    scan_status: "clean",
+    extracted_json: data,
+  };
+  if (emailId) row.email_message_id = emailId;
+
+  const { error: insErr } = await db.from("inbound_payloads").insert(row);
+  if (insErr) {
+    console.error("[email-ingest] insert failed:", insErr.message);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  await db.from("system_audit_logs").insert({
+    org_id: orgId,
+    action: "email.ingested",
+    log_meta: { payloadId, emailId, subject: data?.subject ?? null },
+  });
+
+  // 8. Queue
+  enqueue({ name: "payload/completed", data: { orgId, payloadId } });
+
+  return NextResponse.json({ received: true, payloadId }, { status: 200 });
+}
+
+────────────────────────────────────────────────────────────────
+4e. app/api/payloads/[id]/route.ts
+────────────────────────────────────────────────────────────────
+
+GET /api/payloads/:id
+Auth: session cookie → resolveOrgFromSession → 401 if null
+Returns: { id, status, scan_status, source, created_at, size_bytes, original_filename }
+
+/**
+ * GET /api/payloads/[id]
+ * Returns the status of a specific payload (polling endpoint).
+ * Scoped to the authenticated org — other orgs' payloads return 404.
+ *
+ * Response 200: { id, status, scan_status, source, created_at, size_bytes, original_filename }
+ * Response 401: { error: "Unauthorized" }
+ * Response 404: { error: "Not found" }
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // 1. Auth
+  const sbClient = await supabaseServer();
+  const {
+    data: { session },
+  } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id: payloadId } = await params;
+
+  // 2. Fetch (ORG-SCOPED — other orgs' rows return null → 404)
+  const { supabase: db } = await import("@/src/db");
+  const { data, error } = await db
+    .from("inbound_payloads")
+    .select("id, status, scan_status, source, created_at, size_bytes, original_filename")
+    .eq("id", payloadId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+  if (!data) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(data, { status: 200 });
+}
+
+────────────────────────────────────────────────────────────────
+4f. app/api/payloads/[id]/results/route.ts
+────────────────────────────────────────────────────────────────
+
+GET /api/payloads/:id/results
+Auth: session cookie → resolveOrgFromSession → 401 if null
+Returns: { payloadId, agentRuns: [...], proposedActions: [...] }
+
+agentRuns fields: id, role, status, latency_ms, created_at
+proposedActions fields: id, kind, payload, status, agent_run_id, created_at
+
+/**
+ * GET /api/payloads/[id]/results
+ * Returns all agent runs and proposed actions for a payload.
+ * Scoped to the authenticated org.
+ *
+ * Response 200: { payloadId, agentRuns: Array, proposedActions: Array }
+ * Response 401: { error: "Unauthorized" }
+ * Response 404: { error: "Not found" }
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  // 1. Auth
+  const sbClient = await supabaseServer();
+  const {
+    data: { session },
+  } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id: payloadId } = await params;
+
+  // 2. Verify the payload belongs to this org
+  const { supabase: db } = await import("@/src/db");
+  const { data: payload, error: payloadErr } = await db
+    .from("inbound_payloads")
+    .select("id")
+    .eq("id", payloadId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  if (payloadErr) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+  if (!payload) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // 3. Fetch agent runs (ORG-SCOPED)
+  const { data: agentRuns, error: runsErr } = await db
+    .from("agent_runs")
+    .select("id, role, status, latency_ms, created_at")
+    .eq("payload_id", payloadId)
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: true });
+
+  if (runsErr) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  // 4. Fetch proposed actions (ORG-SCOPED)
+  const { data: proposedActions, error: actionsErr } = await db
+    .from("proposed_actions")
+    .select("id, kind, payload, status, agent_run_id, created_at")
+    .eq("payload_id", payloadId)
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: true });
+
+  if (actionsErr) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  return NextResponse.json(
+    {
+      payloadId,
+      agentRuns: agentRuns ?? [],
+      proposedActions: proposedActions ?? [],
+    },
+    { status: 200 }
+  );
+}
+
+────────────────────────────────────────────────────────────────
+4g. app/api/org/api-keys/route.ts
+────────────────────────────────────────────────────────────────
+
+GET  /api/org/api-keys  — list keys (no raw values, only prefix + name + dates)
+POST /api/org/api-keys  — create a new key (returns raw key ONCE, never again)
+DELETE /api/org/api-keys?keyId=<id> — revoke a key
+
+Auth: session cookie → resolveOrgFromSession → 401 if null
+
+/**
+ * /api/org/api-keys
+ *
+ * Manage API keys for webhook authentication.
+ *
+ * GET  → list all keys for the org (prefix, name, created_at, last_used_at)
+ * POST → create a new key (body: { name: string })
+ *         Returns rawKey ONCE — not stored, cannot be retrieved again.
+ * DELETE ?keyId=<uuid> → revoke a key
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+import { generateApiKey } from "@/src/lib/api-key";
+
+async function getAuth(
+  req: NextRequest
+): Promise<{ orgId: string } | NextResponse> {
+  const sbClient = await supabaseServer();
+  const {
+    data: { session },
+  } = await sbClient.auth.getSession();
+  const orgId = await resolveOrgFromSession(session);
+  if (!orgId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return { orgId };
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await getAuth(req);
+  if (auth instanceof NextResponse) return auth;
+  const { orgId } = auth;
+
+  const { supabase: db } = await import("@/src/db");
+  const { data, error } = await db
+    .from("org_api_keys")
+    .select("id, key_prefix, name, created_at, last_used_at")
+    .eq("org_id", orgId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  return NextResponse.json({ keys: data ?? [] }, { status: 200 });
+}
+
+export async function POST(req: NextRequest) {
+  const auth = await getAuth(req);
+  if (auth instanceof NextResponse) return auth;
+  const { orgId } = auth;
+
+  let body: { name?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (typeof body.name !== "string" || body.name.trim().length === 0) {
+    return NextResponse.json(
+      { error: "Body must include name (non-empty string)" },
+      { status: 400 }
+    );
+  }
+
+  const name = body.name.trim().slice(0, 100);
+  const { rawKey, keyHash, keyPrefix } = generateApiKey();
+
+  const { supabase: db } = await import("@/src/db");
+  const { data, error } = await db
+    .from("org_api_keys")
+    .insert({ org_id: orgId, key_hash: keyHash, key_prefix: keyPrefix, name })
+    .select("id, key_prefix, name, created_at")
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  await db.from("system_audit_logs").insert({
+    org_id: orgId,
+    action: "api_key.created",
+    log_meta: { keyId: data.id, name },
+  });
+
+  // Return rawKey ONCE. It is not stored and cannot be retrieved again.
+  return NextResponse.json(
+    {
+      id: data.id,
+      key_prefix: data.key_prefix,
+      name: data.name,
+      created_at: data.created_at,
+      rawKey, // ← only time the raw key is visible
+    },
+    { status: 201 }
+  );
+}
+
+export async function DELETE(req: NextRequest) {
+  const auth = await getAuth(req);
+  if (auth instanceof NextResponse) return auth;
+  const { orgId } = auth;
+
+  const keyId = req.nextUrl.searchParams.get("keyId");
+  if (!keyId) {
+    return NextResponse.json(
+      { error: "keyId query parameter required" },
+      { status: 400 }
+    );
+  }
+
+  const { supabase: db } = await import("@/src/db");
+  const { error } = await db
+    .from("org_api_keys")
+    .delete()
+    .eq("id", keyId)
+    .eq("org_id", orgId); // ORG-SCOPED — cannot delete another org's key
+
+  if (error) {
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  }
+
+  await db.from("system_audit_logs").insert({
+    org_id: orgId,
+    action: "api_key.revoked",
+    log_meta: { keyId },
+  });
+
+  return NextResponse.json({ revoked: true }, { status: 200 });
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — src/check-http-phase2.ts
+═══════════════════════════════════════════════════════════════
+
+Create a new check script that tests the Phase 2 routes WITHOUT a valid
+session (negative cases only — same pattern as check-http-negative.ts).
+This must be runnable without credentials, requiring only the dev server.
+
+Also add package.json script: "check:http2": "tsx src/check-http-phase2.ts"
+
+The script should test:
+1. GET /api/payloads/some-uuid → 401 (no session)
+2. GET /api/payloads/some-uuid/results → 401 (no session)
+3. GET /api/org/api-keys → 401 (no session)
+4. POST /api/org/api-keys → 401 (no session)
+5. DELETE /api/org/api-keys?keyId=some-uuid → 401 (no session)
+6. POST /api/ingest/webhook → 401 (no Authorization header)
+7. POST /api/ingest/webhook with bad key → 401
+8. POST /api/ingest/email → 401 (no svix headers)
+9. POST /api/ingest/webhook with valid JSON but no key → 401
+
+Use the same pass/fail/section helper pattern from check-http-negative.ts.
+Reads env from .env.local.
+Requires dev server at http://localhost:3000 (same as check:http).
+
+/**
+ * src/check-http-phase2.ts
+ *
+ * Live HTTP negative tests for Phase 2 routes.
+ * Tests that all new routes fail closed when unauthenticated.
+ *
+ * Requires dev server: npm run dev
+ * Run with: npx tsx src/check-http-phase2.ts
+ */
+import { config as loadEnv } from "dotenv";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+loadEnv({ path: resolve(__dirname, "..", ".env.local"), quiet: true });
+
+const BASE = process.env.HTTP_TEST_BASE ?? "http://localhost:3000";
+const FAKE_UUID = "00000000-0000-0000-0000-000000000000";
+
+let failures = 0;
+const pass = (m: string) => console.log(`  ✓ ${m}`);
+const fail = (m: string) => { failures++; console.error(`  ✗ ${m}`); };
+const section = (t: string) => console.log(`\n${t}`);
+
+async function expect(
+  label: string,
+  path: string,
+  options: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: unknown;
+    expectedStatus: number;
+  }
+): Promise<void> {
+  const { method = "GET", headers = {}, body, expectedStatus } = options;
+  const reqHeaders: Record<string, string> = { ...headers };
+  if (body !== undefined) reqHeaders["content-type"] = "application/json";
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: reqHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    fail(`${label}: request failed — is dev server up at ${BASE}? (${(e as Error).message})`);
+    return;
+  }
+
+  const text = await res.text();
+  if (res.status === expectedStatus) {
+    pass(`${label} → ${expectedStatus} (${text.slice(0, 60)})`);
+  } else {
+    fail(`${label} → expected ${expectedStatus}, got ${res.status} (${text.slice(0, 120)})`);
+  }
+}
+
+async function main(): Promise<void> {
+  console.log("U-I-OS Phase 2 live HTTP negative check\n========================================");
+  console.log(`  base: ${BASE}`);
+
+  section("1. /api/payloads/[id] — auth required");
+  await expect("GET no session", `/api/payloads/${FAKE_UUID}`, { expectedStatus: 401 });
+
+  section("2. /api/payloads/[id]/results — auth required");
+  await expect("GET no session", `/api/payloads/${FAKE_UUID}/results`, { expectedStatus: 401 });
+
+  section("3. /api/org/api-keys — auth required");
+  await expect("GET no session", "/api/org/api-keys", { expectedStatus: 401 });
+  await expect("POST no session", "/api/org/api-keys", {
+    method: "POST",
+    body: { name: "test" },
+    expectedStatus: 401,
+  });
+  await expect("DELETE no session", `/api/org/api-keys?keyId=${FAKE_UUID}`, {
+    method: "DELETE",
+    expectedStatus: 401,
+  });
+
+  section("4. /api/ingest/webhook — API key required");
+  await expect("POST no auth header", "/api/ingest/webhook", {
+    method: "POST",
+    body: { test: true },
+    expectedStatus: 401,
+  });
+  await expect("POST bad bearer key", "/api/ingest/webhook", {
+    method: "POST",
+    headers: { authorization: "Bearer uios_wh_thisisnotarealkey1234567890abcdefghijklmnopq" },
+    body: { test: true },
+    expectedStatus: 401,
+  });
+  await expect("POST non-bearer auth", "/api/ingest/webhook", {
+    method: "POST",
+    headers: { authorization: "Basic dXNlcjpwYXNz" },
+    body: { test: true },
+    expectedStatus: 401,
+  });
+
+  section("5. /api/ingest/email — signature required");
+  await expect("POST no svix headers", "/api/ingest/email", {
+    method: "POST",
+    body: { type: "email.received", data: {} },
+    expectedStatus: 401,
+  });
+
+  console.log("\n========================================");
+  if (failures === 0) {
+    console.log("RESULT: PASS — all Phase 2 routes fail closed when unauthenticated. ✓");
+    process.exit(0);
+  } else {
+    console.error(`RESULT: FAIL — ${failures} check(s) failed.`);
+    process.exit(1);
+  }
+}
+
+main().catch((err) => {
+  console.error("\nUnexpected error:", err);
+  process.exit(1);
+});
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — package.json: add check:http2 script
+═══════════════════════════════════════════════════════════════
+
+Add to the "scripts" section of package.json:
+  "check:http2": "tsx src/check-http-phase2.ts"
+
+The existing scripts must not be changed.
+
+═══════════════════════════════════════════════════════════════
+STEP 7 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+After all files are written:
+
+1. npm run typecheck
+   - Must exit 0. Fix any TypeScript errors and repeat until clean.
+   - Common issues to expect and fix:
+     a. next-env.d.ts not found → run: npx next info (or touch next-env.d.ts)
+        Actually: run "npx next build --no-lint 2>&1 | head -20" to generate
+        next-env.d.ts if missing. Or create it manually:
+          /// <reference types="next" />
+          /// <reference types="next/image-types/global" />
+     b. Import path issues → use @/ prefix for all project imports
+     c. NextResponse / NextRequest type errors → ensure next is imported correctly
+
+2. npm run check:agents
+   - Must still pass (no regressions in agent layer).
+
+3. bash scripts/secret-scan.sh
+   - Must exit clean. No real secrets in any file.
+
+4. git add -A
+   git commit -m "feat(api): Phase 2 API layer — 6 routes, api-key auth, org_api_keys migration"
+
+5. git checkout main
+   git merge phase2-api-layer --no-ff -m "feat(api): merge Phase 2 API layer"
+   git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+Phase 2 is complete when ALL of the following are true:
+
+✓ src/migrations/0204_api_keys_and_webhook_source.sql exists
+✓ src/lib/api-key.ts exists
+✓ next.config.ts exists
+✓ app/layout.tsx exists
+✓ app/page.tsx exists
+✓ app/api/uploads/slot/route.ts exists
+✓ app/api/uploads/finalize/route.ts exists
+✓ app/api/ingest/webhook/route.ts exists
+✓ app/api/ingest/email/route.ts exists
+✓ app/api/payloads/[id]/route.ts exists
+✓ app/api/payloads/[id]/results/route.ts exists
+✓ app/api/org/api-keys/route.ts exists
+✓ src/check-http-phase2.ts exists
+✓ package.json includes "check:http2" script
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ bash scripts/secret-scan.sh exits clean
+✓ All changes merged to main and pushed
+
+─────────────────────────────────────────────────────────────
+SECURITY INVARIANTS (apply to every file written in this phase)
+─────────────────────────────────────────────────────────────
+
+1. org_id is ALWAYS CODE-OWNED:
+   - Session routes: org_id comes ONLY from resolveOrgFromSession()
+   - Webhook routes: org_id comes ONLY from verifyApiKey() result
+   - Email routes: org_id extracted from recipient address AND verified
+     against the organizations table before use
+   - NEVER accept orgId from the request body or query params
+
+2. API keys: only SHA-256 hash stored, raw key returned exactly ONCE (on create)
+
+3. Service-role client (src/db.ts) used for all payload/audit writes.
+   supabaseServer() is used ONLY to read the session, never to query data.
+
+4. Every DB read filtering by payload_id ALSO filters by org_id.
+   A payload_id alone is not sufficient — it must be paired with the auth'd org.
+
+5. No real secrets may appear in any source file.
+   RESEND_WEBHOOK_SECRET, NEXT_PUBLIC_SUPABASE_ANON_KEY, etc. are env vars only.

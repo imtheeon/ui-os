@@ -1,0 +1,2093 @@
+
+> ui-os@1.0.0 check:agents
+> tsx src/check-agents.ts
+
+== validateProposal ==
+  PASS rejects unknown kind
+  PASS rejects bad amount
+  PASS accepts good ledger entry
+  PASS accepts good report
+  PASS clamps oversize string
+== executor ==
+  PASS applyAction writes ledger_entries
+  PASS record is org-stamped by code
+  PASS applyAction rejects org mismatch
+== model tiers ==
+  PASS accountant → haiku model
+  PASS analyst → sonnet model
+== brain (stub) ==
+  PASS stub accountant proposes a ledger entry
+  PASS stub analyst proposes a report
+== runAgent ==
+  PASS runAgent ok
+  PASS proposal is pending + org-stamped
+  PASS org C sees none of org B's proposals
+  PASS model-supplied org_id ignored; row stamped with event org
+  PASS unknown kind produces zero proposals
+  PASS free tier skipped
+  PASS free tier wrote no proposals
+== manager ==
+  PASS looksFinancial true on amount
+  PASS looksFinancial false on plain
+  PASS financial routes to [data_quality_agent, schema_detection_agent, document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, professional_services_agent, headcount_analysis_agent, competitive_benchmarking_agent, data_reshape_agent, date_normalization_agent, string_normalization_agent, currency_normalization_agent, join_quality_agent, data_validation_rules_agent, distribution_agent, correlation_agent, regression_agent, hypothesis_testing_agent, pareto_agent, clustering_agent, funnel_analysis_agent, retention_analysis_agent, ab_test_agent, nps_analysis_agent, feature_adoption_agent, customer_health_score_agent, expansion_opportunity_agent, attrition_analysis_agent, headcount_planning_agent, demand_forecasting_agent, capacity_planning_agent, sla_analysis_agent, metric_tree_agent, text_analytics_agent, data_freshness_agent, narrative_diff_agent, alert_threshold_agent, data_annotation_agent, due_diligence_checklist_agent, market_sizing_agent, invoice_extraction_agent, bigquery_query_agent, reconciler, invoice_matcher, cash_flow_agent, tax_categorizer, budget_analyst, saas_metrics_agent, burn_rate_agent, cohort_agent, ar_aging_agent, ap_agent, bank_recon_agent, ratio_analysis_agent, cash_positioning_agent, debt_schedule_agent, equity_waterfall_agent, investor_metrics_agent, payment_terms_agent, working_capital_optimization_agent, profitability_agent, working_capital_agent, break_even_agent, cogs_analysis_agent, revenue_recognition_agent, churn_risk_agent, customer_segmentation_agent, payroll_analytics_agent, vendor_concentration_agent, clv_agent, sensitivity_analysis_agent, sales_pipeline_agent, pricing_optimization_agent, contract_analysis_agent, marketing_roi_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, liquidity_risk_agent, covenant_tracking_agent, transaction_classifier, expense_policy_agent, subscription_tracker, commission_calculator, overtime_analysis_agent, unit_economics_agent, valuation_agent, cap_table_agent, lease_analysis_agent, asset_register_agent, price_volume_mix_agent, bridge_analysis_agent, discount_analysis_agent, maverick_spend_agent, collections_priority_agent, bad_debt_provision_agent, credit_scoring_agent, fx_exposure_agent, consolidation_agent, nonprofit_agent, healthcare_agent, legal_billing_agent, hospitality_agent, construction_agent, revenue_quality_agent, cohort_analysis_agent, variance_analysis_agent, cash_flow_forecast_agent, expense_forecast_agent, debt_covenant_agent, tax_provision_agent, collections_agent, board_narrative_agent, investor_update_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, accountant, forecaster, quota_attainment_agent, win_loss_agent, forecast_accuracy_agent, attribution_agent, price_elasticity_agent, compensation_analysis_agent, financial_statement_normalizer_agent, three_statement_model_agent, quality_of_earnings_agent, deferred_revenue_agent, earnings_quality_agent, intercompany_elimination_agent, stock_based_compensation_agent, gaap_compliance_agent, tax_rate_reconciliation_agent, report_generator, orchestrator_agent, confidence_reviewer_agent, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]
+  PASS onehundredeightyseven agent/run events enqueued
+  PASS non-financial routes to [data_quality_agent, schema_detection_agent, document_classifier, schema_evolution_agent, column_profiler, data_dictionary_agent, missing_data_agent, headcount_analytics_agent, productivity_agent, growth_rate_agent, data_privacy_agent, data_quality, compliance_agent, onboarding_agent, clarification_agent, multi_period, audit_summarizer, kpi_extractor, sql_analyst, anomaly_detector, categorizer, data_cleaner, unit_normalizer, duplicate_detector, outlier_explanation_agent, time_series_decomp_agent, failure_risk_agent, run_rate_agent, spend_analysis_agent, investor_memo_agent, okr_tracker_agent, swot_agent, query_builder_agent, esg_reporting_agent, seasonality_agent, benchmark_agent, professional_services_agent, headcount_analysis_agent, competitive_benchmarking_agent, data_reshape_agent, date_normalization_agent, string_normalization_agent, currency_normalization_agent, join_quality_agent, data_validation_rules_agent, distribution_agent, correlation_agent, regression_agent, hypothesis_testing_agent, pareto_agent, clustering_agent, funnel_analysis_agent, retention_analysis_agent, ab_test_agent, nps_analysis_agent, feature_adoption_agent, customer_health_score_agent, expansion_opportunity_agent, attrition_analysis_agent, headcount_planning_agent, demand_forecasting_agent, capacity_planning_agent, sla_analysis_agent, metric_tree_agent, text_analytics_agent, data_freshness_agent, narrative_diff_agent, alert_threshold_agent, data_annotation_agent, due_diligence_checklist_agent, market_sizing_agent, invoice_extraction_agent, bigquery_query_agent, inventory_tracker, reorder_flagger, supplier_analyst, po_agent, code_reviewer, code_tester, customer_segmentation_agent, payroll_analytics_agent, vendor_concentration_agent, clv_agent, sensitivity_analysis_agent, contract_analysis_agent, fraud_detection_agent, concentration_risk_agent, scenario_agent, ecommerce_agent, retail_agent, vendor_risk, trend_detector, period_comparator, health_scorer, email_drafter, recommender, pattern_memory, data_merger, report_generator, orchestrator_agent, confidence_reviewer_agent, exec_summarizer, insight_synthesis_agent, conflict_detection_agent, alert_agent, client_reporter, narrator, meeting_prepper, board_deck_builder, viz_recommender, chart_config_agent, kpi_card_agent, dashboard_spec_agent, validator, analyst, action_priority_agent]
+== full chain (manager → agent/run handoff) ==
+  PASS manager enqueued data_quality_agent+schema_detection_agent+document_classifier+schema_evolution_agent+column_profiler+data_dictionary_agent+missing_data_agent+headcount_analytics_agent+productivity_agent+growth_rate_agent+data_privacy_agent+data_quality+compliance_agent+onboarding_agent+clarification_agent+multi_period+audit_summarizer+kpi_extractor+sql_analyst+anomaly_detector+categorizer+data_cleaner+unit_normalizer+duplicate_detector+outlier_explanation_agent+time_series_decomp_agent+failure_risk_agent+run_rate_agent+spend_analysis_agent+investor_memo_agent+okr_tracker_agent+swot_agent+query_builder_agent+esg_reporting_agent+seasonality_agent+benchmark_agent+professional_services_agent+headcount_analysis_agent+competitive_benchmarking_agent+data_reshape_agent+date_normalization_agent+string_normalization_agent+currency_normalization_agent+join_quality_agent+data_validation_rules_agent+distribution_agent+correlation_agent+regression_agent+hypothesis_testing_agent+pareto_agent+clustering_agent+funnel_analysis_agent+retention_analysis_agent+ab_test_agent+nps_analysis_agent+feature_adoption_agent+customer_health_score_agent+expansion_opportunity_agent+attrition_analysis_agent+headcount_planning_agent+demand_forecasting_agent+capacity_planning_agent+sla_analysis_agent+metric_tree_agent+text_analytics_agent+data_freshness_agent+narrative_diff_agent+alert_threshold_agent+data_annotation_agent+due_diligence_checklist_agent+market_sizing_agent+invoice_extraction_agent+bigquery_query_agent+reconciler+invoice_matcher+cash_flow_agent+tax_categorizer+budget_analyst+saas_metrics_agent+burn_rate_agent+cohort_agent+ar_aging_agent+ap_agent+bank_recon_agent+ratio_analysis_agent+cash_positioning_agent+debt_schedule_agent+equity_waterfall_agent+investor_metrics_agent+payment_terms_agent+working_capital_optimization_agent+profitability_agent+working_capital_agent+break_even_agent+cogs_analysis_agent+revenue_recognition_agent+churn_risk_agent+customer_segmentation_agent+payroll_analytics_agent+vendor_concentration_agent+clv_agent+sensitivity_analysis_agent+sales_pipeline_agent+pricing_optimization_agent+contract_analysis_agent+marketing_roi_agent+fraud_detection_agent+concentration_risk_agent+scenario_agent+liquidity_risk_agent+covenant_tracking_agent+transaction_classifier+expense_policy_agent+subscription_tracker+commission_calculator+overtime_analysis_agent+unit_economics_agent+valuation_agent+cap_table_agent+lease_analysis_agent+asset_register_agent+price_volume_mix_agent+bridge_analysis_agent+discount_analysis_agent+maverick_spend_agent+collections_priority_agent+bad_debt_provision_agent+credit_scoring_agent+fx_exposure_agent+consolidation_agent+nonprofit_agent+healthcare_agent+legal_billing_agent+hospitality_agent+construction_agent+revenue_quality_agent+cohort_analysis_agent+variance_analysis_agent+cash_flow_forecast_agent+expense_forecast_agent+debt_covenant_agent+tax_provision_agent+collections_agent+board_narrative_agent+investor_update_agent+vendor_risk+trend_detector+period_comparator+health_scorer+email_drafter+recommender+pattern_memory+accountant+forecaster+quota_attainment_agent+win_loss_agent+forecast_accuracy_agent+attribution_agent+price_elasticity_agent+compensation_analysis_agent+financial_statement_normalizer_agent+three_statement_model_agent+quality_of_earnings_agent+deferred_revenue_agent+earnings_quality_agent+intercompany_elimination_agent+stock_based_compensation_agent+gaap_compliance_agent+tax_rate_reconciliation_agent+report_generator+orchestrator_agent+confidence_reviewer_agent+exec_summarizer+insight_synthesis_agent+conflict_detection_agent+alert_agent+client_reporter+narrator+meeting_prepper+board_deck_builder+viz_recommender+chart_config_agent+kpi_card_agent+dashboard_spec_agent+validator+analyst+action_priority_agent
+  PASS chain produced 187 proposals (data quality assessment + schema detection + document classification + schema evolution + column profiling + data dictionary + missing data analysis + headcount analytics + productivity analysis + growth rate calculation + outlier explanation + time series decomposition + failure risk assessment + run rate calculation + spend analysis + investor memo drafting + okr tracking + swot analysis + query building + esg reporting + seasonality analysis + benchmarking + professional services analysis + headcount analysis + competitive benchmarking + data reshape + date normalization + string normalization + currency normalization + join quality assessment + data validation rules + distribution analysis + correlation analysis + regression analysis + hypothesis testing + pareto analysis + clustering + funnel analysis + retention analysis + ab test analysis + nps analysis + feature adoption analysis + customer health scoring + expansion opportunity analysis + attrition analysis + headcount planning + demand forecasting + capacity planning + sla analysis + metric tree + text analytics + data freshness assessment + narrative diff + alert threshold configuration + data annotation + due diligence checklist + market sizing + invoice extraction + bigquery query + data privacy assessment + data quality + compliance + onboarding + clarification + multi period + audit summary + kpi extraction + sql analysis + anomaly + categorization + cleanup + normalization + duplicate flag + reconciliation + invoice match + cash flow + tax categorization + budget comparison + saas metrics + burn rate + cohort analysis + ar aging + ap analysis + bank reconciliation + ratio analysis + cash positioning + debt schedule + equity waterfall + investor metrics + payment terms analysis + working capital optimization + profitability analysis + working capital analysis + break even analysis + cogs analysis + revenue recognition analysis + churn risk analysis + customer segmentation + payroll analytics + vendor concentration + clv + sensitivity analysis + sales pipeline + pricing optimization + contract analysis + marketing roi + fraud detection + concentration risk + scenario modeling + liquidity risk + covenant tracking + transaction classification + expense policy check + subscription tracking + commission calculation + overtime analysis + unit economics analysis + valuation estimation + cap table analysis + lease analysis + asset register analysis + price volume mix analysis + bridge analysis + discount analysis + maverick spend detection + collections prioritization + bad debt provision + credit scoring + fx exposure analysis + consolidation + nonprofit financial analysis + healthcare financial analysis + legal billing analysis + hospitality financial analysis + construction financial analysis + revenue quality analysis + cohort analysis + variance analysis + cash flow forecast + expense forecast + debt covenant analysis + tax provision analysis + collections management + board narrative drafting + investor update drafting + vendor risk + trend + period comparison + health score + email draft + recommendations + pattern extraction + insight synthesis + conflict detection + forecast + quota attainment analysis + win loss analysis + forecast accuracy analysis + attribution analysis + price elasticity analysis + compensation analysis + financial statement normalization + three statement model + quality of earnings + deferred revenue analysis + earnings quality assessment + intercompany elimination + stock-based compensation analysis + gaap compliance assessment + tax rate reconciliation + report + orchestration + confidence review + exec summary + alerts + client report + narrative + meeting prep + board deck + viz recommendations + chart configs + kpi cards + dashboard spec + validation + ledger + analyst report + action prioritization)
+== approval gate (service level) ==
+  PASS listPending returns the pending action
+  PASS approve writes ledger record
+  PASS record exists, org-stamped
+  PASS proposal flipped to applied
+  PASS second approve is no-op
+  PASS still exactly one record
+  PASS cannot approve another org's action
+  PASS reject ok
+  PASS reject wrote no record
+== anomaly detector ==
+  PASS flag_anomaly accepts good
+  PASS flag_anomaly rejects bad severity
+  PASS anomaly_detector → haiku model
+  PASS anomaly run produced a flag
+  PASS approve writes flagged_anomalies
+  PASS anomaly record org-stamped
+== categorizer ==
+  PASS categorize_items accepts good
+  PASS categorize_items rejects missing scheme
+  PASS categorize_items accepts empty assignments
+  PASS categorizer → haiku model
+  PASS categorizer run produced a categorization
+  PASS approve writes categorization_runs
+  PASS categorization record org-stamped
+== data cleaner ==
+  PASS clean_data accepts good
+  PASS clean_data rejects missing issues
+  PASS clean_data rejects bad rows_affected
+  PASS data_cleaner → haiku model
+  PASS data_cleaner run produced a cleanup proposal
+  PASS approve writes cleaned_data_runs
+  PASS cleaned data record org-stamped
+  PASS approveAction writes agent_accuracy for data_cleaner (role check constraint includes it)
+== data merger ==
+  PASS merge_datasets accepts good
+  PASS merge_datasets rejects missing merge_strategy
+  PASS merge_datasets rejects empty join_columns
+  PASS data_merger → sonnet model
+  PASS data_merger run produced a merge proposal
+  PASS approve writes merged_dataset_runs
+  PASS merged dataset record org-stamped
+  PASS approveAction writes agent_accuracy for data_merger
+== unit normalizer ==
+  PASS normalize_units accepts good
+  PASS normalize_units rejects bad unit_type
+  PASS normalize_units rejects empty target_unit
+  PASS unit_normalizer → haiku model
+  PASS unit_normalizer run produced a normalization proposal
+  PASS approve writes normalization_runs
+  PASS normalization record org-stamped
+  PASS approveAction writes agent_accuracy for unit_normalizer
+== reconciler ==
+  PASS reconcile_records accepts good
+  PASS reconcile_records filters out bad match_status
+  PASS reconcile_records filters out confidence out of range
+  PASS reconciler → sonnet model
+  PASS reconciler run produced a reconciliation proposal
+  PASS approve writes reconciliation_runs
+  PASS reconciliation record org-stamped
+  PASS approveAction writes agent_accuracy for reconciler
+== invoice matcher ==
+  PASS match_invoices accepts good
+  PASS match_invoices filters out bad match_status
+  PASS match_invoices filters out negative amount_cents
+  PASS invoice_matcher → haiku model
+  PASS invoice_matcher run produced a match proposal
+  PASS approve writes invoice_matches
+  PASS invoice match record org-stamped
+  PASS approveAction writes agent_accuracy for invoice_matcher
+== cash flow agent ==
+  PASS project_cash_flow accepts good
+  PASS project_cash_flow rejects bad risk_level
+  PASS project_cash_flow rejects bad projection_period
+  PASS cash_flow_agent → sonnet model
+  PASS cash_flow_agent run produced a projection
+  PASS approve writes cash_flow_projections
+  PASS cash flow record org-stamped
+  PASS approveAction writes agent_accuracy for cash_flow_agent
+== tax categorizer ==
+  PASS categorize_tax_items accepts good
+  PASS categorize_tax_items filters out missing tax_category
+  PASS categorize_tax_items filters out negative amount_cents
+  PASS tax_categorizer → haiku model
+  PASS tax_categorizer run produced a categorization
+  PASS approve writes tax_categorization_runs
+  PASS tax categorization record org-stamped
+  PASS approveAction writes agent_accuracy for tax_categorizer
+== duplicate detector ==
+  PASS flag_duplicates accepts good
+  PASS flag_duplicates filters out row_references fewer than 2
+  PASS flag_duplicates filters out bad duplicate_type
+  PASS duplicate_detector → haiku model
+  PASS duplicate_detector run produced a duplicate flag
+  PASS approve writes duplicate_flags
+  PASS duplicate flag record org-stamped
+  PASS approveAction writes agent_accuracy for duplicate_detector
+== budget analyst ==
+  PASS compare_budget_actual accepts good
+  PASS compare_budget_actual rejects bad overall_status
+  PASS compare_budget_actual filters out bad comparison status
+  PASS budget_analyst → sonnet model
+  PASS budget_analyst run produced a comparison
+  PASS approve writes budget_comparisons
+  PASS budget comparison record org-stamped
+  PASS approveAction writes agent_accuracy for budget_analyst
+== inventory tracker ==
+  PASS track_inventory accepts good
+  PASS track_inventory filters out negative quantity
+  PASS track_inventory filters out missing sku
+  PASS inventory_tracker → haiku model
+  PASS inventory_tracker run produced a snapshot
+  PASS approve writes inventory_snapshots
+  PASS inventory snapshot record org-stamped
+  PASS approveAction writes agent_accuracy for inventory_tracker
+== reorder flagger ==
+  PASS flag_reorders accepts good
+  PASS flag_reorders filters out bad urgency
+  PASS flag_reorders filters out negative current_quantity
+  PASS reorder_flagger → haiku model
+  PASS reorder_flagger run produced a flag
+  PASS approve writes reorder_flags
+  PASS reorder flag record org-stamped
+  PASS approveAction writes agent_accuracy for reorder_flagger
+== supplier analyst ==
+  PASS analyze_suppliers accepts good
+  PASS analyze_suppliers rejects bad concentration_risk
+  PASS analyze_suppliers filters out on_time_rate out of range
+  PASS supplier_analyst → sonnet model
+  PASS supplier_analyst run produced an analysis
+  PASS approve writes supplier_analyses
+  PASS supplier analysis record org-stamped
+  PASS approveAction writes agent_accuracy for supplier_analyst
+== po agent ==
+  PASS process_purchase_orders accepts good
+  PASS process_purchase_orders filters out bad status
+  PASS process_purchase_orders filters out negative total_cents
+  PASS po_agent → haiku model
+  PASS po_agent run produced a PO batch
+  PASS approve writes purchase_order_runs
+  PASS purchase order record org-stamped
+  PASS approveAction writes agent_accuracy for po_agent
+== trend detector ==
+  PASS detect_trends accepts good
+  PASS detect_trends filters out bad direction
+  PASS detect_trends rejects bad overall_direction
+  PASS trend_detector → sonnet model
+  PASS trend_detector run produced a detection
+  PASS approve writes trend_detections
+  PASS trend detection record org-stamped
+  PASS approveAction writes agent_accuracy for trend_detector
+== period comparator ==
+  PASS compare_periods accepts good
+  PASS compare_periods rejects empty period_a_label
+  PASS compare_periods filters out bad change_direction
+  PASS period_comparator → sonnet model
+  PASS period_comparator run produced a comparison
+  PASS approve writes period_comparisons
+  PASS period comparison record org-stamped
+  PASS approveAction writes agent_accuracy for period_comparator
+== exec summarizer ==
+  PASS generate_exec_summary accepts good
+  PASS generate_exec_summary rejects empty headline
+  PASS generate_exec_summary rejects bad confidence
+  PASS exec_summarizer → sonnet model
+  PASS exec_summarizer run produced a summary
+  PASS approve writes exec_summaries
+  PASS exec summary record org-stamped
+  PASS approveAction writes agent_accuracy for exec_summarizer
+== forecaster ==
+  PASS generate_forecast accepts good
+  PASS generate_forecast rejects bad horizon
+  PASS generate_forecast rejects bad confidence
+  PASS forecaster → sonnet model
+  PASS forecaster run produced a forecast
+  PASS approve writes forecast_runs
+  PASS forecast record org-stamped
+  PASS approveAction writes agent_accuracy for forecaster
+== report generator ==
+  PASS generate_report accepts good
+  PASS generate_report rejects bad report_type
+  PASS generate_report rejects empty title
+  PASS report_generator → sonnet model
+  PASS report_generator run produced a report
+  PASS approve writes generated_reports
+  PASS generated report record org-stamped
+  PASS approveAction writes agent_accuracy for report_generator
+== data quality ==
+  PASS assess_data_quality accepts good
+  PASS assess_data_quality rejects quality_score out of range
+  PASS assess_data_quality rejects bad overall_grade
+  PASS data_quality → haiku model
+  PASS data_quality run produced an assessment
+  PASS approve writes data_quality_assessments
+  PASS data quality record org-stamped
+  PASS approveAction writes agent_accuracy for data_quality
+== compliance agent ==
+  PASS flag_compliance_issues accepts good
+  PASS flag_compliance_issues rejects bad risk_level
+  PASS flag_compliance_issues filters out bad issue_type
+  PASS compliance_agent → haiku model
+  PASS compliance_agent run produced a flag
+  PASS approve writes compliance_flags
+  PASS compliance flag record org-stamped
+  PASS approveAction writes agent_accuracy for compliance_agent
+== vendor risk ==
+  PASS assess_vendor_risk accepts good
+  PASS assess_vendor_risk filters out spend_pct > 100
+  PASS assess_vendor_risk rejects bad concentration_risk
+  PASS vendor_risk → sonnet model
+  PASS vendor_risk run produced an assessment
+  PASS approve writes vendor_risk_assessments
+  PASS vendor risk record org-stamped
+  PASS approveAction writes agent_accuracy for vendor_risk
+== onboarding agent ==
+  PASS generate_onboarding_guidance accepts good
+  PASS generate_onboarding_guidance filters out empty guidance_steps item
+  PASS generate_onboarding_guidance rejects bad confidence
+  PASS onboarding_agent → sonnet model
+  PASS onboarding_agent run produced guidance
+  PASS approve writes onboarding_guidance_runs
+  PASS onboarding guidance record org-stamped
+  PASS approveAction writes agent_accuracy for onboarding_agent
+== clarification agent ==
+  PASS request_clarification accepts good
+  PASS request_clarification rejects empty questions array
+  PASS request_clarification rejects bad urgency
+  PASS clarification_agent → opus model
+  PASS clarification_agent run produced a request
+  PASS approve writes clarification_requests
+  PASS clarification request record org-stamped
+  PASS approveAction writes agent_accuracy for clarification_agent
+== multi period ==
+  PASS analyze_multi_period accepts good
+  PASS analyze_multi_period rejects bad dominant_pattern
+  PASS analyze_multi_period filters out bad cross_period insight significance
+  PASS multi_period → sonnet model
+  PASS multi_period run produced an analysis
+  PASS approve writes multi_period_analyses
+  PASS multi period record org-stamped
+  PASS approveAction writes agent_accuracy for multi_period
+== audit summarizer ==
+  PASS summarize_audit_trail accepts good
+  PASS summarize_audit_trail filters out empty summary_paragraphs item
+  PASS summarize_audit_trail rejects negative events_summarized
+  PASS audit_summarizer → haiku model
+  PASS audit_summarizer run produced a summary
+  PASS approve writes audit_summaries
+  PASS audit summary record org-stamped
+  PASS approveAction writes agent_accuracy for audit_summarizer
+== code reviewer ==
+  PASS review_code accepts good
+  PASS review_code rejects bad overall_risk
+  PASS review_code filters out finding with bad issue_type
+  PASS code_reviewer → sonnet model
+  PASS code_reviewer run produced a review
+  PASS approve writes code_review_runs
+  PASS code review record org-stamped
+  PASS approveAction writes agent_accuracy for code_reviewer
+== code tester ==
+  PASS generate_tests accepts good
+  PASS generate_tests rejects coverage_estimate > 100
+  PASS generate_tests filters out test case with bad test_type
+  PASS code_tester → opus model
+  PASS code_tester run produced tests
+  PASS approve writes test_generation_runs
+  PASS test generation record org-stamped
+  PASS approveAction writes agent_accuracy for code_tester
+== sql analyst ==
+  PASS analyze_sql accepts good
+  PASS analyze_sql rejects bad risk_level
+  PASS analyze_sql filters out issue with bad issue_type
+  PASS sql_analyst → sonnet model
+  PASS sql_analyst run produced an analysis
+  PASS approve writes sql_analysis_runs
+  PASS sql analysis record org-stamped
+  PASS approveAction writes agent_accuracy for sql_analyst
+== validator ==
+  PASS validate_analysis accepts good
+  PASS validate_analysis rejects bad recommendation
+  PASS validate_analysis rejects bad confidence_in_swarm
+  PASS validator → opus model
+  PASS validator run produced a report
+  PASS approve writes validation_reports
+  PASS validation report record org-stamped
+  PASS approveAction writes agent_accuracy for validator
+== health scorer ==
+  PASS generate_health_score accepts good
+  PASS generate_health_score rejects overall_score > 100
+  PASS generate_health_score rejects bad grade
+  PASS health_scorer → haiku model
+  PASS health_scorer run produced a score
+  PASS approve writes health_score_runs
+  PASS health score record org-stamped
+  PASS approveAction writes agent_accuracy for health_scorer
+== email drafter ==
+  PASS draft_email accepts good
+  PASS draft_email rejects bad recipient_type
+  PASS draft_email rejects empty subject
+  PASS email_drafter → sonnet model
+  PASS email_drafter run produced a draft
+  PASS approve writes email_drafts
+  PASS email draft record org-stamped
+  PASS approveAction writes agent_accuracy for email_drafter
+== recommender ==
+  PASS generate_recommendations accepts good
+  PASS generate_recommendations filters out recommendation with bad impact
+  PASS generate_recommendations rejects bad priority
+  PASS recommender → haiku model
+  PASS recommender run produced recommendations
+  PASS approve writes recommendation_runs
+  PASS recommendation record org-stamped
+  PASS approveAction writes agent_accuracy for recommender
+== pattern memory ==
+  PASS extract_patterns accepts good
+  PASS extract_patterns filters out pattern with confidence out of range
+  PASS extract_patterns filters out pattern missing pattern_type
+  PASS extract_patterns rejects negative pattern_count
+  PASS pattern_memory → haiku model
+  PASS pattern_memory run produced an extraction
+  PASS approve writes pattern_extractions
+  PASS pattern extraction record org-stamped
+  PASS approveAction writes agent_accuracy for pattern_memory
+== alert agent ==
+  PASS generate_alerts accepts good
+  PASS generate_alerts rejects bad severity_level
+  PASS generate_alerts filters out alert with bad severity
+  PASS alert_agent → haiku model
+  PASS alert_agent run produced an alert set
+  PASS approve writes alert_runs
+  PASS alert run record org-stamped
+  PASS approveAction writes agent_accuracy for alert_agent
+== client reporter ==
+  PASS generate_client_report accepts good
+  PASS generate_client_report rejects empty report_title
+  PASS generate_client_report filters out section missing heading
+  PASS client_reporter → sonnet model
+  PASS client_reporter run produced a report
+  PASS approve writes client_report_runs
+  PASS client report record org-stamped
+  PASS approveAction writes agent_accuracy for client_reporter
+== narrator ==
+  PASS generate_narrative accepts good
+  PASS generate_narrative rejects bad tone
+  PASS generate_narrative rejects empty headline
+  PASS narrator → sonnet model
+  PASS narrator run produced a narrative
+  PASS approve writes narrative_runs
+  PASS narrative record org-stamped
+  PASS approveAction writes agent_accuracy for narrator
+== meeting prepper ==
+  PASS prepare_meeting accepts good
+  PASS prepare_meeting rejects bad meeting_type
+  PASS prepare_meeting filters out agenda item with duration_minutes out of range
+  PASS meeting_prepper → sonnet model
+  PASS meeting_prepper run produced a prep
+  PASS approve writes meeting_prep_runs
+  PASS meeting prep record org-stamped
+  PASS approveAction writes agent_accuracy for meeting_prepper
+== board deck builder ==
+  PASS build_board_deck accepts good
+  PASS build_board_deck filters out slide with bad content_type
+  PASS build_board_deck filters out key_metric with bad trend
+  PASS board_deck_builder → sonnet model
+  PASS board_deck_builder run produced a deck
+  PASS approve writes board_deck_runs
+  PASS board deck record org-stamped
+  PASS approveAction writes agent_accuracy for board_deck_builder
+== viz recommender ==
+  PASS recommend_visualizations accepts good
+  PASS recommend_visualizations rejects bad data_shape
+  PASS recommend_visualizations filters out recommendation with bad chart_type
+  PASS recommend_visualizations rejects bad priority via filtering
+  PASS viz_recommender → haiku model
+  PASS viz_recommender run produced recommendations
+  PASS approve writes viz_recommendation_runs
+  PASS viz recommendation record org-stamped
+  PASS approveAction writes agent_accuracy for viz_recommender
+== chart config agent ==
+  PASS generate_chart_configs accepts good
+  PASS generate_chart_configs rejects bad total_configs
+  PASS generate_chart_configs filters out config with bad chart_type
+  PASS generate_chart_configs filters out config with bad color_scheme
+  PASS generate_chart_configs filters out config with bad aggregation
+  PASS chart_config_agent → sonnet model
+  PASS chart_config_agent run produced configs
+  PASS approve writes chart_config_runs
+  PASS chart config record org-stamped
+  PASS approveAction writes agent_accuracy for chart_config_agent
+== kpi card agent ==
+  PASS extract_kpi_cards accepts good
+  PASS extract_kpi_cards filters out kpi_card with bad trend
+  PASS extract_kpi_cards filters out kpi_card with bad category
+  PASS kpi_card_agent → haiku model
+  PASS kpi_card_agent run produced kpi cards
+  PASS approve writes kpi_card_runs
+  PASS kpi card record org-stamped
+  PASS approveAction writes agent_accuracy for kpi_card_agent
+== dashboard spec agent ==
+  PASS generate_dashboard_spec accepts good
+  PASS generate_dashboard_spec rejects bad layout
+  PASS generate_dashboard_spec filters out section with bad section_type
+  PASS generate_dashboard_spec rejects bad recommended_refresh
+  PASS dashboard_spec_agent → sonnet model
+  PASS dashboard_spec_agent run produced a spec
+  PASS approve writes dashboard_spec_runs
+  PASS dashboard spec record org-stamped
+  PASS approveAction writes agent_accuracy for dashboard_spec_agent
+== saas metrics agent ==
+  PASS calculate_saas_metrics accepts good with all nulls
+  PASS calculate_saas_metrics accepts good with all values
+  PASS calculate_saas_metrics rejects bad metrics_confidence
+  PASS calculate_saas_metrics rejects churn_rate > 1.0
+  PASS saas_metrics_agent → sonnet model
+  PASS saas_metrics_agent run produced metrics
+  PASS approve writes saas_metrics_runs
+  PASS saas metrics record org-stamped
+  PASS approveAction writes agent_accuracy for saas_metrics_agent
+== burn rate agent ==
+  PASS calculate_burn_rate accepts good with all nulls
+  PASS calculate_burn_rate rejects bad burn_trend
+  PASS calculate_burn_rate rejects bad runway_status
+  PASS burn_rate_agent → haiku model
+  PASS burn_rate_agent run produced a calculation
+  PASS approve writes burn_rate_runs
+  PASS burn rate record org-stamped
+  PASS approveAction writes agent_accuracy for burn_rate_agent
+== cohort agent ==
+  PASS analyze_cohorts accepts good with empty cohorts
+  PASS analyze_cohorts rejects bad cohort_type
+  PASS analyze_cohorts rejects bad trend
+  PASS analyze_cohorts filters out retention_rate > 1.0
+  PASS cohort_agent → sonnet model
+  PASS cohort_agent run produced an analysis
+  PASS approve writes cohort_analysis_runs
+  PASS cohort analysis record org-stamped
+  PASS approveAction writes agent_accuracy for cohort_agent
+== ar aging agent ==
+  PASS analyze_ar_aging accepts good
+  PASS analyze_ar_aging rejects bad bucket value
+  PASS analyze_ar_aging rejects bad risk_level
+  PASS ar_aging_agent → haiku model
+  PASS ar_aging_agent run produced an analysis
+  PASS approve writes ar_aging_runs
+  PASS ar aging record org-stamped
+  PASS approveAction writes agent_accuracy for ar_aging_agent
+== ap agent ==
+  PASS analyze_accounts_payable accepts good
+  PASS analyze_accounts_payable rejects bad vendor status
+  PASS analyze_accounts_payable filters out vendor with negative amount_owed
+  PASS ap_agent → haiku model
+  PASS ap_agent run produced an analysis
+  PASS approve writes ap_analysis_runs
+  PASS ap analysis record org-stamped
+  PASS approveAction writes agent_accuracy for ap_agent
+== bank recon agent ==
+  PASS reconcile_bank accepts good with all nulls
+  PASS reconcile_bank rejects bad reconciliation_status
+  PASS reconcile_bank filters out unmatched_item with bad item_type
+  PASS bank_recon_agent → haiku model
+  PASS bank_recon_agent run produced a reconciliation
+  PASS approve writes bank_recon_runs
+  PASS bank recon record org-stamped
+  PASS approveAction writes agent_accuracy for bank_recon_agent
+== ratio analysis agent ==
+  PASS analyze_financial_ratios accepts good
+  PASS analyze_financial_ratios rejects bad overall_health
+  PASS analyze_financial_ratios silently filters out-of-range nested ratio key
+  PASS analyze_financial_ratios accepts all-empty ratio objects
+  PASS ratio_analysis_agent → sonnet model
+  PASS ratio_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes ratio_analysis_runs
+  PASS ratio analysis record org-stamped
+  PASS approveAction writes agent_accuracy for ratio_analysis_agent
+  PASS ratio_analysis_agent routes on the financial route
+== profitability agent ==
+  PASS analyze_profitability accepts good
+  PASS analyze_profitability filters out segment with gross_margin > 100
+  PASS analyze_profitability rejects empty most_profitable
+  PASS analyze_profitability rejects negative total_revenue
+  PASS profitability_agent → sonnet model
+  PASS profitability_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes profitability_runs
+  PASS profitability record org-stamped
+  PASS approveAction writes agent_accuracy for profitability_agent
+  PASS profitability_agent routes on the financial route
+== working capital agent ==
+  PASS analyze_working_capital accepts good with all fields
+  PASS analyze_working_capital accepts all nullable fields null with valid status
+  PASS analyze_working_capital rejects bad status
+  PASS analyze_working_capital rejects negative days_inventory_outstanding
+  PASS working_capital_agent → haiku model
+  PASS working_capital_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes working_capital_runs
+  PASS working capital record org-stamped
+  PASS approveAction writes agent_accuracy for working_capital_agent
+  PASS working_capital_agent routes on the financial route
+== break even agent ==
+  PASS calculate_break_even accepts good
+  PASS calculate_break_even rejects bad status
+  PASS calculate_break_even rejects contribution_margin_ratio > 1
+  PASS calculate_break_even accepts all nulls with insufficient_data status
+  PASS break_even_agent → haiku model
+  PASS break_even_agent run produced a calculation
+  PASS stub proposal passes validateProposal
+  PASS approve writes break_even_runs
+  PASS break even record org-stamped
+  PASS approveAction writes agent_accuracy for break_even_agent
+  PASS break_even_agent routes on the financial route
+== cogs analysis agent ==
+  PASS analyze_cogs accepts good
+  PASS analyze_cogs rejects bad cogs_trend
+  PASS analyze_cogs filters out component with percentage_of_cogs > 100
+  PASS analyze_cogs rejects negative total_cogs
+  PASS cogs_analysis_agent → sonnet model
+  PASS cogs_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes cogs_analysis_runs
+  PASS cogs analysis record org-stamped
+  PASS approveAction writes agent_accuracy for cogs_analysis_agent
+  PASS cogs_analysis_agent routes on the financial route
+== revenue recognition agent ==
+  PASS analyze_revenue_recognition accepts good
+  PASS analyze_revenue_recognition rejects bad recognition_method
+  PASS analyze_revenue_recognition filters out compliance_flag with bad severity
+  PASS analyze_revenue_recognition rejects empty asc_606_notes
+  PASS revenue_recognition_agent → sonnet model
+  PASS revenue_recognition_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes revenue_recognition_runs
+  PASS revenue recognition record org-stamped
+  PASS approveAction writes agent_accuracy for revenue_recognition_agent
+  PASS revenue_recognition_agent routes on the financial route
+== churn risk agent ==
+  PASS analyze_churn_risk accepts good
+  PASS analyze_churn_risk filters out customer with risk_score > 100
+  PASS analyze_churn_risk filters out customer with bad risk_level
+  PASS analyze_churn_risk rejects empty data_period
+  PASS churn_risk_agent → sonnet model
+  PASS churn_risk_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes churn_risk_runs
+  PASS churn risk record org-stamped
+  PASS approveAction writes agent_accuracy for churn_risk_agent
+  PASS churn_risk_agent routes on the financial route
+== customer segmentation agent ==
+  PASS segment_customers accepts good
+  PASS segment_customers rejects bad segmentation_method
+  PASS segment_customers filters out segment with percentage_of_total > 100
+  PASS segment_customers rejects when all segments filtered out (empty result)
+  PASS customer_segmentation_agent → haiku model
+  PASS customer_segmentation_agent run produced a segmentation
+  PASS stub proposal passes validateProposal
+  PASS approve writes customer_segmentation_runs
+  PASS customer segmentation record org-stamped
+  PASS approveAction writes agent_accuracy for customer_segmentation_agent
+  PASS customer_segmentation_agent routes on BOTH the financial and non-financial route
+== sales pipeline agent ==
+  PASS analyze_sales_pipeline accepts good
+  PASS analyze_sales_pipeline filters out deal with probability > 100
+  PASS analyze_sales_pipeline rejects negative total_pipeline_value
+  PASS analyze_sales_pipeline filters out stage_summary with avg_probability > 100
+  PASS sales_pipeline_agent → sonnet model
+  PASS sales_pipeline_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes sales_pipeline_runs
+  PASS sales pipeline record org-stamped
+  PASS approveAction writes agent_accuracy for sales_pipeline_agent
+  PASS sales_pipeline_agent routes on the financial route
+== pricing optimization agent ==
+  PASS analyze_pricing accepts good
+  PASS analyze_pricing rejects bad price_elasticity
+  PASS analyze_pricing rejects bad competitive_position
+  PASS analyze_pricing rejects bad confidence
+  PASS pricing_optimization_agent → opus model
+  PASS pricing_optimization_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes pricing_optimization_runs
+  PASS pricing optimization record org-stamped
+  PASS approveAction writes agent_accuracy for pricing_optimization_agent
+  PASS pricing_optimization_agent routes on the financial route
+== contract analysis agent ==
+  PASS analyze_contracts accepts good
+  PASS analyze_contracts filters out contract with bad contract_type
+  PASS analyze_contracts filters out contract with bad status
+  PASS analyze_contracts rejects missing renewal_risk_summary
+  PASS contract_analysis_agent → sonnet model
+  PASS contract_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes contract_analysis_runs
+  PASS contract analysis record org-stamped
+  PASS approveAction writes agent_accuracy for contract_analysis_agent
+  PASS contract_analysis_agent routes on BOTH the financial and non-financial route
+== marketing roi agent ==
+  PASS analyze_marketing_roi accepts good
+  PASS analyze_marketing_roi rejects empty best_performing_channel
+  PASS analyze_marketing_roi filters out channel with negative spend
+  PASS analyze_marketing_roi rejects when all channels filtered out (empty result)
+  PASS marketing_roi_agent → sonnet model
+  PASS marketing_roi_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes marketing_roi_runs
+  PASS marketing roi record org-stamped
+  PASS approveAction writes agent_accuracy for marketing_roi_agent
+  PASS marketing_roi_agent routes on the financial route
+== fraud detection agent ==
+  PASS detect_fraud_signals accepts good
+  PASS detect_fraud_signals filters out item with bad severity
+  PASS detect_fraud_signals rejects bad risk_level
+  PASS detect_fraud_signals rejects malformed benford_analysis
+  PASS detect_fraud_signals accepts valid benford_analysis
+  PASS fraud_detection_agent → opus model
+  PASS fraud_detection_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes fraud_detection_runs
+  PASS fraud detection record org-stamped
+  PASS approveAction writes agent_accuracy for fraud_detection_agent
+  PASS fraud_detection_agent routes on BOTH the financial and non-financial route
+== concentration risk agent ==
+  PASS analyze_concentration_risk accepts good
+  PASS analyze_concentration_risk filters out dimension with bad risk_level
+  PASS analyze_concentration_risk rejects bad overall_risk_level
+  PASS analyze_concentration_risk rejects hhi > 10000
+  PASS concentration_risk_agent → haiku model
+  PASS concentration_risk_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes concentration_risk_runs
+  PASS concentration risk record org-stamped
+  PASS approveAction writes agent_accuracy for concentration_risk_agent
+  PASS concentration_risk_agent routes on BOTH the financial and non-financial route
+== scenario agent ==
+  PASS model_scenarios accepts good
+  PASS model_scenarios filters out scenario with bad type
+  PASS model_scenarios rejects single scenario
+  PASS model_scenarios rejects missing base_case
+  PASS scenario_agent → opus model
+  PASS scenario_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes scenario_runs
+  PASS scenario record org-stamped
+  PASS approveAction writes agent_accuracy for scenario_agent
+  PASS scenario_agent routes on BOTH the financial and non-financial route
+== liquidity risk agent ==
+  PASS analyze_liquidity_risk accepts good
+  PASS analyze_liquidity_risk rejects bad risk_level
+  PASS analyze_liquidity_risk rejects empty stress_scenarios
+  PASS liquidity_risk_agent → sonnet model
+  PASS liquidity_risk_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes liquidity_risk_runs
+  PASS liquidity risk record org-stamped
+  PASS approveAction writes agent_accuracy for liquidity_risk_agent
+  PASS liquidity_risk_agent routes on the financial route
+== covenant tracking agent ==
+  PASS track_covenants accepts good
+  PASS track_covenants filters out covenant with bad covenant_type
+  PASS track_covenants rejects bad overall_compliance
+  PASS covenant_tracking_agent → sonnet model
+  PASS covenant_tracking_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes covenant_tracking_runs
+  PASS covenant tracking record org-stamped
+  PASS approveAction writes agent_accuracy for covenant_tracking_agent
+  PASS covenant_tracking_agent routes on the financial route
+== document classifier ==
+  PASS classify_document accepts good
+  PASS classify_document rejects bad document_type
+  PASS classify_document rejects bad confidence
+  PASS document_classifier → haiku model
+  PASS document_classifier run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes document_classifier_runs
+  PASS document classifier record org-stamped
+  PASS approveAction writes agent_accuracy for document_classifier
+  PASS document_classifier routes on BOTH the financial and non-financial route, and is FIRST among non-quality-gate agents in the plan
+== schema evolution agent ==
+  PASS detect_schema_evolution accepts good
+  PASS detect_schema_evolution filters out column with bad inferred_type
+  PASS detect_schema_evolution rejects bad compatibility
+  PASS schema_evolution_agent → haiku model
+  PASS schema_evolution_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes schema_evolution_runs
+  PASS schema evolution record org-stamped
+  PASS approveAction writes agent_accuracy for schema_evolution_agent
+  PASS schema_evolution_agent routes on BOTH the financial and non-financial route, fourth position after data_quality_agent, schema_detection_agent, and document_classifier
+== kpi extractor ==
+  PASS extract_kpis accepts good
+  PASS extract_kpis filters out kpi with bad category
+  PASS extract_kpis filters out kpi with bad trend
+  PASS kpi_extractor → haiku model
+  PASS kpi_extractor run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes kpi_extractor_runs
+  PASS kpi extractor record org-stamped
+  PASS approveAction writes agent_accuracy for kpi_extractor
+  PASS kpi_extractor routes on BOTH the financial and non-financial route
+== insight synthesis agent ==
+  PASS synthesize_insights accepts good
+  PASS synthesize_insights filters out key_insight with bad impact
+  PASS synthesize_insights rejects fewer than 3 key_insights
+  PASS insight_synthesis_agent → opus model
+  PASS insight_synthesis_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes insight_synthesis_runs
+  PASS insight synthesis record org-stamped
+  PASS approveAction writes agent_accuracy for insight_synthesis_agent
+  PASS insight_synthesis_agent routes on BOTH the financial and non-financial route, immediately after exec_summarizer
+== conflict detection agent ==
+  PASS detect_conflicts accepts good with no conflicts
+  PASS detect_conflicts filters out conflict with bad type
+  PASS detect_conflicts rejects bad severity
+  PASS conflict_detection_agent → sonnet model
+  PASS conflict_detection_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes conflict_detection_runs
+  PASS conflict detection record org-stamped
+  PASS approveAction writes agent_accuracy for conflict_detection_agent
+  PASS conflict_detection_agent routes on BOTH the financial and non-financial route, immediately after insight_synthesis_agent
+== action priority agent ==
+  PASS prioritize_actions accepts good
+  PASS prioritize_actions filters out action with bad impact
+  PASS prioritize_actions rejects top_3_actions with only 2 items
+  PASS action_priority_agent → haiku model
+  PASS action_priority_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes action_priority_runs
+  PASS action priority record org-stamped
+  PASS approveAction writes agent_accuracy for action_priority_agent
+  PASS action_priority_agent routes on BOTH the financial and non-financial route, and is LAST in the plan
+== column profiler ==
+  PASS profile_columns accepts good
+  PASS profile_columns filters out column with bad data_type
+  PASS profile_columns filters out column with null_percentage > 100
+  PASS column_profiler → haiku model
+  PASS column_profiler run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes column_profiler_runs
+  PASS column profiler record org-stamped
+  PASS approveAction writes agent_accuracy for column_profiler
+  PASS column_profiler routes on BOTH the financial and non-financial route, immediately after schema_evolution_agent
+== data dictionary agent ==
+  PASS build_data_dictionary accepts good
+  PASS build_data_dictionary filters out entry with empty description
+  PASS build_data_dictionary truncates tags to max 5
+  PASS data_dictionary_agent → sonnet model
+  PASS data_dictionary_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes data_dictionary_runs
+  PASS data dictionary record org-stamped
+  PASS approveAction writes agent_accuracy for data_dictionary_agent
+  PASS data_dictionary_agent routes on BOTH the financial and non-financial route, immediately after column_profiler
+== missing data agent ==
+  PASS analyze_missing_data accepts good
+  PASS analyze_missing_data filters out summary with bad missing_pattern
+  PASS analyze_missing_data rejects bad data_usability
+  PASS missing_data_agent → haiku model
+  PASS missing_data_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes missing_data_runs
+  PASS missing data record org-stamped
+  PASS approveAction writes agent_accuracy for missing_data_agent
+  PASS missing_data_agent routes on BOTH the financial and non-financial route, immediately after data_dictionary_agent
+== data privacy agent ==
+  PASS assess_data_privacy accepts good
+  PASS assess_data_privacy filters out field with bad pii_type
+  PASS assess_data_privacy rejects bad risk_level
+  PASS data_privacy_agent → haiku model
+  PASS data_privacy_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes data_privacy_runs
+  PASS data privacy record org-stamped
+  PASS approveAction writes agent_accuracy for data_privacy_agent
+  PASS data_privacy_agent routes on BOTH the financial and non-financial route, immediately after growth_rate_agent
+== transaction classifier ==
+  PASS classify_transactions accepts good
+  PASS classify_transactions filters out transaction with bad category
+  PASS classify_transactions filters out transaction with bad confidence
+  PASS transaction_classifier → haiku model
+  PASS transaction_classifier run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes transaction_classifier_runs
+  PASS transaction classifier record org-stamped
+  PASS approveAction writes agent_accuracy for transaction_classifier
+  PASS transaction_classifier routes on the financial route
+== expense policy agent ==
+  PASS check_expense_policy accepts good
+  PASS check_expense_policy filters out violation with bad violation_type
+  PASS check_expense_policy rejects compliance_rate > 100
+  PASS expense_policy_agent → sonnet model
+  PASS expense_policy_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes expense_policy_runs
+  PASS expense policy record org-stamped
+  PASS approveAction writes agent_accuracy for expense_policy_agent
+  PASS expense_policy_agent routes on the financial route
+== subscription tracker ==
+  PASS track_subscriptions accepts good
+  PASS track_subscriptions filters out subscription with bad status
+  PASS track_subscriptions filters out subscription with bad movement
+  PASS subscription_tracker → haiku model
+  PASS subscription_tracker run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes subscription_tracker_runs
+  PASS subscription tracker record org-stamped
+  PASS approveAction writes agent_accuracy for subscription_tracker
+  PASS subscription_tracker routes on the financial route
+== headcount analytics agent ==
+  PASS analyze_headcount_analytics accepts good
+  PASS analyze_headcount_analytics filters out entry with bad employment_type
+  PASS analyze_headcount_analytics rejects attrition_rate > 100
+  PASS headcount_analytics_agent → haiku model
+  PASS headcount_analytics_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes headcount_analytics_runs
+  PASS headcount analytics record org-stamped
+  PASS approveAction writes agent_accuracy for headcount_analytics_agent
+  PASS headcount_analytics_agent routes on BOTH the financial and non-financial route, immediately after missing_data_agent
+== commission calculator ==
+  PASS calculate_commissions accepts good
+  PASS calculate_commissions filters out commission with empty rep_name
+  PASS calculate_commissions rejects effective_commission_rate > 100
+  PASS commission_calculator → haiku model
+  PASS commission_calculator run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes commission_calculator_runs
+  PASS commission calculator record org-stamped
+  PASS approveAction writes agent_accuracy for commission_calculator
+  PASS commission_calculator routes on the financial route
+== productivity agent ==
+  PASS analyze_productivity accepts good
+  PASS analyze_productivity filters out metric with bad status
+  PASS analyze_productivity rejects overall_productivity_score > 100
+  PASS productivity_agent → sonnet model
+  PASS productivity_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes productivity_runs
+  PASS productivity record org-stamped
+  PASS approveAction writes agent_accuracy for productivity_agent
+  PASS productivity_agent routes on BOTH the financial and non-financial route, immediately after headcount_analytics_agent
+== overtime analysis agent ==
+  PASS analyze_overtime accepts good
+  PASS analyze_overtime rejects negative total_overtime_hours
+  PASS analyze_overtime accepts valid with no chronic employees
+  PASS overtime_analysis_agent → haiku model
+  PASS overtime_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes overtime_analysis_runs
+  PASS overtime analysis record org-stamped
+  PASS approveAction writes agent_accuracy for overtime_analysis_agent
+  PASS overtime_analysis_agent routes on the financial route
+== growth rate agent ==
+  PASS calculate_growth_rates accepts good
+  PASS calculate_growth_rates filters out metric with missing metric_name
+  PASS calculate_growth_rates rejects bad growth_trajectory
+  PASS growth_rate_agent → haiku model
+  PASS growth_rate_agent run produced an analysis
+  PASS stub proposal passes validateProposal
+  PASS approve writes growth_rate_runs
+  PASS growth rate record org-stamped
+  PASS approveAction writes agent_accuracy for growth_rate_agent
+  PASS growth_rate_agent routes on BOTH the financial and non-financial route, immediately after productivity_agent
+== outlier explanation agent ==
+  PASS explain_outliers accepts good
+  PASS explain_outliers rejects negative outlier_count
+  PASS explain_outliers filters out outlier with missing column
+  PASS explain_outliers rejects empty summary
+  PASS outlier_explanation_agent → haiku model
+  PASS outlier_explanation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns explain_outliers
+  PASS approve writes outlier_explanation_runs
+  PASS outlier explanation record org-stamped
+  PASS outlier_explanation_agent routes on BOTH the financial and non-financial route
+== time series decomposition agent ==
+  PASS decompose_time_series accepts good
+  PASS decompose_time_series rejects invalid trend_direction
+  PASS decompose_time_series rejects trend_strength > 100
+  PASS decompose_time_series filters out component with missing period
+  PASS time_series_decomp_agent → sonnet model
+  PASS time_series_decomp_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns decompose_time_series
+  PASS approve writes time_series_decomp_runs
+  PASS time series decomp record org-stamped
+  PASS time_series_decomp_agent routes on BOTH the financial and non-financial route
+== failure risk agent ==
+  PASS assess_failure_risk accepts good
+  PASS assess_failure_risk rejects overall_risk_score > 100
+  PASS assess_failure_risk rejects invalid risk_level
+  PASS assess_failure_risk filters out risk factor with missing factor
+  PASS failure_risk_agent → sonnet model
+  PASS failure_risk_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns assess_failure_risk
+  PASS approve writes failure_risk_runs
+  PASS failure risk record org-stamped
+  PASS failure_risk_agent routes on BOTH the financial and non-financial route
+== unit economics agent ==
+  PASS analyze_unit_economics accepts good
+  PASS analyze_unit_economics rejects gross_margin_pct > 100
+  PASS analyze_unit_economics rejects churn_rate_monthly > 100
+  PASS analyze_unit_economics filters out by_channel item with negative cac
+  PASS unit_economics_agent → sonnet model
+  PASS unit_economics_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_unit_economics
+  PASS approve writes unit_economics_runs
+  PASS unit economics record org-stamped
+  PASS unit_economics_agent routes on the financial route
+== valuation agent ==
+  PASS estimate_valuation accepts good
+  PASS estimate_valuation rejects invalid primary_method
+  PASS estimate_valuation rejects estimated_valuation_high < estimated_valuation_low
+  PASS estimate_valuation rejects empty valuation_notes
+  PASS valuation_agent → opus model
+  PASS valuation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns estimate_valuation
+  PASS approve writes valuation_runs
+  PASS valuation record org-stamped
+  PASS valuation_agent routes on the financial route
+== cap table agent ==
+  PASS analyze_cap_table accepts good
+  PASS analyze_cap_table rejects option_pool_pct > 100
+  PASS analyze_cap_table rejects fully_diluted_shares < total_shares_outstanding
+  PASS analyze_cap_table filters out holder with ownership_pct > 100
+  PASS cap_table_agent → sonnet model
+  PASS cap_table_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_cap_table
+  PASS approve writes cap_table_runs
+  PASS cap table record org-stamped
+  PASS cap_table_agent routes on the financial route
+== lease analysis agent ==
+  PASS analyze_leases accepts good
+  PASS analyze_leases rejects negative total_lease_liability
+  PASS analyze_leases filters out lease with invalid lease_type
+  PASS analyze_leases filters out lease with negative monthly_payment
+  PASS lease_analysis_agent → sonnet model
+  PASS lease_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_leases
+  PASS approve writes lease_analysis_runs
+  PASS lease analysis record org-stamped
+  PASS lease_analysis_agent routes on the financial route
+== asset register agent ==
+  PASS analyze_asset_register accepts good
+  PASS analyze_asset_register filters out asset with invalid asset_class
+  PASS analyze_asset_register filters out asset with invalid depreciation_method
+  PASS analyze_asset_register rejects negative total_gross_value
+  PASS asset_register_agent → haiku model
+  PASS asset_register_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_asset_register
+  PASS approve writes asset_register_runs
+  PASS asset register record org-stamped
+  PASS asset_register_agent routes on the financial route
+== price volume mix agent ==
+  PASS analyze_price_volume_mix accepts good
+  PASS analyze_price_volume_mix rejects invalid primary_driver
+  PASS analyze_price_volume_mix filters out breakdown item with missing segment
+  PASS analyze_price_volume_mix accepts valid with primary_driver balanced
+  PASS price_volume_mix_agent → sonnet model
+  PASS price_volume_mix_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_price_volume_mix
+  PASS approve writes price_volume_mix_runs
+  PASS price volume mix record org-stamped
+  PASS price_volume_mix_agent routes on the financial route
+== bridge analysis agent ==
+  PASS build_bridge_analysis accepts good
+  PASS build_bridge_analysis rejects invalid bridge_type
+  PASS build_bridge_analysis filters out step with invalid type
+  PASS build_bridge_analysis rejects when fewer than 2 steps remain after filtering
+  PASS bridge_analysis_agent → sonnet model
+  PASS bridge_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns build_bridge_analysis
+  PASS approve writes bridge_analysis_runs
+  PASS bridge analysis record org-stamped
+  PASS bridge_analysis_agent routes on the financial route
+== run rate agent ==
+  PASS calculate_run_rate accepts good
+  PASS calculate_run_rate rejects invalid annualization_method
+  PASS calculate_run_rate rejects months_of_data_used < 1
+  PASS calculate_run_rate filters out adjustment with invalid type
+  PASS run_rate_agent → haiku model
+  PASS run_rate_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns calculate_run_rate
+  PASS approve writes run_rate_runs
+  PASS run rate record org-stamped
+  PASS run_rate_agent routes on BOTH the financial and non-financial route
+== spend analysis agent ==
+  PASS analyze_spend accepts good
+  PASS analyze_spend rejects negative total_spend
+  PASS analyze_spend filters out category with invalid status
+  PASS analyze_spend filters out top_opportunities item with invalid effort
+  PASS spend_analysis_agent → sonnet model
+  PASS spend_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_spend
+  PASS approve writes spend_analysis_runs
+  PASS spend analysis record org-stamped
+  PASS spend_analysis_agent routes on BOTH the financial and non-financial route
+== discount analysis agent ==
+  PASS analyze_discounts accepts good
+  PASS analyze_discounts rejects average_discount_percentage > 100
+  PASS analyze_discounts filters out item with discount_percentage > 100
+  PASS analyze_discounts filters out item with missing deal_ref
+  PASS discount_analysis_agent → haiku model
+  PASS discount_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_discounts
+  PASS approve writes discount_analysis_runs
+  PASS discount analysis record org-stamped
+  PASS discount_analysis_agent routes on the financial route
+== maverick spend agent ==
+  PASS detect_maverick_spend accepts good
+  PASS detect_maverick_spend rejects maverick_percentage > 100
+  PASS detect_maverick_spend filters out transaction with invalid maverick_reason
+  PASS detect_maverick_spend filters out transaction with invalid severity
+  PASS maverick_spend_agent → haiku model
+  PASS maverick_spend_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns detect_maverick_spend
+  PASS approve writes maverick_spend_runs
+  PASS maverick spend record org-stamped
+  PASS maverick_spend_agent routes on the financial route
+== collections priority agent ==
+  PASS prioritize_collections accepts good
+  PASS prioritize_collections rejects negative total_outstanding
+  PASS prioritize_collections filters out account with invalid priority
+  PASS prioritize_collections filters out account with invalid recommended_action
+  PASS collections_priority_agent → haiku model
+  PASS collections_priority_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns prioritize_collections
+  PASS approve writes collections_priority_runs
+  PASS collections priority record org-stamped
+  PASS collections_priority_agent routes on the financial route
+== bad debt provision agent ==
+  PASS calculate_bad_debt_provision accepts good
+  PASS calculate_bad_debt_provision rejects invalid provision_methodology
+  PASS calculate_bad_debt_provision filters out aging item with invalid bucket
+  PASS calculate_bad_debt_provision rejects empty notes
+  PASS bad_debt_provision_agent → haiku model
+  PASS bad_debt_provision_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns calculate_bad_debt_provision
+  PASS approve writes bad_debt_provision_runs
+  PASS bad debt provision record org-stamped
+  PASS bad_debt_provision_agent routes on the financial route
+== credit scoring agent ==
+  PASS score_credit_risk accepts good
+  PASS score_credit_risk rejects negative high_risk_exposure
+  PASS score_credit_risk filters out customer with invalid risk_grade
+  PASS score_credit_risk filters out customer with credit_score > 100
+  PASS credit_scoring_agent → sonnet model
+  PASS credit_scoring_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns score_credit_risk
+  PASS approve writes credit_scoring_runs
+  PASS credit scoring record org-stamped
+  PASS credit_scoring_agent routes on the financial route
+== fx exposure agent ==
+  PASS analyze_fx_exposure accepts good
+  PASS analyze_fx_exposure rejects empty functional_currency
+  PASS analyze_fx_exposure filters out exposure with invalid exposure_type
+  PASS analyze_fx_exposure filters out exposure with invalid exposure_direction
+  PASS fx_exposure_agent → sonnet model
+  PASS fx_exposure_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_fx_exposure
+  PASS approve writes fx_exposure_runs
+  PASS fx exposure record org-stamped
+  PASS fx_exposure_agent routes on the financial route
+== investor memo agent ==
+  PASS draft_investor_memo accepts good
+  PASS draft_investor_memo rejects empty memo_title
+  PASS draft_investor_memo rejects empty investment_thesis
+  PASS draft_investor_memo filters out key_metrics item with invalid trend
+  PASS investor_memo_agent → sonnet model
+  PASS investor_memo_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns draft_investor_memo
+  PASS approve writes investor_memo_runs
+  PASS investor memo record org-stamped
+  PASS investor_memo_agent routes on BOTH the financial and non-financial route
+== okr tracker agent ==
+  PASS track_okrs accepts good
+  PASS track_okrs filters out objective with invalid objective_status
+  PASS track_okrs filters out key_result with invalid status
+  PASS track_okrs rejects negative on_track_count
+  PASS okr_tracker_agent → haiku model
+  PASS okr_tracker_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns track_okrs
+  PASS approve writes okr_tracker_runs
+  PASS okr tracker record org-stamped
+  PASS okr_tracker_agent routes on BOTH the financial and non-financial route
+== swot agent ==
+  PASS conduct_swot accepts good
+  PASS conduct_swot rejects empty overall_assessment
+  PASS conduct_swot filters out strengths item with invalid impact
+  PASS conduct_swot filters out strategic_priorities item with invalid type
+  PASS swot_agent → sonnet model
+  PASS swot_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns conduct_swot
+  PASS approve writes swot_runs
+  PASS swot record org-stamped
+  PASS swot_agent routes on BOTH the financial and non-financial route
+== query builder agent ==
+  PASS build_queries accepts good
+  PASS build_queries filters out suggested_queries item with invalid query_type
+  PASS build_queries rejects fewer than 3 valid suggested_queries after filtering
+  PASS build_queries filters out natural_language_questions item with invalid answer_type
+  PASS query_builder_agent → sonnet model
+  PASS query_builder_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns build_queries
+  PASS approve writes query_builder_runs
+  PASS query builder record org-stamped
+  PASS query_builder_agent routes on BOTH the financial and non-financial route
+== esg reporting agent ==
+  PASS generate_esg_report accepts good
+  PASS generate_esg_report rejects invalid reporting_framework
+  PASS generate_esg_report rejects esg_score > 100
+  PASS generate_esg_report filters out environmental_metrics item with invalid status
+  PASS esg_reporting_agent → sonnet model
+  PASS esg_reporting_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns generate_esg_report
+  PASS approve writes esg_reporting_runs
+  PASS esg reporting record org-stamped
+  PASS esg_reporting_agent routes on BOTH the financial and non-financial route
+== seasonality agent ==
+  PASS analyze_seasonality accepts good
+  PASS analyze_seasonality rejects invalid seasonality_strength
+  PASS analyze_seasonality filters out seasonal_indices item with index <= 0
+  PASS analyze_seasonality rejects empty metric_name
+  PASS seasonality_agent → sonnet model
+  PASS seasonality_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_seasonality
+  PASS approve writes seasonality_runs
+  PASS seasonality record org-stamped
+  PASS seasonality_agent routes on BOTH the financial and non-financial route
+== benchmark agent ==
+  PASS benchmark_performance accepts good
+  PASS benchmark_performance rejects invalid overall_performance
+  PASS benchmark_performance rejects invalid company_stage
+  PASS benchmark_performance filters out benchmarks item with invalid performance
+  PASS benchmark_agent → sonnet model
+  PASS benchmark_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns benchmark_performance
+  PASS approve writes benchmark_runs
+  PASS benchmark record org-stamped
+  PASS benchmark_agent routes on BOTH the financial and non-financial route
+== consolidation agent ==
+  PASS consolidate_entities accepts good
+  PASS consolidate_entities rejects single entity
+  PASS consolidate_entities filters out entity with invalid entity_type
+  PASS consolidation_agent → opus model
+  PASS consolidation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns consolidate_entities
+  PASS approve writes consolidation_runs
+  PASS consolidation record org-stamped
+  PASS consolidation_agent routes on the financial route
+== ecommerce agent ==
+  PASS analyze_ecommerce accepts good
+  PASS analyze_ecommerce filters out channel_breakdown item with bad channel
+  PASS analyze_ecommerce rejects conversion_rate > 100
+  PASS ecommerce_agent → sonnet model
+  PASS ecommerce_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_ecommerce
+  PASS approve writes ecommerce_runs
+  PASS ecommerce record org-stamped
+  PASS ecommerce_agent routes on the non-financial route
+== professional services agent ==
+  PASS analyze_professional_services accepts good
+  PASS analyze_professional_services filters out project with bad status
+  PASS analyze_professional_services rejects utilization_rate > 100
+  PASS professional_services_agent → sonnet model
+  PASS professional_services_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_professional_services
+  PASS approve writes professional_services_runs
+  PASS professional services record org-stamped
+  PASS professional_services_agent routes on BOTH the financial and non-financial route
+== nonprofit agent ==
+  PASS analyze_nonprofit_financials accepts good
+  PASS analyze_nonprofit_financials filters out revenue_by_source item with bad source
+  PASS analyze_nonprofit_financials filters out grant with bad status
+  PASS nonprofit_agent → sonnet model
+  PASS nonprofit_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_nonprofit_financials
+  PASS approve writes nonprofit_runs
+  PASS nonprofit record org-stamped
+  PASS nonprofit_agent routes on the financial route
+== healthcare agent ==
+  PASS analyze_healthcare_financials accepts good
+  PASS analyze_healthcare_financials filters out payor_mix item with bad payor
+  PASS analyze_healthcare_financials rejects denial_rate > 100
+  PASS healthcare_agent → sonnet model
+  PASS healthcare_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_healthcare_financials
+  PASS approve writes healthcare_runs
+  PASS healthcare record org-stamped
+  PASS healthcare_agent routes on the financial route
+== legal billing agent ==
+  PASS analyze_legal_billing accepts good
+  PASS analyze_legal_billing filters out timekeeper with bad role
+  PASS analyze_legal_billing filters out matter with bad status
+  PASS legal_billing_agent → haiku model
+  PASS legal_billing_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_legal_billing
+  PASS approve writes legal_billing_runs
+  PASS legal billing record org-stamped
+  PASS legal_billing_agent routes on the financial route
+== hospitality agent ==
+  PASS analyze_hospitality_financials accepts good
+  PASS analyze_hospitality_financials filters out channel_mix item with bad channel
+  PASS analyze_hospitality_financials rejects occupancy_rate > 100
+  PASS hospitality_agent → haiku model
+  PASS hospitality_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_hospitality_financials
+  PASS approve writes hospitality_runs
+  PASS hospitality record org-stamped
+  PASS hospitality_agent routes on the financial route
+== retail agent ==
+  PASS analyze_retail_performance accepts good
+  PASS analyze_retail_performance rejects sell_through_rate > 100
+  PASS analyze_retail_performance filters out store with rank < 1
+  PASS retail_agent → sonnet model
+  PASS retail_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_retail_performance
+  PASS approve writes retail_runs
+  PASS retail record org-stamped
+  PASS retail_agent routes on the non-financial route
+== construction agent ==
+  PASS analyze_construction_financials accepts good
+  PASS analyze_construction_financials filters out project with bad status
+  PASS analyze_construction_financials filters out project with percent_complete > 100
+  PASS construction_agent → sonnet model
+  PASS construction_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_construction_financials
+  PASS approve writes construction_runs
+  PASS construction record org-stamped
+  PASS construction_agent routes on the financial route
+== revenue quality agent ==
+  PASS analyze_revenue_quality accepts good
+  PASS analyze_revenue_quality rejects recurring_revenue_pct > 100
+  PASS analyze_revenue_quality rejects top_customer_concentration_pct > 100
+  PASS analyze_revenue_quality filters out revenue_by_type item with negative amount
+  PASS revenue_quality_agent → sonnet model
+  PASS revenue_quality_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_revenue_quality
+  PASS approve writes revenue_quality_runs
+  PASS revenue quality record org-stamped
+  PASS revenue_quality_agent routes on the financial route
+== cohort analysis agent ==
+  PASS analyze_customer_cohorts accepts good
+  PASS analyze_customer_cohorts rejects bad cohort_type
+  PASS analyze_customer_cohorts rejects bad trend value
+  PASS analyze_customer_cohorts filters out cohort item with month_1 > 100
+  PASS cohort_analysis_agent → sonnet model
+  PASS cohort_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_customer_cohorts
+  PASS approve writes customer_cohort_runs
+  PASS cohort analysis record org-stamped
+  PASS cohort_analysis_agent routes on the financial route
+== variance analysis agent ==
+  PASS analyze_variances accepts good
+  PASS analyze_variances filters out variance item with bad direction
+  PASS analyze_variances rejects empty period
+  PASS analyze_variances rejects negative favorable_count
+  PASS variance_analysis_agent → sonnet model
+  PASS variance_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_variances
+  PASS approve writes variance_analysis_runs
+  PASS variance analysis record org-stamped
+  PASS variance_analysis_agent routes on the financial route
+== cash flow forecast agent ==
+  PASS forecast_cash_flow accepts good
+  PASS forecast_cash_flow rejects bad cash_constraint_risk
+  PASS forecast_cash_flow filters out weekly_forecast item with negative inflows
+  PASS forecast_cash_flow rejects empty weekly_forecast array
+  PASS cash_flow_forecast_agent → opus model
+  PASS cash_flow_forecast_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns forecast_cash_flow
+  PASS approve writes cash_flow_forecast_runs
+  PASS cash flow forecast record org-stamped
+  PASS cash_flow_forecast_agent routes on the financial route
+== expense forecast agent ==
+  PASS forecast_expenses accepts good
+  PASS forecast_expenses rejects bad confidence value
+  PASS forecast_expenses rejects missing fixed_vs_variable object
+  PASS forecast_expenses filters out forecast_period item with negative forecast_amount
+  PASS expense_forecast_agent → sonnet model
+  PASS expense_forecast_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns forecast_expenses
+  PASS approve writes expense_forecast_runs
+  PASS expense forecast record org-stamped
+  PASS expense_forecast_agent routes on the financial route
+== headcount analysis agent ==
+  PASS analyze_headcount accepts good
+  PASS analyze_headcount rejects compensation_revenue_pct > 100
+  PASS analyze_headcount rejects attrition_rate > 100
+  PASS analyze_headcount filters out by_department item with negative total_cost
+  PASS headcount_analysis_agent → haiku model
+  PASS headcount_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_headcount
+  PASS approve writes headcount_analysis_runs
+  PASS headcount analysis record org-stamped
+  PASS headcount_analysis_agent routes on BOTH the financial and non-financial route
+== debt covenant agent ==
+  PASS analyze_debt_covenants accepts good
+  PASS analyze_debt_covenants rejects bad overall_status
+  PASS analyze_debt_covenants filters out covenant item with bad status
+  PASS analyze_debt_covenants rejects negative breach_count
+  PASS debt_covenant_agent → opus model
+  PASS debt_covenant_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_debt_covenants
+  PASS approve writes debt_covenant_runs
+  PASS debt covenant record org-stamped
+  PASS debt_covenant_agent routes on the financial route
+== tax provision agent ==
+  PASS analyze_tax_provision accepts good
+  PASS analyze_tax_provision rejects statutory_rate > 100
+  PASS analyze_tax_provision filters out deferred_tax_asset item with negative amount
+  PASS analyze_tax_provision rejects empty period
+  PASS tax_provision_agent → opus model
+  PASS tax_provision_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_tax_provision
+  PASS approve writes tax_provision_runs
+  PASS tax provision record org-stamped
+  PASS tax_provision_agent routes on the financial route
+== collections agent ==
+  PASS manage_collections accepts good
+  PASS manage_collections rejects overdue_pct > 100
+  PASS manage_collections filters out priority_account item with bad priority
+  PASS manage_collections filters out aging_summary item with negative balance
+  PASS collections_agent → haiku model
+  PASS collections_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns manage_collections
+  PASS approve writes collections_runs
+  PASS collections record org-stamped
+  PASS collections_agent routes on the financial route
+== competitive benchmarking agent ==
+  PASS benchmark_competitive accepts good
+  PASS benchmark_competitive rejects bad performance_quartile
+  PASS benchmark_competitive filters out benchmark_comparison item with bad assessment
+  PASS benchmark_competitive rejects empty industry_context
+  PASS competitive_benchmarking_agent → sonnet model
+  PASS competitive_benchmarking_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns benchmark_competitive
+  PASS approve writes competitive_benchmarking_runs
+  PASS competitive benchmarking record org-stamped
+  PASS competitive_benchmarking_agent routes on BOTH the financial and non-financial route
+== data quality agent ==
+  PASS evaluate_data_quality accepts good
+  PASS evaluate_data_quality rejects overall_score > 100
+  PASS evaluate_data_quality rejects overall_score < 0
+  PASS evaluate_data_quality filters out issue item with bad severity
+  PASS data_quality_agent → haiku model
+  PASS data_quality_agent run produced an assessment
+  PASS stub proposal passes validateProposal and returns evaluate_data_quality
+  PASS approve writes data_quality_runs
+  PASS data quality record org-stamped
+  PASS data_quality_agent routes on BOTH the financial and non-financial route, and is FIRST in the plan
+== schema detection agent ==
+  PASS detect_schema accepts good
+  PASS detect_schema rejects bad detected_schema_type
+  PASS detect_schema rejects bad confidence
+  PASS detect_schema filters out alternative_schema_type item with bad confidence
+  PASS schema_detection_agent → haiku model
+  PASS schema_detection_agent run produced a classification
+  PASS stub proposal passes validateProposal and returns detect_schema
+  PASS approve writes schema_detection_runs
+  PASS schema detection record org-stamped
+  PASS schema_detection_agent routes on BOTH the financial and non-financial route, and is SECOND in the plan after data_quality_agent
+== board narrative agent ==
+  PASS draft_board_narrative accepts good
+  PASS draft_board_narrative rejects empty executive_summary
+  PASS draft_board_narrative rejects bad tone
+  PASS draft_board_narrative rejects financial_highlights with fewer than 3 items
+  PASS board_narrative_agent → opus model
+  PASS board_narrative_agent run produced a narrative
+  PASS stub proposal passes validateProposal and returns draft_board_narrative
+  PASS approve writes board_narrative_runs
+  PASS board narrative record org-stamped
+  PASS board_narrative_agent routes on the financial route
+== investor update agent ==
+  PASS draft_investor_update accepts good
+  PASS draft_investor_update rejects empty subject_line
+  PASS draft_investor_update rejects wins with fewer than 2 items
+  PASS draft_investor_update rejects empty challenges array
+  PASS investor_update_agent → opus model
+  PASS investor_update_agent run produced an update
+  PASS stub proposal passes validateProposal and returns draft_investor_update
+  PASS approve writes investor_update_runs
+  PASS investor update record org-stamped
+  PASS investor_update_agent routes on the financial route
+== orchestrator agent ==
+  PASS orchestrate_agents accepts good
+  PASS orchestrate_agents rejects empty data_summary
+  PASS orchestrate_agents rejects empty recommended_agents array
+  PASS orchestrate_agents filters out recommended_agent item with bad priority
+  PASS orchestrator_agent → sonnet model
+  PASS orchestrator_agent run produced a plan
+  PASS stub proposal passes validateProposal and returns orchestrate_agents
+  PASS approve writes orchestrator_runs
+  PASS orchestrator record org-stamped
+  PASS orchestrator_agent routes on BOTH the financial and non-financial route, near the end before exec_summarizer
+== confidence reviewer agent ==
+  PASS review_confidence accepts good
+  PASS review_confidence rejects bad overall_confidence
+  PASS review_confidence rejects bad approval_recommendation
+  PASS review_confidence filters out reviewed_proposal item with bad confidence_assessment
+  PASS confidence_reviewer_agent → sonnet model
+  PASS confidence_reviewer_agent run produced a review
+  PASS stub proposal passes validateProposal and returns review_confidence
+  PASS approve writes confidence_reviewer_runs
+  PASS confidence reviewer record org-stamped
+  PASS confidence_reviewer_agent routes on BOTH the financial and non-financial route, near the end after orchestrator_agent, before exec_summarizer
+== data reshape agent ==
+  PASS reshape_data accepts good
+  PASS reshape_data rejects bad source_shape
+  PASS reshape_data rejects bad target_shape
+  PASS reshape_data rejects empty id_columns array
+  PASS data_reshape_agent → haiku model
+  PASS data_reshape_agent run produced a reshape plan
+  PASS stub proposal passes validateProposal and returns reshape_data
+  PASS approve writes data_reshape_runs
+  PASS data reshape record org-stamped
+  PASS data_reshape_agent routes on BOTH the financial and non-financial route
+== date normalization agent ==
+  PASS normalize_dates accepts good
+  PASS normalize_dates rejects bad target_format
+  PASS normalize_dates filters out detected_formats item with empty column_name
+  PASS normalize_dates filters out normalization_map item with empty original_format
+  PASS date_normalization_agent → haiku model
+  PASS date_normalization_agent run produced a normalization plan
+  PASS stub proposal passes validateProposal and returns normalize_dates
+  PASS approve writes date_normalization_runs
+  PASS date normalization record org-stamped
+  PASS date_normalization_agent routes on BOTH the financial and non-financial route
+== string normalization agent ==
+  PASS normalize_strings accepts good
+  PASS normalize_strings filters out case_standardization item with bad recommended_case
+  PASS normalize_strings filters out entity_dedup_candidates item with similarity_score > 1
+  PASS normalize_strings filters out entity_dedup_candidates item with similarity_score < 0
+  PASS string_normalization_agent → haiku model
+  PASS string_normalization_agent run produced a normalization plan
+  PASS stub proposal passes validateProposal and returns normalize_strings
+  PASS approve writes string_normalization_runs
+  PASS string normalization record org-stamped
+  PASS string_normalization_agent routes on BOTH the financial and non-financial route
+== currency normalization agent ==
+  PASS normalize_currency accepts good
+  PASS normalize_currency rejects empty base_currency
+  PASS normalize_currency rejects invalid conversion_needed type
+  PASS normalize_currency filters out currencies_detected item with empty currency_code
+  PASS currency_normalization_agent → haiku model
+  PASS currency_normalization_agent run produced a normalization plan
+  PASS stub proposal passes validateProposal and returns normalize_currency
+  PASS approve writes currency_normalization_runs
+  PASS currency normalization record org-stamped
+  PASS currency_normalization_agent routes on BOTH the financial and non-financial route
+== join quality agent ==
+  PASS assess_join_quality accepts good
+  PASS assess_join_quality rejects bad join_type_recommendation
+  PASS assess_join_quality rejects bad match_quality
+  PASS assess_join_quality filters out recommended_join_keys item with empty left_column
+  PASS join_quality_agent → sonnet model
+  PASS join_quality_agent run produced an assessment
+  PASS stub proposal passes validateProposal and returns assess_join_quality
+  PASS approve writes join_quality_runs
+  PASS join quality record org-stamped
+  PASS join_quality_agent routes on BOTH the financial and non-financial route
+== data validation rules agent ==
+  PASS validate_data_rules accepts good
+  PASS validate_data_rules rejects bad data_readiness
+  PASS validate_data_rules rejects invalid validation_summary object
+  PASS validate_data_rules filters out rules_generated item with empty rule_id
+  PASS data_validation_rules_agent → sonnet model
+  PASS data_validation_rules_agent run produced a validation
+  PASS stub proposal passes validateProposal and returns validate_data_rules
+  PASS approve writes data_validation_rules_runs
+  PASS data validation rules record org-stamped
+  PASS data_validation_rules_agent routes on BOTH the financial and non-financial route
+== distribution agent ==
+  PASS analyze_distribution accepts good
+  PASS analyze_distribution rejects empty columns_analyzed array
+  PASS analyze_distribution filters out distribution_summary item with bad distribution_shape
+  PASS analyze_distribution filters out columns_analyzed item with empty column_name
+  PASS distribution_agent → haiku model
+  PASS distribution_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_distribution
+  PASS approve writes distribution_runs
+  PASS distribution record org-stamped
+  PASS distribution_agent routes on BOTH the financial and non-financial route
+== correlation agent ==
+  PASS analyze_correlation accepts good
+  PASS analyze_correlation rejects invalid columns_included
+  PASS analyze_correlation filters out correlation_pairs item with pearson_r > 1
+  PASS analyze_correlation filters out correlation_pairs item with pearson_r < -1
+  PASS correlation_agent → sonnet model
+  PASS correlation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_correlation
+  PASS approve writes correlation_runs
+  PASS correlation record org-stamped
+  PASS correlation_agent routes on BOTH the financial and non-financial route
+== regression agent ==
+  PASS analyze_regression accepts good
+  PASS analyze_regression rejects empty dependent_variable
+  PASS analyze_regression rejects bad regression_type
+  PASS analyze_regression rejects model_fit with r_squared > 1
+  PASS regression_agent → sonnet model
+  PASS regression_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_regression
+  PASS approve writes regression_runs
+  PASS regression record org-stamped
+  PASS regression_agent routes on BOTH the financial and non-financial route
+== hypothesis testing agent ==
+  PASS test_hypothesis accepts good
+  PASS test_hypothesis rejects empty tests_performed array
+  PASS test_hypothesis filters out test item with bad test_type
+  PASS test_hypothesis filters out test item with p_value > 1
+  PASS hypothesis_testing_agent → sonnet model
+  PASS hypothesis_testing_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns test_hypothesis
+  PASS approve writes hypothesis_testing_runs
+  PASS hypothesis testing record org-stamped
+  PASS hypothesis_testing_agent routes on BOTH the financial and non-financial route
+== pareto agent ==
+  PASS analyze_pareto accepts good
+  PASS analyze_pareto rejects empty analysis_dimension
+  PASS analyze_pareto rejects empty pareto_entries array
+  PASS analyze_pareto rejects concentration_score > 100
+  PASS pareto_agent → haiku model
+  PASS pareto_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_pareto
+  PASS approve writes pareto_runs
+  PASS pareto record org-stamped
+  PASS pareto_agent routes on BOTH the financial and non-financial route
+== clustering agent ==
+  PASS cluster_data accepts good
+  PASS cluster_data rejects cluster_count < 2
+  PASS cluster_data rejects cluster_count > 10
+  PASS cluster_data rejects bad cluster_quality
+  PASS clustering_agent → sonnet model
+  PASS clustering_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns cluster_data
+  PASS approve writes clustering_runs
+  PASS clustering record org-stamped
+  PASS clustering_agent routes on BOTH the financial and non-financial route
+== funnel analysis agent ==
+  PASS analyze_funnel accepts good
+  PASS analyze_funnel rejects funnel_stages with fewer than 2 items
+  PASS analyze_funnel rejects overall_conversion_rate > 100
+  PASS analyze_funnel rejects empty funnel_name
+  PASS funnel_analysis_agent → sonnet model
+  PASS funnel_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_funnel
+  PASS approve writes funnel_analysis_runs
+  PASS funnel analysis record org-stamped
+  PASS funnel_analysis_agent routes on BOTH the financial and non-financial route
+== retention analysis agent ==
+  PASS analyze_retention accepts good
+  PASS analyze_retention rejects bad cohort_type
+  PASS analyze_retention rejects bad retention_curve_shape
+  PASS analyze_retention filters out cohorts item with initial_count < 1
+  PASS retention_analysis_agent → sonnet model
+  PASS retention_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_retention
+  PASS approve writes retention_analysis_runs
+  PASS retention analysis record org-stamped
+  PASS retention_analysis_agent routes on BOTH the financial and non-financial route
+== ab test agent ==
+  PASS analyze_ab_test accepts good
+  PASS analyze_ab_test rejects variants with fewer than 2 items
+  PASS analyze_ab_test rejects bad winner
+  PASS analyze_ab_test rejects statistical_result with p_value > 1
+  PASS ab_test_agent → sonnet model
+  PASS ab_test_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_ab_test
+  PASS approve writes ab_test_runs
+  PASS ab test record org-stamped
+  PASS ab_test_agent routes on BOTH the financial and non-financial route
+== nps analysis agent ==
+  PASS analyze_nps accepts good
+  PASS analyze_nps rejects nps_score > 100
+  PASS analyze_nps rejects nps_score < -100
+  PASS analyze_nps rejects total_responses < 1
+  PASS nps_analysis_agent → haiku model
+  PASS nps_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_nps
+  PASS approve writes nps_analysis_runs
+  PASS nps analysis record org-stamped
+  PASS nps_analysis_agent routes on BOTH the financial and non-financial route
+== feature adoption agent ==
+  PASS analyze_feature_adoption accepts good
+  PASS analyze_feature_adoption rejects empty features_analyzed array
+  PASS analyze_feature_adoption filters out features_analyzed item with total_users < 1
+  PASS analyze_feature_adoption filters out correlation_with_retention item with bad retention_signal_strength
+  PASS feature_adoption_agent → haiku model
+  PASS feature_adoption_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_feature_adoption
+  PASS approve writes feature_adoption_runs
+  PASS feature adoption record org-stamped
+  PASS feature_adoption_agent routes on BOTH the financial and non-financial route
+== customer health score agent ==
+  PASS score_customer_health accepts good
+  PASS score_customer_health rejects empty scored_customers array
+  PASS score_customer_health filters out scored_customers item with health_score > 100
+  PASS score_customer_health rejects bad model_confidence
+  PASS customer_health_score_agent → sonnet model
+  PASS customer_health_score_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns score_customer_health
+  PASS approve writes customer_health_score_runs
+  PASS customer health score record org-stamped
+  PASS customer_health_score_agent routes on BOTH the financial and non-financial route
+== quota attainment agent ==
+  PASS analyze_quota_attainment accepts good
+  PASS analyze_quota_attainment rejects empty period
+  PASS analyze_quota_attainment rejects empty rep_attainments array
+  PASS analyze_quota_attainment rejects bad quota_setting_assessment
+  PASS quota_attainment_agent → haiku model
+  PASS quota_attainment_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_quota_attainment
+  PASS approve writes quota_attainment_runs
+  PASS quota attainment record org-stamped
+  PASS quota_attainment_agent routes on the financial route
+== win loss agent ==
+  PASS analyze_win_loss accepts good
+  PASS analyze_win_loss rejects win_rate_pct > 100
+  PASS analyze_win_loss rejects empty win_factors array
+  PASS analyze_win_loss filters out win_factors item with bad impact
+  PASS win_loss_agent → sonnet model
+  PASS win_loss_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_win_loss
+  PASS approve writes win_loss_runs
+  PASS win loss record org-stamped
+  PASS win_loss_agent routes on the financial route
+== forecast accuracy agent ==
+  PASS analyze_forecast_accuracy accepts good
+  PASS analyze_forecast_accuracy rejects empty period
+  PASS analyze_forecast_accuracy rejects bad bias_direction
+  PASS analyze_forecast_accuracy filters out forecast_vs_actual item with empty label
+  PASS forecast_accuracy_agent → sonnet model
+  PASS forecast_accuracy_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_forecast_accuracy
+  PASS approve writes forecast_accuracy_runs
+  PASS forecast accuracy record org-stamped
+  PASS forecast_accuracy_agent routes on the financial route
+== attribution agent ==
+  PASS analyze_attribution accepts good
+  PASS analyze_attribution rejects bad attribution_model
+  PASS analyze_attribution rejects empty channel_attribution array
+  PASS analyze_attribution filters out channel_attribution item with empty channel
+  PASS attribution_agent → sonnet model
+  PASS attribution_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_attribution
+  PASS approve writes attribution_runs
+  PASS attribution record org-stamped
+  PASS attribution_agent routes on the financial route
+== price elasticity agent ==
+  PASS analyze_price_elasticity accepts good
+  PASS analyze_price_elasticity rejects empty product_analyzed
+  PASS analyze_price_elasticity rejects fewer than 2 price_points
+  PASS analyze_price_elasticity rejects bad elasticity_classification
+  PASS price_elasticity_agent → sonnet model
+  PASS price_elasticity_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_price_elasticity
+  PASS approve writes price_elasticity_runs
+  PASS price elasticity record org-stamped
+  PASS price_elasticity_agent routes on the financial route
+== expansion opportunity agent ==
+  PASS analyze_expansion_opportunity accepts good
+  PASS analyze_expansion_opportunity rejects empty opportunity_accounts array
+  PASS analyze_expansion_opportunity filters out opportunity_accounts item with bad expansion_type
+  PASS analyze_expansion_opportunity rejects empty prioritized_plays array
+  PASS expansion_opportunity_agent → sonnet model
+  PASS expansion_opportunity_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_expansion_opportunity
+  PASS approve writes expansion_opportunity_runs
+  PASS expansion opportunity record org-stamped
+  PASS expansion_opportunity_agent routes on BOTH the financial and non-financial route
+== attrition analysis agent ==
+  PASS analyze_attrition accepts good
+  PASS analyze_attrition rejects voluntary_attrition_rate_pct > 100
+  PASS analyze_attrition rejects empty period
+  PASS analyze_attrition filters out flight_risk_flags item with bad severity
+  PASS attrition_analysis_agent → sonnet model
+  PASS attrition_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_attrition
+  PASS approve writes attrition_analysis_runs
+  PASS attrition analysis record org-stamped
+  PASS attrition_analysis_agent routes on BOTH the financial and non-financial route
+== headcount planning agent ==
+  PASS plan_headcount accepts good
+  PASS plan_headcount rejects empty department_plans array
+  PASS plan_headcount rejects empty planning_period
+  PASS plan_headcount filters out department_plans item with bad priority
+  PASS headcount_planning_agent → sonnet model
+  PASS headcount_planning_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns plan_headcount
+  PASS approve writes headcount_planning_runs
+  PASS headcount planning record org-stamped
+  PASS headcount_planning_agent routes on BOTH the financial and non-financial route
+== demand forecasting agent ==
+  PASS forecast_demand accepts good
+  PASS forecast_demand rejects empty metric_forecasted
+  PASS forecast_demand rejects bad methodology
+  PASS forecast_demand rejects bad trend_direction
+  PASS demand_forecasting_agent → sonnet model
+  PASS demand_forecasting_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns forecast_demand
+  PASS approve writes demand_forecasting_runs
+  PASS demand forecasting record org-stamped
+  PASS demand_forecasting_agent routes on BOTH the financial and non-financial route
+== capacity planning agent ==
+  PASS plan_capacity accepts good
+  PASS plan_capacity rejects empty capacity_dimension
+  PASS plan_capacity rejects current_capacity with utilization_pct > 100
+  PASS plan_capacity filters out capacity_gaps item with bad gap_type
+  PASS capacity_planning_agent → sonnet model
+  PASS capacity_planning_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns plan_capacity
+  PASS approve writes capacity_planning_runs
+  PASS capacity planning record org-stamped
+  PASS capacity_planning_agent routes on BOTH the financial and non-financial route
+== sla analysis agent ==
+  PASS analyze_sla accepts good
+  PASS analyze_sla rejects overall_compliance_pct > 100
+  PASS analyze_sla rejects bad trend_assessment
+  PASS analyze_sla filters out sla_metrics item with empty metric_name
+  PASS sla_analysis_agent → haiku model
+  PASS sla_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_sla
+  PASS approve writes sla_analysis_runs
+  PASS sla analysis record org-stamped
+  PASS sla_analysis_agent routes on BOTH the financial and non-financial route
+== compensation analysis agent ==
+  PASS analyze_compensation accepts good
+  PASS analyze_compensation rejects empty compensation_by_level array
+  PASS analyze_compensation rejects budget_impact with headcount_budget_pct > 100
+  PASS analyze_compensation filters out pay_equity_flags item with bad severity
+  PASS compensation_analysis_agent → sonnet model
+  PASS compensation_analysis_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_compensation
+  PASS approve writes compensation_analysis_runs
+  PASS compensation analysis record org-stamped
+  PASS compensation_analysis_agent routes on the financial route
+== metric tree agent ==
+  PASS build_metric_tree accepts good
+  PASS build_metric_tree rejects empty root_metric
+  PASS build_metric_tree rejects empty metric_tree array
+  PASS build_metric_tree filters out metric_tree item with level > 5
+  PASS metric_tree_agent → sonnet model
+  PASS metric_tree_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns build_metric_tree
+  PASS approve writes metric_tree_runs
+  PASS metric tree record org-stamped
+  PASS metric_tree_agent routes on BOTH the financial and non-financial route
+== text analytics agent ==
+  PASS analyze_text accepts good
+  PASS analyze_text rejects empty text_columns_analyzed array
+  PASS analyze_text rejects bad overall_sentiment
+  PASS analyze_text filters out top_themes item with bad sentiment
+  PASS text_analytics_agent → sonnet model
+  PASS text_analytics_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_text
+  PASS approve writes text_analytics_runs
+  PASS text analytics record org-stamped
+  PASS text_analytics_agent routes on BOTH the financial and non-financial route
+== data freshness agent ==
+  PASS assess_data_freshness accepts good
+  PASS assess_data_freshness rejects empty most_recent_record_date
+  PASS assess_data_freshness rejects bad freshness_rating
+  PASS assess_data_freshness filters out coverage_gaps item with bad gap_type
+  PASS data_freshness_agent → haiku model
+  PASS data_freshness_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns assess_data_freshness
+  PASS approve writes data_freshness_runs
+  PASS data freshness record org-stamped
+  PASS data_freshness_agent routes on BOTH the financial and non-financial route
+== narrative diff agent ==
+  PASS diff_narratives accepts good
+  PASS diff_narratives rejects empty period_a_label
+  PASS diff_narratives rejects bad story_arc
+  PASS diff_narratives filters out metric_changes item with bad direction
+  PASS narrative_diff_agent → sonnet model
+  PASS narrative_diff_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns diff_narratives
+  PASS approve writes narrative_diff_runs
+  PASS narrative diff record org-stamped
+  PASS narrative_diff_agent routes on BOTH the financial and non-financial route
+== alert threshold agent ==
+  PASS configure_alert_thresholds accepts good
+  PASS configure_alert_thresholds rejects empty recommended_alerts array
+  PASS configure_alert_thresholds filters out recommended_alerts item with bad severity
+  PASS configure_alert_thresholds rejects empty summary
+  PASS alert_threshold_agent → haiku model
+  PASS alert_threshold_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns configure_alert_thresholds
+  PASS approve writes alert_threshold_runs
+  PASS alert threshold record org-stamped
+  PASS alert_threshold_agent routes on BOTH the financial and non-financial route
+== data annotation agent ==
+  PASS annotate_data accepts good
+  PASS annotate_data rejects invalid total_annotations
+  PASS annotate_data filters out row_annotations item with bad annotation_type
+  PASS annotate_data filters out column_annotations item with empty column_name
+  PASS data_annotation_agent → haiku model
+  PASS data_annotation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns annotate_data
+  PASS approve writes data_annotation_runs
+  PASS data annotation record org-stamped
+  PASS data_annotation_agent routes on BOTH the financial and non-financial route
+== financial statement normalizer agent ==
+  PASS normalize_financial_statements accepts good
+  PASS normalize_financial_statements rejects bad statement_type
+  PASS normalize_financial_statements rejects bad accounting_standard_detected
+  PASS normalize_financial_statements rejects empty normalized_line_items array
+  PASS financial_statement_normalizer_agent → sonnet model
+  PASS financial_statement_normalizer_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns normalize_financial_statements
+  PASS approve writes financial_statement_normalizer_runs
+  PASS financial statement normalizer record org-stamped
+  PASS financial_statement_normalizer_agent routes on the financial route
+== three statement model agent ==
+  PASS build_three_statement_model accepts good
+  PASS build_three_statement_model rejects empty base_period
+  PASS build_three_statement_model rejects bad model_completeness
+  PASS build_three_statement_model filters out key_assumptions item with bad sensitivity
+  PASS three_statement_model_agent → opus model
+  PASS three_statement_model_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns build_three_statement_model
+  PASS approve writes three_statement_model_runs
+  PASS three statement model record org-stamped
+  PASS three_statement_model_agent routes on the financial route
+== quality of earnings agent ==
+  PASS assess_quality_of_earnings accepts good
+  PASS assess_quality_of_earnings rejects recurring_revenue_pct > 100
+  PASS assess_quality_of_earnings rejects bad qoe_rating
+  PASS assess_quality_of_earnings filters out adjustments item with bad direction
+  PASS quality_of_earnings_agent → opus model
+  PASS quality_of_earnings_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns assess_quality_of_earnings
+  PASS approve writes quality_of_earnings_runs
+  PASS quality of earnings record org-stamped
+  PASS quality_of_earnings_agent routes on the financial route
+== deferred revenue agent ==
+  PASS analyze_deferred_revenue accepts good
+  PASS analyze_deferred_revenue rejects empty period
+  PASS analyze_deferred_revenue rejects bad recognition_pattern
+  PASS analyze_deferred_revenue rejects revenue_visibility_score > 100
+  PASS deferred_revenue_agent → sonnet model
+  PASS deferred_revenue_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_deferred_revenue
+  PASS approve writes deferred_revenue_runs
+  PASS deferred revenue record org-stamped
+  PASS deferred_revenue_agent routes on the financial route
+== earnings quality agent ==
+  PASS assess_earnings_quality accepts good
+  PASS assess_earnings_quality rejects bad earnings_persistence_assessment
+  PASS assess_earnings_quality rejects bad overall_quality_rating
+  PASS assess_earnings_quality filters out red_flags item with bad severity
+  PASS earnings_quality_agent → opus model
+  PASS earnings_quality_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns assess_earnings_quality
+  PASS approve writes earnings_quality_runs
+  PASS earnings quality record org-stamped
+  PASS earnings_quality_agent routes on the financial route
+== intercompany elimination agent ==
+  PASS eliminate_intercompany accepts good
+  PASS eliminate_intercompany rejects empty entities_identified array
+  PASS eliminate_intercompany rejects bad elimination_completeness
+  PASS eliminate_intercompany filters out intercompany_transactions item with bad transaction_type
+  PASS intercompany_elimination_agent → sonnet model
+  PASS intercompany_elimination_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns eliminate_intercompany
+  PASS approve writes intercompany_elimination_runs
+  PASS intercompany elimination record org-stamped
+  PASS intercompany_elimination_agent routes on the financial route
+== stock-based compensation agent ==
+  PASS analyze_stock_based_compensation accepts good
+  PASS analyze_stock_based_compensation rejects sbc_as_pct_of_revenue > 100
+  PASS analyze_stock_based_compensation rejects unvested_overhang with overhang_pct > 100
+  PASS analyze_stock_based_compensation filters out sbc_quality_flags item with bad severity
+  PASS stock_based_compensation_agent → sonnet model
+  PASS stock_based_compensation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_stock_based_compensation
+  PASS approve writes stock_based_compensation_runs
+  PASS stock-based compensation record org-stamped
+  PASS stock_based_compensation_agent routes on the financial route
+== gaap compliance agent ==
+  PASS assess_gaap_compliance accepts good
+  PASS assess_gaap_compliance rejects empty compliance_assessments array
+  PASS assess_gaap_compliance rejects bad overall_compliance_rating
+  PASS assess_gaap_compliance filters out compliance_assessments item with bad compliance_status
+  PASS gaap_compliance_agent → opus model
+  PASS gaap_compliance_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns assess_gaap_compliance
+  PASS approve writes gaap_compliance_runs
+  PASS gaap compliance record org-stamped
+  PASS gaap_compliance_agent routes on the financial route
+== tax rate reconciliation agent ==
+  PASS reconcile_tax_rate accepts good
+  PASS reconcile_tax_rate rejects statutory_rate_pct > 100
+  PASS reconcile_tax_rate rejects empty period
+  PASS reconcile_tax_rate filters out tax_risk_flags item with bad severity
+  PASS tax_rate_reconciliation_agent → sonnet model
+  PASS tax_rate_reconciliation_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns reconcile_tax_rate
+  PASS approve writes tax_rate_reconciliation_runs
+  PASS tax rate reconciliation record org-stamped
+  PASS tax_rate_reconciliation_agent routes on the financial route
+== due diligence checklist agent ==
+  PASS build_due_diligence_checklist accepts good
+  PASS build_due_diligence_checklist rejects bad transaction_type
+  PASS build_due_diligence_checklist rejects empty checklist_categories array
+  PASS build_due_diligence_checklist filters out critical_items item with bad status
+  PASS due_diligence_checklist_agent → sonnet model
+  PASS due_diligence_checklist_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns build_due_diligence_checklist
+  PASS approve writes due_diligence_checklist_runs
+  PASS due diligence checklist record org-stamped
+  PASS due_diligence_checklist_agent routes on BOTH the financial and non-financial route
+== market sizing agent ==
+  PASS analyze_market_sizing accepts good
+  PASS analyze_market_sizing rejects empty market_definition
+  PASS analyze_market_sizing rejects bad sizing_methodology
+  PASS analyze_market_sizing rejects current_market_share_pct > 100
+  PASS market_sizing_agent → sonnet model
+  PASS market_sizing_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns analyze_market_sizing
+  PASS approve writes market_sizing_runs
+  PASS market sizing record org-stamped
+  PASS market_sizing_agent routes on BOTH the financial and non-financial route
+== invoice extraction agent ==
+  PASS extract_invoice_data accepts good
+  PASS extract_invoice_data rejects empty invoices_extracted array
+  PASS extract_invoice_data filters out invoices_extracted item with bad status
+  PASS extract_invoice_data rejects invalid ready_for_posting type
+  PASS invoice_extraction_agent → haiku model
+  PASS invoice_extraction_agent run produced an analysis
+  PASS stub proposal passes validateProposal and returns extract_invoice_data
+  PASS approve writes invoice_extraction_runs
+  PASS invoice extraction record org-stamped
+  PASS invoice_extraction_agent routes on BOTH the financial and non-financial route
+== bigquery query agent ==
+  PASS query_bigquery accepts good
+  PASS query_bigquery rejects invalid query_status
+  PASS query_bigquery rejects empty generated_sql
+  PASS query_bigquery filters out result_schema item with empty name
+  PASS stubBrain returns query_bigquery
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS bigquery_query_agent routes on BOTH the financial and non-financial route
+== cash positioning agent ==
+  PASS position_cash accepts good
+  PASS position_cash rejects invalid liquidity_status
+  PASS position_cash rejects empty as_of_date
+  PASS position_cash filters out cash_by_account item with empty account_name
+  PASS stubBrain returns position_cash
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS cash_positioning_agent routes on the financial route
+== debt schedule agent ==
+  PASS build_debt_schedule accepts good
+  PASS build_debt_schedule rejects invalid refinancing_risk
+  PASS build_debt_schedule rejects empty as_of_date
+  PASS build_debt_schedule filters out debt_facilities item with empty facility_name
+  PASS stubBrain returns build_debt_schedule
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS debt_schedule_agent routes on the financial route
+== equity waterfall agent ==
+  PASS model_equity_waterfall accepts good
+  PASS model_equity_waterfall rejects empty exit_scenarios array
+  PASS model_equity_waterfall rejects empty waterfall_notes
+  PASS model_equity_waterfall filters out exit_scenarios item with empty scenario_name
+  PASS stubBrain returns model_equity_waterfall
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS equity_waterfall_agent routes on the financial route
+== payroll analytics agent ==
+  PASS analyze_payroll accepts good
+  PASS analyze_payroll rejects empty pay_period
+  PASS analyze_payroll rejects negative employee_count
+  PASS analyze_payroll filters out payroll_by_department item with empty department
+  PASS stubBrain returns analyze_payroll
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS payroll_analytics_agent routes on BOTH the financial and non-financial route
+== vendor concentration agent ==
+  PASS analyze_vendor_concentration accepts good
+  PASS analyze_vendor_concentration rejects invalid concentration_risk_level
+  PASS analyze_vendor_concentration rejects empty analysis_period
+  PASS analyze_vendor_concentration filters out top_vendors item with empty vendor_name
+  PASS stubBrain returns analyze_vendor_concentration
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS vendor_concentration_agent routes on BOTH the financial and non-financial route
+== investor metrics agent ==
+  PASS compute_investor_metrics accepts good
+  PASS compute_investor_metrics rejects invalid rating
+  PASS compute_investor_metrics rejects empty as_of_period
+  PASS compute_investor_metrics rejects net_revenue_retention out of range (>300)
+  PASS stubBrain returns compute_investor_metrics
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS investor_metrics_agent routes on the financial route
+== clv agent ==
+  PASS compute_clv accepts good
+  PASS compute_clv rejects empty analysis_period
+  PASS compute_clv rejects monthly_churn_rate > 100
+  PASS compute_clv filters out clv_by_segment item with empty segment_name
+  PASS stubBrain returns compute_clv
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS clv_agent routes on BOTH the financial and non-financial route
+== payment terms agent ==
+  PASS analyze_payment_terms accepts good
+  PASS analyze_payment_terms rejects empty analysis_period
+  PASS analyze_payment_terms rejects negative avg_dso_days
+  PASS analyze_payment_terms filters out customer_terms_analysis item with empty customer_name
+  PASS stubBrain returns analyze_payment_terms
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS payment_terms_agent routes on the financial route
+== sensitivity analysis agent ==
+  PASS analyze_sensitivity accepts good
+  PASS analyze_sensitivity rejects empty sensitivity_variables array
+  PASS analyze_sensitivity rejects empty base_case_metric
+  PASS analyze_sensitivity filters out sensitivity_variables item with empty variable_name
+  PASS stubBrain returns analyze_sensitivity
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS sensitivity_analysis_agent routes on BOTH the financial and non-financial route
+== working capital optimization agent ==
+  PASS optimize_working_capital accepts good
+  PASS optimize_working_capital rejects invalid implementation_complexity
+  PASS optimize_working_capital rejects empty analysis_period
+  PASS optimize_working_capital rejects empty priority_actions array
+  PASS stubBrain returns optimize_working_capital
+  PASS stub proposal passes validateProposal
+  PASS runAgent succeeds and returns correct action kind
+  PASS working_capital_optimization_agent routes on the financial route
+== org context ==
+  PASS getOrgContext returns undefined when org has no data
+  PASS getOrgContext contextBlock includes memory entry
+  PASS runAgent succeeds when org has memory context
+== memory extractor ==
+  PASS extractMemory ledger → spend_baseline
+  PASS extractMemory categorize → vendor_category with deduped top_categories
+  PASS extractMemory store_report → empty
+== approval policy ==
+  PASS shouldAutoApprove false below threshold
+  PASS shouldAutoApprove true at threshold
+== memory upsert (approve gate) ==
+  PASS approveAction writes org_memory entry
+  PASS approveAction writes agent_accuracy entry
+== auto-approval ==
+  PASS runAgent auto-approval: run succeeded
+  PASS auto-approved proposal is applied (not pending)
+  PASS auto-approval wrote ledger entry
+  PASS auto-approval wrote audit log entry
+  PASS below-threshold proposal stays pending
+  PASS no-memory proposal stays pending
+
+RESULT: 1880 passed, 0 failed

@@ -19,6 +19,7 @@
     "check:scan": "tsx src/check-scan.ts",
     "check:parse": "tsx src/check-parse.ts",
     "check:agents": "tsx src/check-agents.ts",
+    "check:http2": "tsx src/check-http-phase2.ts",
     "scan": "bash scripts/secret-scan.sh"
   },
   "keywords": [],

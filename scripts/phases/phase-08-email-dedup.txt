@@ -1,0 +1,53 @@
+═══════════════════════════════════════════════════════════════
+PHASE 8 — EMAIL DEDUPLICATION
+Restore the partial unique index documented in CLAUDE.md
+═══════════════════════════════════════════════════════════════
+
+This is a single migration. The CLAUDE.md TODO explicitly calls this out.
+
+AUTONOMOUS RULES:
+- Branch: phase8-email-dedup → merge to main.
+- Commit: "fix(email): restore email_message_id dedup partial index"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase8-email-dedup
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — MIGRATION 0208: email dedup index
+═══════════════════════════════════════════════════════════════
+
+Apply via Supabase MCP (project zmntyhnmhzgtgwujhedf):
+
+-- Restore email deduplication (dropped in migration 0003 per CLAUDE.md TODO).
+-- Partial index: only enforces uniqueness for email rows with a non-null message id.
+-- This does NOT affect upload or webhook rows (which have NULL email_message_id).
+CREATE UNIQUE INDEX IF NOT EXISTS inbound_payloads_email_msg_id_uniq
+  ON inbound_payloads(org_id, email_message_id)
+  WHERE source = 'email' AND email_message_id IS NOT NULL;
+
+Save to src/migrations/0208_email_dedup_index.sql.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "fix(email): restore email_message_id dedup partial index"
+5. git checkout main && git merge phase8-email-dedup --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/migrations/0208_email_dedup_index.sql exists
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ pushed to main

@@ -1,0 +1,173 @@
+═══════════════════════════════════════════════════════════════
+PHASE 9 — REAL MALWARE SCANNING
+Replace the always-clean stub with VirusTotal API scanning
+═══════════════════════════════════════════════════════════════
+
+Currently scan-upload.ts always returns "clean". This phase adds real
+scanning via the VirusTotal API. Falls back to "clean" if no API key is set
+(preserves dev/test behavior).
+
+AUTONOMOUS RULES:
+- VIRUSTOTAL_API_KEY must never appear in source files.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Branch: phase9-scanner → merge to main.
+- Commit: "feat(scan): VirusTotal malware scanning"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase9-scanner
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — Read src/lib/scan-upload.ts
+═══════════════════════════════════════════════════════════════
+
+Read the file first to understand the Scanner interface and the
+placeholder implementation.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — src/lib/virustotal-scanner.ts
+═══════════════════════════════════════════════════════════════
+
+/**
+ * src/lib/virustotal-scanner.ts
+ *
+ * VirusTotal API v3 scanner implementation.
+ * Uploads the file bytes to VT, polls for results (up to 60s),
+ * returns "clean" if no engines flag it, "infected" if any do.
+ *
+ * Falls back to "clean" with a console warning if VIRUSTOTAL_API_KEY is not set.
+ * This preserves dev/test behavior without requiring a real API key locally.
+ */
+
+const VT_API_KEY = process.env.VIRUSTOTAL_API_KEY;
+const VT_BASE = "https://www.virustotal.com/api/v3";
+const POLL_INTERVAL_MS = 5_000;
+const MAX_POLLS = 12; // 60 seconds total
+
+export type ScanVerdict = "clean" | "infected" | "error";
+
+async function vtRequest(
+  path: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  return fetch(`${VT_BASE}${path}`, {
+    ...options,
+    headers: {
+      "x-apikey": VT_API_KEY!,
+      ...(options.headers ?? {}),
+    },
+  });
+}
+
+export async function scanBuffer(buffer: Buffer, filename: string): Promise<ScanVerdict> {
+  if (!VT_API_KEY) {
+    console.warn("[scanner] VIRUSTOTAL_API_KEY not set — skipping real scan, returning clean");
+    return "clean";
+  }
+
+  try {
+    // 1. Upload file
+    const formData = new FormData();
+    formData.append("file", new Blob([buffer]), filename);
+    const uploadRes = await vtRequest("/files", { method: "POST", body: formData });
+    if (!uploadRes.ok) return "error";
+    const { data: uploadData } = await uploadRes.json() as { data: { id: string } };
+    const analysisId = uploadData.id;
+
+    // 2. Poll for result
+    for (let i = 0; i < MAX_POLLS; i++) {
+      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+      const res = await vtRequest(`/analyses/${analysisId}`);
+      if (!res.ok) continue;
+      const { data } = await res.json() as {
+        data: { attributes: { status: string; stats: { malicious: number; suspicious: number } } }
+      };
+      const { status, stats } = data.attributes;
+      if (status === "completed") {
+        return (stats.malicious > 0 || stats.suspicious > 0) ? "infected" : "clean";
+      }
+    }
+
+    // Timed out — treat as error, don't block the upload
+    console.warn(`[scanner] VT analysis timed out for ${filename}`);
+    return "error";
+  } catch (err) {
+    console.error("[scanner] VT scan failed:", (err as Error).message);
+    return "error";
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — Update src/lib/scan-upload.ts
+═══════════════════════════════════════════════════════════════
+
+Read scan-upload.ts. Find the placeholder Scanner implementation that always
+returns "clean". Replace it with one that calls scanBuffer() from
+virustotal-scanner.ts.
+
+The Scanner interface (already in scan-upload.ts) should remain unchanged.
+Only the implementation of the default scanner changes.
+
+When verdict is "infected":
+- Set scan_status = 'infected' on the inbound_payloads row
+- Set status = 'blocked_unauthorized_tier' (reuse the existing blocked status
+  as the "rejected" terminal state, or add a new 'blocked_infected' value —
+  check the current CHECK constraint and add 'blocked_infected' via migration
+  if it doesn't exist)
+- Write audit log: action='upload.infected', log_meta includes filename, payloadId
+- Delete the file from storage (do not keep infected files)
+- Do NOT enqueue any further processing
+
+When verdict is "error":
+- Set scan_status = 'error'
+- Still advance to the parse stage (conservative: don't block on scanner errors)
+- Write audit log: action='upload.scan_error'
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — MIGRATION 0209 (if needed)
+═══════════════════════════════════════════════════════════════
+
+If the current inbound_payloads.scan_status CHECK does not include 'infected',
+add it:
+
+ALTER TABLE inbound_payloads DROP CONSTRAINT IF EXISTS inbound_payloads_scan_status_check;
+ALTER TABLE inbound_payloads ADD CONSTRAINT inbound_payloads_scan_status_check
+  CHECK (scan_status IN ('pending', 'clean', 'infected', 'error'));
+
+Save to src/migrations/0209_scan_status_infected.sql.
+Only apply if the CHECK needs updating — check the current constraint first.
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — .env.example addition
+═══════════════════════════════════════════════════════════════
+
+# VirusTotal (Phase 9 — malware scanning)
+# Get a free API key at https://www.virustotal.com/gui/join-us
+VIRUSTOTAL_API_KEY=
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(scan): VirusTotal malware scanning"
+5. git checkout main && git merge phase9-scanner --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/lib/virustotal-scanner.ts exists
+✓ scan-upload.ts no longer always returns "clean"
+✓ scan-upload.ts handles "infected" verdict (delete file, block row)
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

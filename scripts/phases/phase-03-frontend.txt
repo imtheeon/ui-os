@@ -1,0 +1,282 @@
+═══════════════════════════════════════════════════════════════
+PHASE 3 — FRONTEND DASHBOARD
+Next.js App Router UI for uploading, tracking, and viewing agent results
+═══════════════════════════════════════════════════════════════
+
+You are building the frontend dashboard for U-I-OS. This is a Next.js 16
+App Router project with React 19. The API routes (Phase 2) already exist.
+You are building the pages and components that call them.
+
+Stack: Next.js 16, React 19, Tailwind CSS (install it), no UI library.
+Design: clean, minimal, dark-friendly. No emojis in UI. Professional CFO tool.
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Branch: phase3-frontend → merge to main.
+- Commit: "feat(ui): Phase 3 frontend dashboard"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH + INSTALL TAILWIND
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase3-frontend
+  npm install -D tailwindcss @tailwindcss/typography postcss autoprefixer
+  npx tailwindcss init -p
+
+Update tailwind.config.js content array:
+  content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"]
+
+Add to app/layout.tsx:
+  import "./globals.css"
+
+Create app/globals.css:
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — ROUTE STRUCTURE
+═══════════════════════════════════════════════════════════════
+
+Create this directory structure:
+
+app/
+  (auth)/
+    login/page.tsx          ← login form (Supabase email+password)
+    signup/page.tsx         ← signup form
+  (dashboard)/
+    layout.tsx              ← sidebar nav + auth guard
+    page.tsx                ← overview / recent payloads
+    upload/
+      page.tsx              ← file upload UI
+    payloads/
+      page.tsx              ← list of all payloads
+      [id]/
+        page.tsx            ← payload detail + agent results
+    settings/
+      api-keys/
+        page.tsx            ← manage webhook API keys
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — AUTH PAGES
+═══════════════════════════════════════════════════════════════
+
+app/(auth)/login/page.tsx:
+- Email + password form
+- Calls supabase.auth.signInWithPassword()
+- On success: redirect to /
+- On error: show inline error message
+- Link to /signup
+
+app/(auth)/signup/page.tsx:
+- Email + password form
+- Calls supabase.auth.signUp()
+- On success: show "Check your email to confirm" message
+- Link to /login
+
+Both pages use the ANON key client from @supabase/ssr (client-side).
+Use "use client" directive.
+Simple centered card layout with Tailwind.
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — DASHBOARD LAYOUT (auth guard)
+═══════════════════════════════════════════════════════════════
+
+app/(dashboard)/layout.tsx:
+- Server Component
+- Uses supabaseServer() to check session
+- If no session: redirect('/login')
+- Renders: sidebar nav + {children}
+
+Sidebar nav links:
+  Overview      → /
+  Upload        → /upload
+  Payloads      → /payloads
+  API Keys      → /settings/api-keys
+
+Sidebar styling: fixed left sidebar, 240px wide, dark background (#0f172a),
+white text. Main content area takes remaining width.
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — OVERVIEW PAGE
+═══════════════════════════════════════════════════════════════
+
+app/(dashboard)/page.tsx:
+- Server Component
+- Fetches last 10 payloads for the org from /api/payloads
+  (actually query Supabase directly using supabaseServer + service role)
+- Shows: total payloads, pending, processing, completed counts
+- Shows table of recent payloads: id (truncated), source, status, created_at
+- Each row links to /payloads/[id]
+
+Wait — for server components that need data, import the service-role db
+directly (src/db.ts) after resolving orgId from the session. Do not fetch
+the API routes from server components; call library functions or db directly.
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — UPLOAD PAGE
+═══════════════════════════════════════════════════════════════
+
+app/(dashboard)/upload/page.tsx:
+Use "use client".
+
+Flow:
+1. User selects file (CSV or PDF, max 25MB)
+2. Client calls POST /api/uploads/slot → gets { signedUrl, payloadId, token }
+3. Client uploads file directly to Supabase Storage using the signedUrl
+   (PUT request with the file bytes, Content-Type header)
+4. Client calls POST /api/uploads/finalize with { payloadId }
+5. Show success: "Upload complete! Processing your file..."
+6. Redirect to /payloads/[payloadId] after 2 seconds
+
+UI states:
+- Idle: drag-drop zone + "or click to browse" button
+- Uploading: progress bar (use XMLHttpRequest for progress events)
+- Finalizing: spinner
+- Done: success message + redirect countdown
+- Error: red error message, allow retry
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — PAYLOADS LIST PAGE
+═══════════════════════════════════════════════════════════════
+
+app/(dashboard)/payloads/page.tsx:
+- Server Component
+- Query inbound_payloads directly via db + resolveOrgFromSession
+- Show table: payload_id (first 8 chars), source, status, created_at, size_bytes
+- Status badge: pending=gray, processing=yellow, completed=green, failed=red
+- Each row links to /payloads/[id]
+- Simple pagination: show 20 per page
+
+═══════════════════════════════════════════════════════════════
+STEP 7 — PAYLOAD DETAIL PAGE
+═══════════════════════════════════════════════════════════════
+
+app/(dashboard)/payloads/[id]/page.tsx:
+- Server Component
+- Fetch payload status + agent runs + proposed actions
+  via GET /api/payloads/[id] and GET /api/payloads/[id]/results
+  (or call db directly)
+- Show:
+  - Payload header: id, source, status badge, created_at
+  - Agent Runs section: table of role, status, latency_ms, created_at
+  - Proposed Actions section: table of kind, status, created_at
+    with a collapsed JSON viewer for the payload field
+- If status is 'pending' or 'processing': add auto-refresh
+  (client component wrapper with setInterval every 5s calling router.refresh())
+
+═══════════════════════════════════════════════════════════════
+STEP 8 — API KEYS PAGE
+═══════════════════════════════════════════════════════════════
+
+app/(dashboard)/settings/api-keys/page.tsx:
+Use "use client".
+
+- Fetch GET /api/org/api-keys on load → show list of keys
+  (key_prefix, name, created_at, last_used_at)
+- "Create new key" button: shows modal with name input field
+  → calls POST /api/org/api-keys
+  → shows the raw key in a copyable box with warning "Save this key now —
+    it won't be shown again"
+- Revoke button on each row → calls DELETE /api/org/api-keys?keyId=...
+  → removes from list
+
+═══════════════════════════════════════════════════════════════
+STEP 9 — src/lib/supabaseClient.ts (browser-side client)
+═══════════════════════════════════════════════════════════════
+
+Create a browser-side Supabase client for use in "use client" components:
+
+/**
+ * src/lib/supabaseClient.ts
+ * Browser-side Supabase client (anon key, no cookies needed).
+ * Use in "use client" components for auth calls only.
+ */
+import { createBrowserClient } from "@supabase/ssr";
+
+export function supabaseClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 10 — middleware.ts (protect dashboard routes)
+═══════════════════════════════════════════════════════════════
+
+Create middleware.ts at project root:
+
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // Protect dashboard routes
+  const isDashboard = !request.nextUrl.pathname.startsWith("/login") &&
+                      !request.nextUrl.pathname.startsWith("/signup") &&
+                      !request.nextUrl.pathname.startsWith("/api") &&
+                      !request.nextUrl.pathname.startsWith("/_next");
+
+  if (isDashboard && !session) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
+
+═══════════════════════════════════════════════════════════════
+STEP 11 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0. Fix all errors.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(ui): Phase 3 frontend dashboard"
+5. git checkout main && git merge phase3-frontend --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ app/(auth)/login/page.tsx exists
+✓ app/(auth)/signup/page.tsx exists
+✓ app/(dashboard)/layout.tsx exists (with auth guard)
+✓ app/(dashboard)/page.tsx exists
+✓ app/(dashboard)/upload/page.tsx exists
+✓ app/(dashboard)/payloads/page.tsx exists
+✓ app/(dashboard)/payloads/[id]/page.tsx exists
+✓ app/(dashboard)/settings/api-keys/page.tsx exists
+✓ src/lib/supabaseClient.ts exists
+✓ middleware.ts exists
+✓ app/globals.css exists (Tailwind)
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main
