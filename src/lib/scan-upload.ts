@@ -1,22 +1,14 @@
 /**
  * src/lib/scan-upload.ts — Phase 5, STAGE 4: upload malware scan.
  *
- * ╔══════════════════════════════════════════════════════════════════════╗
- * ║  ⚠️  THIS DOES NOT ACTUALLY SCAN ANYTHING YET.  ⚠️                     ║
- * ║                                                                        ║
- * ║  `placeholderScanner` ALWAYS returns "clean" without reading a single  ║
- * ║  byte of the uploaded file. There is NO ClamAV, NO VirusTotal, NO      ║
- * ║  content inspection of any kind. Every upload "passes" unconditionally.║
- * ║                                                                        ║
- * ║  Do NOT read a 'clean' scan_status as evidence a file is safe — right  ║
- * ║  now it only means "the stub ran". Real malware scanning (ClamAV or a  ║
- * ║  VirusTotal lookup against the stored object) is DEFERRED TO PHASE 9.  ║
- * ║                                                                        ║
- * ║  The flow below is real and final; only the `Scanner` is a stub.       ║
- * ║  Swapping in a real scanner = replace `placeholderScanner` with one    ║
- * ║  whose scan() fetches the object and returns a verdict. NOTHING ELSE   ║
- * ║  in this file needs to change.                                         ║
- * ╚══════════════════════════════════════════════════════════════════════╝
+ * Phase 9 wired in a real scanner (see virustotal-scanner.ts): the default
+ * Scanner used below is now `virusTotalScanner`, which downloads the stored
+ * object and checks it against the VirusTotal API. Without
+ * VIRUSTOTAL_API_KEY configured it falls back to "clean" without reading any
+ * bytes or making a network call — this preserves dev/test behavior (zero
+ * real API calls) without requiring a key locally. `placeholderScanner`
+ * remains available below for tests that want an explicit, unconditional
+ * "clean" stub regardless of env.
  *
  * TRUST MODEL: scanUpload acts only on the orgId that rode inside the trusted
  * 'upload/finalized' event (emitted solely by finalizeUpload). It re-scopes
@@ -28,6 +20,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { INBOUND_BUCKET } from "./uploads";
 import { enqueue as defaultEnqueue, type UiEvent } from "./queue";
+import { virusTotalScanner, VT_CONFIGURED } from "./virustotal-scanner";
 
 export type ScanVerdict = "clean" | "infected" | "error";
 
@@ -47,9 +40,9 @@ export interface Scanner {
 
 /**
  * !!! STUB SCANNER — ALWAYS "clean", inspects NOTHING. !!!
- * Placeholder for the MVP so the lifecycle is wired end to end. Replace with a
- * real ClamAV/VirusTotal implementation in Phase 9. See the banner at the top
- * of this file. Intentionally takes no action on `target`.
+ * No longer the default (see virustotal-scanner.ts, wired in Phase 9); kept
+ * for tests that want an explicit, unconditional "clean" stub. Intentionally
+ * takes no action on `target`.
  */
 export const placeholderScanner: Scanner = {
   async scan(_target: ScanTarget): Promise<ScanVerdict> {
@@ -90,7 +83,7 @@ export async function scanUpload(
 ): Promise<ScanResult> {
   const { orgId, payloadId } = params;
   const db: SupabaseClient = deps?.db ?? (await import("../db")).supabase;
-  const scanner: Scanner = deps?.scanner ?? placeholderScanner;
+  const scanner: Scanner = deps?.scanner ?? virusTotalScanner;
   const enqueue = deps?.enqueue ?? defaultEnqueue;
 
   // 1. Fetch the row, ORG-SCOPED. Cannot touch another tenant's payload even
@@ -115,8 +108,8 @@ export async function scanUpload(
 
   const storagePath = row.storage_path as string;
 
-  // 3. Run the scanner. ⚠️ With placeholderScanner this ALWAYS returns "clean"
-  //    and reads no bytes — see the banner at the top of this file.
+  // 3. Run the scanner (virusTotalScanner by default — see virustotal-scanner.ts;
+  //    falls back to "clean" without a network call if no API key is configured).
   let verdict: ScanVerdict;
   try {
     verdict = await scanner.scan({
@@ -142,8 +135,13 @@ export async function scanUpload(
 
     await writeAudit(db, orgId, "upload.scan_clean", {
       payloadId,
-      stub: true, // honest: this verdict came from the always-passes placeholder
-      note: "placeholder scanner — no real malware scan performed (Phase 9)",
+      // Honest record of whether this verdict came from a real VT scan or the
+      // no-key fallback (identical outcome, but the audit trail shouldn't
+      // overclaim a real scan happened when it didn't).
+      stub: !VT_CONFIGURED,
+      note: VT_CONFIGURED
+        ? "VirusTotal scan — no engine flagged the file"
+        : "VIRUSTOTAL_API_KEY not configured — no real malware scan performed",
     });
 
     // Hand off to stage 5 (parser). Only a CLEAN file proceeds.
