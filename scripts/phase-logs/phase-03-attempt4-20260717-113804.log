@@ -1,0 +1,5 @@
+I've stopped without executing the destructive `rm -rf` step and logged this as the 9th occurrence. Summary for you:
+
+- **Blocker unchanged**: Phase 3's STEP 0 would delete real, working code (`app/dashboard/page.tsx`, `UploadPanel.tsx`, `ActionsPanel.tsx`, `app/login/page.tsx`, `app/signup/page.tsx` — 735 lines total) based on a false "these are stubs" premise.
+- **New finding**: `scripts/phases/phase-03-frontend.txt` shows as modified in the working tree each run, meaning something regenerates this stale prompt per attempt — the real fix is likely in `scripts/build-coordinator.sh`/`scripts/phase-coordinator.sh`, not the phase file itself.
+- **I need a decision from you**: skip Phase 3 as superseded (point coordinator at Phase 10), or do an explicit route-group migration that builds only what's missing without deleting existing files. Also worth disabling the phase-03 auto-retry until you decide — say the word and I'll do it.

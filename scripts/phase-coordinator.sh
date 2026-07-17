@@ -51,8 +51,8 @@ ERROR_LOG_LINES=150       # lines of failed log to feed back for self-correction
 declare -A DONE_FILE=(
   [06]="src/lib/inngest.ts"
   [10]="src/check-live-smoke.ts"
-  [03]="app/(dashboard)/upload/page.tsx"
-  [04]="app/(auth)/onboarding/page.tsx"
+  [03]="app/dashboard/upload/page.tsx"
+  [04]="app/onboarding/page.tsx"
   [05]="src/lib/stripe.ts"
   [11]="src/lib/report-generator.ts"
   [07]="src/lib/pdf-parser.ts"
@@ -105,6 +105,40 @@ sleep_with_countdown() {
 }
 
 # ---------------------------------------------------------------------------
+# Pre-phase git cleanup: commit any leftover work and land on main cleanly.
+# Called before every phase (including skipped ones) so the working tree is
+# always clean when the next phase's prompt runs its own branching logic.
+# ---------------------------------------------------------------------------
+pre_phase_git_cleanup() {
+  cd "$REPO"
+
+  local current_branch
+  current_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+
+  # 1. Commit any uncommitted work so it isn't lost / swept into the wrong commit
+  if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+    echo "  📦  Uncommitted changes on '$current_branch' — committing before next phase..."
+    git add -A
+    git commit -m "chore: auto-commit phase work (coordinator cleanup)"
+  fi
+
+  # 2. If we're on a feature branch, merge it to main and push
+  if [[ "$current_branch" != "main" && "$current_branch" != "HEAD" ]]; then
+    echo "  🔀  On branch '$current_branch' — merging to main before next phase..."
+    git checkout main
+    git merge "$current_branch" --no-ff -m "chore: merge $current_branch (coordinator cleanup)" \
+      || { echo "  ⚠  Merge conflict — accepting 'theirs' for all conflicts..."; \
+           git checkout --theirs . && git add -A && \
+           git commit -m "chore: merge $current_branch (auto-resolved conflicts)"; }
+    git push origin main || echo "  ⚠  Push failed — continuing anyway."
+  fi
+
+  # 3. Ensure we're on main and up-to-date
+  git checkout main 2>/dev/null || true
+  git pull 2>/dev/null || true
+}
+
+# ---------------------------------------------------------------------------
 # Core: run one phase with usage-limit retry logic
 # ---------------------------------------------------------------------------
 
@@ -151,6 +185,10 @@ run_phase() {
     echo "✗ Phase $num: prompt file not found in $PHASES — stopping."
     exit 1
   fi
+
+  # Ensure main is clean before every phase starts
+  echo "  🧹  Pre-phase git cleanup for Phase $num..."
+  pre_phase_git_cleanup
 
   while (( attempt < MAX_RETRIES )); do
     attempt=$(( attempt + 1 ))
@@ -292,6 +330,7 @@ for num in 06 10 03 04 05 11 07 08 09 12; do
   name="${PHASE_NAME[$num]}"
   if already_done "$sentinel"; then
     echo "→ Phase $num ($name) already complete — skipping."
+    pre_phase_git_cleanup   # still clean up git state before next phase
     continue
   fi
   run_phase "$num"

@@ -1,0 +1,10 @@
+I've stopped without pushing anything. Summary:
+
+**What happened:** This "self-correction" retry is a coordinator auto-firing the same Phase 4 prompt. Nothing changed since attempt 1 — the block isn't a bug (TS error, bad migration, etc.) but the same unresolved decision that's stalled Phase 3 for 11+ prior retries: uncommitted, real dashboard code (`app/dashboard/layout.tsx`, `api-keys/`, `payloads/`, `upload/`, `middleware.ts`) sitting on `phase3-frontend` (0 commits ahead of `main`). Phase 4's final step would `git add -A`, commit, merge, and push to `main` — that would silently bundle this unrelated work into a `"feat(auth): ..."` commit, which violates CLAUDE.md's explicit push-confirmation and architectural-decision rules.
+
+**I did not run STEP 0 or push.** I need you to pick one:
+1. Commit the Phase 3 dashboard work on its own first, then let Phase 4 branch clean off `main`.
+2. Explicitly authorize folding the dashboard files into the Phase 4 commit.
+3. Stash the dashboard work aside, run Phase 4 clean, handle the dashboard separately.
+
+This is also entangled with the still-unanswered Phase 3 decision (skip it as superseded vs. do the route-group migration) — same root cause now blocking two phases. I'd recommend disabling the phase auto-retry loop in `scripts/phase-coordinator.sh` until you decide, since retrying won't change the outcome. Updated memory to reflect this spread to Phase 4 so future retries don't re-derive from scratch.

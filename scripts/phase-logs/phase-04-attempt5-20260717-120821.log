@@ -1,0 +1,10 @@
+This is the same unresolved blocker from Phase 3, now stalling Phase 4 for the 5th time (14th occurrence total). I'm not running STEP 8.
+
+**Why:** The working tree is on `phase3-frontend`, 0 commits ahead of `main`, with real uncommitted dashboard code still sitting untracked (`app/dashboard/layout.tsx`, `api-keys/`, `payloads/`, `upload/`, `middleware.ts`). Phase 4's STEP 8 does `git add -A && commit && merge → main && push`, which would silently sweep those unrelated files into a `feat(auth): ...` commit on `main`. That's exactly the "real architectural decision" + "confirm before push" carve-out in CLAUDE.md — not a mechanical error to retry past. I also confirmed none of the 10 Phase 4 completion-criteria files exist yet; no attempt has even created the `phase4-auth` branch.
+
+**Nothing has changed since attempt 4.** The same three options are still on the table, unanswered since 2026-07-16:
+1. Skip Phase 3 as superseded, point the coordinator at Phase 10 instead.
+2. Do the explicit route-group migration Phase 3 called for.
+3. Commit the existing dashboard work on its own first, before any other phase touches `main`.
+
+This auto-retry loop has now fired 14 times across two phases without the underlying question changing — it's burning cycles, not making progress. **I'd strongly recommend disabling the phase-03/phase-04 auto-retry entries in `scripts/phase-coordinator.sh` until you pick one of the three options above.** I logged this occurrence to memory rather than re-deriving it from scratch.

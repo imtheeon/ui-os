@@ -1,201 +1,77 @@
 ═══════════════════════════════════════════════════════════════
-PHASE 3 — FRONTEND DASHBOARD
-Next.js App Router UI for uploading, tracking, and viewing agent results
+PHASE 3 — FRONTEND DASHBOARD (build only what is missing)
 ═══════════════════════════════════════════════════════════════
 
-You are building the frontend dashboard for U-I-OS. This is a Next.js 16
-App Router project with React 19. The API routes (Phase 2) already exist.
-You are building the pages and components that call them.
+⚠️  CRITICAL RULES FOR THIS PHASE — READ FIRST:
 
-Stack: Next.js 16, React 19, Tailwind CSS (install it), no UI library.
-Design: clean, minimal, dark-friendly. No emojis in UI. Professional CFO tool.
+1. DO NOT delete, rm, or overwrite any existing files in app/
+   Real working code already exists. Preserve it entirely.
 
-AUTONOMOUS RULES:
-- Do not stop to ask questions.
-- TypeScript errors: fix and retry until typecheck exits 0.
-- Branch: phase3-frontend → merge to main.
-- Commit: "feat(ui): Phase 3 frontend dashboard"
+2. DO NOT use route groups (folders named with parentheses).
+   Use flat routes: app/login/, app/signup/, app/dashboard/
+
+3. START by running these commands to see what already exists:
+     ls app/
+     ls app/dashboard/ 2>/dev/null || echo "no dashboard dir"
+     ls app/login/ 2>/dev/null || echo "no login dir"
+     ls app/signup/ 2>/dev/null || echo "no signup dir"
+   Then only create files that are MISSING from the output.
+
+4. The completion sentinel is: app/dashboard/upload/page.tsx
+   If it already exists, this phase is DONE. Stop immediately.
 
 ═══════════════════════════════════════════════════════════════
-STEP 0 — BRANCH + INSTALL TAILWIND
+STEP 0 — BRANCH
 ═══════════════════════════════════════════════════════════════
 
   git checkout main && git pull
   git checkout -b phase3-frontend
-  npm install -D tailwindcss @tailwindcss/typography postcss autoprefixer
+
+If the branch already exists:
+  git checkout phase3-frontend && git rebase main
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — INVENTORY WHAT EXISTS
+═══════════════════════════════════════════════════════════════
+
+Run these and note what is present vs missing:
+
+  ls app/
+  ls app/dashboard/ 2>/dev/null
+  ls app/login/ 2>/dev/null
+  ls app/signup/ 2>/dev/null
+  ls app/dashboard/payloads/ 2>/dev/null
+  test -f middleware.ts && echo "middleware exists" || echo "middleware MISSING"
+  test -f app/globals.css && echo "globals.css exists" || echo "globals.css MISSING"
+  test -f src/lib/supabaseClient.ts && echo "supabaseClient exists" || echo "supabaseClient MISSING"
+
+Only create files that are MISSING. Skip any step where the file already exists.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — TAILWIND (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If tailwindcss is NOT in package.json:
+  npm install -D tailwindcss postcss autoprefixer
   npx tailwindcss init -p
 
-Update tailwind.config.js content array:
-  content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"]
+Ensure tailwind.config.js content includes:
+  "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"
 
-Add to app/layout.tsx:
-  import "./globals.css"
-
-Create app/globals.css:
+If app/globals.css is MISSING, create it:
   @tailwind base;
   @tailwind components;
   @tailwind utilities;
 
-═══════════════════════════════════════════════════════════════
-STEP 1 — ROUTE STRUCTURE
-═══════════════════════════════════════════════════════════════
-
-Create this directory structure:
-
-app/
-  (auth)/
-    login/page.tsx          ← login form (Supabase email+password)
-    signup/page.tsx         ← signup form
-  (dashboard)/
-    layout.tsx              ← sidebar nav + auth guard
-    page.tsx                ← overview / recent payloads
-    upload/
-      page.tsx              ← file upload UI
-    payloads/
-      page.tsx              ← list of all payloads
-      [id]/
-        page.tsx            ← payload detail + agent results
-    settings/
-      api-keys/
-        page.tsx            ← manage webhook API keys
+If app/layout.tsx does not already import globals.css, add the import.
 
 ═══════════════════════════════════════════════════════════════
-STEP 2 — AUTH PAGES
+STEP 3 — src/lib/supabaseClient.ts (only if missing)
 ═══════════════════════════════════════════════════════════════
 
-app/(auth)/login/page.tsx:
-- Email + password form
-- Calls supabase.auth.signInWithPassword()
-- On success: redirect to /
-- On error: show inline error message
-- Link to /signup
+If MISSING, create:
 
-app/(auth)/signup/page.tsx:
-- Email + password form
-- Calls supabase.auth.signUp()
-- On success: show "Check your email to confirm" message
-- Link to /login
-
-Both pages use the ANON key client from @supabase/ssr (client-side).
-Use "use client" directive.
-Simple centered card layout with Tailwind.
-
-═══════════════════════════════════════════════════════════════
-STEP 3 — DASHBOARD LAYOUT (auth guard)
-═══════════════════════════════════════════════════════════════
-
-app/(dashboard)/layout.tsx:
-- Server Component
-- Uses supabaseServer() to check session
-- If no session: redirect('/login')
-- Renders: sidebar nav + {children}
-
-Sidebar nav links:
-  Overview      → /
-  Upload        → /upload
-  Payloads      → /payloads
-  API Keys      → /settings/api-keys
-
-Sidebar styling: fixed left sidebar, 240px wide, dark background (#0f172a),
-white text. Main content area takes remaining width.
-
-═══════════════════════════════════════════════════════════════
-STEP 4 — OVERVIEW PAGE
-═══════════════════════════════════════════════════════════════
-
-app/(dashboard)/page.tsx:
-- Server Component
-- Fetches last 10 payloads for the org from /api/payloads
-  (actually query Supabase directly using supabaseServer + service role)
-- Shows: total payloads, pending, processing, completed counts
-- Shows table of recent payloads: id (truncated), source, status, created_at
-- Each row links to /payloads/[id]
-
-Wait — for server components that need data, import the service-role db
-directly (src/db.ts) after resolving orgId from the session. Do not fetch
-the API routes from server components; call library functions or db directly.
-
-═══════════════════════════════════════════════════════════════
-STEP 5 — UPLOAD PAGE
-═══════════════════════════════════════════════════════════════
-
-app/(dashboard)/upload/page.tsx:
-Use "use client".
-
-Flow:
-1. User selects file (CSV or PDF, max 25MB)
-2. Client calls POST /api/uploads/slot → gets { signedUrl, payloadId, token }
-3. Client uploads file directly to Supabase Storage using the signedUrl
-   (PUT request with the file bytes, Content-Type header)
-4. Client calls POST /api/uploads/finalize with { payloadId }
-5. Show success: "Upload complete! Processing your file..."
-6. Redirect to /payloads/[payloadId] after 2 seconds
-
-UI states:
-- Idle: drag-drop zone + "or click to browse" button
-- Uploading: progress bar (use XMLHttpRequest for progress events)
-- Finalizing: spinner
-- Done: success message + redirect countdown
-- Error: red error message, allow retry
-
-═══════════════════════════════════════════════════════════════
-STEP 6 — PAYLOADS LIST PAGE
-═══════════════════════════════════════════════════════════════
-
-app/(dashboard)/payloads/page.tsx:
-- Server Component
-- Query inbound_payloads directly via db + resolveOrgFromSession
-- Show table: payload_id (first 8 chars), source, status, created_at, size_bytes
-- Status badge: pending=gray, processing=yellow, completed=green, failed=red
-- Each row links to /payloads/[id]
-- Simple pagination: show 20 per page
-
-═══════════════════════════════════════════════════════════════
-STEP 7 — PAYLOAD DETAIL PAGE
-═══════════════════════════════════════════════════════════════
-
-app/(dashboard)/payloads/[id]/page.tsx:
-- Server Component
-- Fetch payload status + agent runs + proposed actions
-  via GET /api/payloads/[id] and GET /api/payloads/[id]/results
-  (or call db directly)
-- Show:
-  - Payload header: id, source, status badge, created_at
-  - Agent Runs section: table of role, status, latency_ms, created_at
-  - Proposed Actions section: table of kind, status, created_at
-    with a collapsed JSON viewer for the payload field
-- If status is 'pending' or 'processing': add auto-refresh
-  (client component wrapper with setInterval every 5s calling router.refresh())
-
-═══════════════════════════════════════════════════════════════
-STEP 8 — API KEYS PAGE
-═══════════════════════════════════════════════════════════════
-
-app/(dashboard)/settings/api-keys/page.tsx:
-Use "use client".
-
-- Fetch GET /api/org/api-keys on load → show list of keys
-  (key_prefix, name, created_at, last_used_at)
-- "Create new key" button: shows modal with name input field
-  → calls POST /api/org/api-keys
-  → shows the raw key in a copyable box with warning "Save this key now —
-    it won't be shown again"
-- Revoke button on each row → calls DELETE /api/org/api-keys?keyId=...
-  → removes from list
-
-═══════════════════════════════════════════════════════════════
-STEP 9 — src/lib/supabaseClient.ts (browser-side client)
-═══════════════════════════════════════════════════════════════
-
-Create a browser-side Supabase client for use in "use client" components:
-
-/**
- * src/lib/supabaseClient.ts
- * Browser-side Supabase client (anon key, no cookies needed).
- * Use in "use client" components for auth calls only.
- */
 import { createBrowserClient } from "@supabase/ssr";
-
 export function supabaseClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -204,17 +80,16 @@ export function supabaseClient() {
 }
 
 ═══════════════════════════════════════════════════════════════
-STEP 10 — middleware.ts (protect dashboard routes)
+STEP 4 — middleware.ts (only if missing)
 ═══════════════════════════════════════════════════════════════
 
-Create middleware.ts at project root:
+If MISSING, create middleware.ts at project root:
 
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -229,19 +104,15 @@ export async function middleware(request: NextRequest) {
       },
     }
   );
-
   const { data: { session } } = await supabase.auth.getSession();
-
-  // Protect dashboard routes
-  const isDashboard = !request.nextUrl.pathname.startsWith("/login") &&
-                      !request.nextUrl.pathname.startsWith("/signup") &&
-                      !request.nextUrl.pathname.startsWith("/api") &&
-                      !request.nextUrl.pathname.startsWith("/_next");
-
-  if (isDashboard && !session) {
+  const path = request.nextUrl.pathname;
+  const isPublic =
+    path.startsWith("/login") || path.startsWith("/signup") ||
+    path.startsWith("/api") || path.startsWith("/_next") ||
+    path === "/favicon.ico";
+  if (!isPublic && !session) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-
   return response;
 }
 
@@ -250,33 +121,117 @@ export const config = {
 };
 
 ═══════════════════════════════════════════════════════════════
-STEP 11 — TYPECHECK + VERIFY + COMMIT + PUSH
+STEP 5 — app/login/page.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING, create ("use client"):
+- Email + password form
+- supabaseClient().auth.signInWithPassword()
+- On success: router.push("/dashboard")
+- On error: inline error message
+- Link to /signup
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — app/signup/page.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING, create ("use client"):
+- Email + password form
+- supabaseClient().auth.signUp()
+- On success: "Check your email to confirm"
+- On error: inline error
+- Link to /login
+
+═══════════════════════════════════════════════════════════════
+STEP 7 — app/dashboard/layout.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING, create (Server Component):
+- supabaseServer() → session → if none: redirect("/login")
+- Renders sidebar + {children}
+- Sidebar links: Overview /dashboard, Upload /dashboard/upload,
+  Payloads /dashboard/payloads, API Keys /dashboard/api-keys
+- Sidebar: fixed left 240px, bg #0f172a, white text
+
+═══════════════════════════════════════════════════════════════
+STEP 8 — app/dashboard/page.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING, create (Server Component):
+- resolveOrgFromSession → orgId
+- Query last 10 inbound_payloads via service-role db
+- Stat cards: total, pending, processing, completed
+- Table of recent payloads → links to /dashboard/payloads/[id]
+
+═══════════════════════════════════════════════════════════════
+STEP 9 — app/dashboard/upload/page.tsx  ← THE SENTINEL
+═══════════════════════════════════════════════════════════════
+
+THIS IS THE MOST IMPORTANT FILE. Create it ("use client"):
+
+1. File picker: accept=".csv,.pdf", max 25MB
+2. POST /api/uploads/slot → { payloadId, signedUrl }
+3. PUT file to signedUrl via XMLHttpRequest (for progress %)
+4. POST /api/uploads/finalize { payloadId }
+5. On success: show link to /dashboard/payloads/[payloadId]
+
+States: idle → uploading (progress bar) → finalizing (spinner) → done / error
+
+═══════════════════════════════════════════════════════════════
+STEP 10 — app/dashboard/payloads/page.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING (Server Component):
+- 20 most recent inbound_payloads for org
+- Table: id (8 chars), source, status badge, created_at
+- Status colors: gray/yellow/green/red
+- Rows link to /dashboard/payloads/[id]
+
+═══════════════════════════════════════════════════════════════
+STEP 11 — app/dashboard/payloads/[id]/page.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING (Server Component):
+- const { id } = await params  ← always await in Next.js 16
+- Fetch from /api/payloads/[id] and /api/payloads/[id]/results
+- Show: payload header, agent runs table, proposed actions table
+- Auto-refresh client wrapper if status is pending/processing
+
+═══════════════════════════════════════════════════════════════
+STEP 12 — app/dashboard/api-keys/page.tsx (only if missing)
+═══════════════════════════════════════════════════════════════
+
+If MISSING ("use client"):
+- GET /api/org/api-keys → list keys
+- Create key modal → POST → show rawKey once
+- Revoke → DELETE /api/org/api-keys?keyId=...
+
+═══════════════════════════════════════════════════════════════
+STEP 13 — TYPECHECK + COMMIT + PUSH
 ═══════════════════════════════════════════════════════════════
 
 1. npm run typecheck — exit 0. Fix all errors.
-2. npm run check:agents — still passing.
+2. npm run check:agents — must pass.
 3. bash scripts/secret-scan.sh — clean.
 4. git add -A
    git commit -m "feat(ui): Phase 3 frontend dashboard"
-5. git checkout main && git merge phase3-frontend --no-ff
-6. git push origin main
+5. git checkout main
+   git merge phase3-frontend --no-ff -m "feat(ui): merge Phase 3 frontend"
+   git push origin main
 
 ═══════════════════════════════════════════════════════════════
-COMPLETION CRITERIA
+COMPLETION CRITERIA — sentinel: app/dashboard/upload/page.tsx
 ═══════════════════════════════════════════════════════════════
 
-✓ app/(auth)/login/page.tsx exists
-✓ app/(auth)/signup/page.tsx exists
-✓ app/(dashboard)/layout.tsx exists (with auth guard)
-✓ app/(dashboard)/page.tsx exists
-✓ app/(dashboard)/upload/page.tsx exists
-✓ app/(dashboard)/payloads/page.tsx exists
-✓ app/(dashboard)/payloads/[id]/page.tsx exists
-✓ app/(dashboard)/settings/api-keys/page.tsx exists
-✓ src/lib/supabaseClient.ts exists
-✓ middleware.ts exists
-✓ app/globals.css exists (Tailwind)
-✓ npm run typecheck exits 0
-✓ npm run check:agents passes
-✓ secret scan clean
-✓ pushed to main
+✓ app/globals.css
+✓ middleware.ts
+✓ src/lib/supabaseClient.ts
+✓ app/login/page.tsx
+✓ app/signup/page.tsx
+✓ app/dashboard/layout.tsx
+✓ app/dashboard/page.tsx
+✓ app/dashboard/upload/page.tsx  ← SENTINEL
+✓ app/dashboard/payloads/page.tsx
+✓ app/dashboard/payloads/[id]/page.tsx
+✓ app/dashboard/api-keys/page.tsx
+✓ typecheck 0, check:agents pass, secret scan clean, pushed to main

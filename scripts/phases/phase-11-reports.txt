@@ -221,7 +221,7 @@ export async function emailReport(params: {
 }
 
 ═══════════════════════════════════════════════════════════════
-STEP 5 — app/(dashboard)/payloads/[id]/page.tsx: add report button
+STEP 5 — app/dashboard/payloads/[id]/page.tsx: add report button
 ═══════════════════════════════════════════════════════════════
 
 Update the payload detail page (from Phase 3) to add:
@@ -233,7 +233,7 @@ Update the payload detail page (from Phase 3) to add:
 - Optional: "Email to client" input field (email address) + send button
 
 ═══════════════════════════════════════════════════════════════
-STEP 6 — app/(dashboard)/reports/page.tsx
+STEP 6 — app/dashboard/reports/page.tsx
 ═══════════════════════════════════════════════════════════════
 
 Reports history page:
@@ -270,7 +270,7 @@ COMPLETION CRITERIA
 ✓ src/lib/report-generator.ts exists
 ✓ src/lib/email-report.ts exists
 ✓ app/api/payloads/[id]/report/route.ts exists
-✓ app/(dashboard)/reports/page.tsx exists
+✓ app/dashboard/reports/page.tsx exists
 ✓ @react-pdf/renderer in package.json
 ✓ resend in package.json
 ✓ npm run typecheck exits 0

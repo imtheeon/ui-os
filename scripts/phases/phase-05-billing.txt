@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
 }
 
 ═══════════════════════════════════════════════════════════════
-STEP 6 — app/(dashboard)/billing/page.tsx
+STEP 6 — app/dashboard/billing/page.tsx
 ═══════════════════════════════════════════════════════════════
 
 "use client" billing page:
@@ -250,7 +250,7 @@ STEP 6 — app/(dashboard)/billing/page.tsx
   → calls POST /api/billing/portal → redirect to Stripe portal URL
 - Show success message if ?success=true in URL
 
-Add "Billing" to sidebar nav in app/(dashboard)/layout.tsx.
+Add "Billing" to sidebar nav in app/dashboard/layout.tsx.
 
 ═══════════════════════════════════════════════════════════════
 STEP 7 — .env.example additions
@@ -284,7 +284,7 @@ COMPLETION CRITERIA
 ✓ app/api/billing/checkout/route.ts exists
 ✓ app/api/billing/portal/route.ts exists
 ✓ app/api/webhooks/stripe/route.ts exists
-✓ app/(dashboard)/billing/page.tsx exists
+✓ app/dashboard/billing/page.tsx exists
 ✓ stripe in package.json dependencies
 ✓ npm run typecheck exits 0
 ✓ npm run check:agents passes

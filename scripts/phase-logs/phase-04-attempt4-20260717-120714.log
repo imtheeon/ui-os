@@ -1,0 +1,15 @@
+This is attempt 13 (across Phase 3 + Phase 4 combined) of an auto-retry loop that's been hitting the same unresolved wall since 2026-07-16. I'm not going to run this phase's STEP 8 (commit + push to main), and here's why:
+
+**The blocker hasn't moved.** The working tree is still on `phase3-frontend`, 0 commits ahead of `main`, with real uncommitted dashboard code sitting untracked:
+- `app/dashboard/layout.tsx`, `api-keys/`, `payloads/`, `upload/`, `middleware.ts`
+
+This Phase 4 prompt's STEP 8 does `git add -A && git commit && git checkout main && git merge --no-ff && git push`. That would sweep those unrelated, uncommitted dashboard files into a `feat(auth): ...` commit pushed straight to `main` — silently merging Phase 3 work under a Phase 4 label. Per CLAUDE.md, that's exactly the kind of "real architectural decision" and pre-push case that requires stopping and asking, not a mechanical error to retry past.
+
+**Three options, still unanswered since 2026-07-16:**
+1. Skip Phase 3 as superseded (its `(auth)`/`(dashboard)` route-group plan collides with the flat routes already shipped) — point the coordinator at Phase 10 instead.
+2. Do the explicit route-group migration Phase 3 called for.
+3. Just commit the existing dashboard work as-is first, on its own, before any other phase touches `main`.
+
+**What I'd actually recommend:** disable the phase auto-retry loop (in `scripts/phase-coordinator.sh` / `scripts/build-coordinator.sh`) until you pick one of these — it's fired 13 times now across two phases without the underlying question changing, burning cycles each time. I've logged this occurrence to memory rather than re-deriving it from scratch again.
+
+I did not touch STEP 0, did not commit, did not push. Let me know which option you want and I'll proceed.

@@ -1,0 +1,16 @@
+This confirms exactly what memory flagged: this is the **7th** auto-fired attempt at an unfixable Phase 3 prompt, and it's now compounded by real, unrecoverable data loss. I'm stopping here rather than pushing forward — this is not a mechanical error to retry past.
+
+**What I found:**
+
+1. **Wrong branch.** We're on `phase10-live-agents`, not `main` or `phase3-frontend`. The Phase 3 script assumes branching from `main`. Running it here risks mixing Phase 3 and Phase 10 work and pushing Phase 10 WIP to `main` under a Phase 3 commit message.
+2. **The route conflict this prompt was auto-retried over 6 times for is real and pre-dates this session** — flat routes (`app/login`, `app/signup`, `app/dashboard`) already exist on `main`. STEP 6 of this prompt claims to fix that by using flat routes too, but the underlying "should we skip Phase 3 as superseded, or do the route-group migration" decision was never answered by you across 6 prior attempts.
+3. **Data loss, unrecoverable from this session.** The previous attempt reports 8 files (`.env.example`, `package.json`, `scripts/phase-coordinator.sh`, `phase-04/05/11/12-*.txt`, `src/lib/run-agent.ts`) got reset to `main`'s committed versions, losing prior uncommitted edits it can't identify. Current `git status` confirms those files now show no diff — consistent with that loss, and I have no way to recover the missing content from here (no stash, no reflog dangling commit was mentioned as checked, no other checkout).
+
+Per this repo's own rule ("Real architectural decision needed — present options, wait") and my memory of this exact recurring situation, I'm not going to mechanically retry a 7th time, fabricate the lost file contents, or push to `main` from the wrong branch. Auto-fixing this would compound the damage.
+
+**I need you to decide:**
+
+1. **Phase 3**: skip it as superseded (routes already exist on `main`), or do you want the real route-group migration (moving login/signup/dashboard into `(auth)`/`(dashboard)` and building the missing upload/payloads/api-keys pages)?
+2. **The lost 8 files**: do you have their prior content anywhere (terminal scrollback, another checkout, `git reflog`, an editor's local history)? If not, I'll treat them as reset to `main` and rebuild only what's actually needed.
+3. Given real uncommitted work may live on `phase10-live-agents`, should I check that branch's state before anything else touches it?
+4. Separately: this coordinator has now auto-fired the same stale Phase 3 prompt 7 times. Want me to help disable/adjust that auto-retry so it stops burning cycles until you've answered?

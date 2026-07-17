@@ -1,0 +1,17 @@
+This confirms it: I should not run this Phase 3 prompt. Here's what's actually going on:
+
+**This is a stale/misrouted task.** The repo is far past Phase 3:
+
+- Phase 3 (frontend dashboard) is already built and merged into `main` — `app/dashboard/`, `app/login/`, `app/signup/`, etc. all exist, just with a different (flatter) route structure than this prompt's `(auth)`/`(dashboard)` route-group spec.
+- The project has since shipped Phase 2 (API layer), Phase 6 (Inngest queue), dozens of agent batches, and is currently mid-**Phase 10** (live agents) on the checked-out branch `phase10-live-agents`.
+- There's an **in-progress, uncommitted Phase 10 change** sitting in the working tree right now: `src/lib/run-agent.ts` has been hardened with a timeout wrapper, error handling, and an idempotency guard; `src/check-live-smoke.ts` was added and wired to `npm run check:smoke`; `.env.example` got new smoke-test vars. Per the phase-10 log, a previous run had gotten as far as "waiting on `check:agents` to finish before committing, merging to main, and pushing" — that commit never happened.
+- There's also an empty `phase-03-attempt1` log from earlier today, suggesting a Phase 3 rerun was already attempted and produced nothing (likely short-circuited because Phase 3 was already done).
+
+Running this Phase 3 prompt now would mean branching off `main` and rebuilding a dashboard that already exists with a different structure, then merging back to `main` and pushing — while there's unrelated, unfinished Phase 10 work sitting uncommitted on the current branch. That's exactly the kind of risky, easy-to-reverse-wrong situation I should flag rather than plow through.
+
+**My read:** this Phase 3 prompt got queued/replayed out of order (coordinator log timestamps show phase-03 and phase-10 attempts within minutes of each other today). I'd like to confirm before doing anything:
+
+1. Should I **skip Phase 3** entirely (it's done) and instead pick up the dangling Phase 10 work — verify `run-agent.ts`'s changes, run `npm run check:agents`, and finish the commit/merge/push that was left hanging?
+2. Or is there a specific reason you want the Phase 3 UI rebuilt with the `(auth)`/`(dashboard)` route-group structure (e.g., replacing the existing flat structure)?
+
+I'll hold off on branching or touching `main` until you confirm which direction you want.
