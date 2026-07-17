@@ -35,6 +35,9 @@ export default async function DashboardLayout({
         <Link href="/dashboard/payloads" style={styles.link}>
           Payloads
         </Link>
+        <Link href="/dashboard/reports" style={styles.link}>
+          Reports
+        </Link>
         <Link href="/dashboard/settings/team" style={styles.link}>
           Team
         </Link>
