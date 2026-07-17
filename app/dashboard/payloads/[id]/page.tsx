@@ -9,6 +9,7 @@ import { supabaseServer } from "../../../../src/lib/supabaseServer";
 import { resolveOrgFromSession } from "../../../../src/lib/resolveOrgFromSession";
 import { supabase as serviceClient } from "../../../../src/db";
 import AutoRefresh from "../AutoRefresh";
+import ReportPanel from "../ReportPanel";
 
 interface AgentRun {
   id: string;
@@ -142,6 +143,8 @@ export default async function PayloadDetailPage({
           </div>
         )}
       </section>
+
+      <ReportPanel payloadId={payload.id} payloadStatus={payload.status} />
     </main>
   );
 }
