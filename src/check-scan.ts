@@ -1,11 +1,15 @@
 /**
  * src/check-scan.ts
  *
- * Verifies Phase 5 STAGE 4 (scanUpload, the placeholder malware scan) against
- * the live database + Storage. Run with: npm run check:scan
+ * Verifies Phase 5 STAGE 4 (scanUpload) against the live database + Storage.
+ * Run with: npm run check:scan
+ *
+ * The default scanner is virusTotalScanner (Phase 9); with no
+ * VIRUSTOTAL_API_KEY set in this env it falls back to "clean" without any
+ * network call, so this check never spends a real VT scan quota.
  *
  * Proves, with an injected service-role client and injected fake scanners:
- *   1. CLEAN  (default placeholder scanner): scan_status → 'clean', an
+ *   1. CLEAN  (default scanner, no-key fallback): scan_status → 'clean', an
  *      upload.scan_clean audit row exists WITH stub:true in log_meta, and an
  *      'upload/scanned' handoff event is emitted. PLUS a seam smoke: drainQueue
  *      routes an 'upload/finalized' event to scanUpload for real.
@@ -120,8 +124,8 @@ async function main(): Promise<void> {
   pass(`Free-tier test orgs A=${orgA.slice(0, 8)} B=${orgB.slice(0, 8)}.`);
 
   try {
-    // ── 1. CLEAN path (default placeholder scanner) ──────────────────────────
-    section("1. CLEAN — placeholder scanner passes, emits handoff");
+    // ── 1. CLEAN path (default scanner, no-key fallback) ─────────────────────
+    section("1. CLEAN — default scanner (no-key fallback) passes, emits handoff");
     {
       const { payloadId } = await setupFinalizedUpload(orgA, "clean.csv", "a,b\n1,2\n");
       resetQueue();
