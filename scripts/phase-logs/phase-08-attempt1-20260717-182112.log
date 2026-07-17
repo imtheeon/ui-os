@@ -1,0 +1,7 @@
+Phase 8 is complete. Summary:
+
+- Created `src/migrations/0208_email_dedup_index.sql` restoring email dedup as a partial unique index scoped by `org_id` (matching this project's multi-tenant model, and adding an explicit `email_message_id IS NOT NULL` guard beyond the literal CLAUDE.md TODO text) — applied live to the Supabase project `zmntyhnmhzgtgwujhedf`.
+- Gates: `typecheck` exit 0, `check:agents` 1880/1880 passed, secret scan clean.
+- Merged `phase8-email-dedup` into `main` and pushed (`2c08d26..e6fe38a`).
+
+One note: the untracked `scripts/phase-logs/phase-08-attempt1-20260717-182112.log` from a prior attempt was left alone (not staged/committed) since it wasn't part of this phase's deliverable.
