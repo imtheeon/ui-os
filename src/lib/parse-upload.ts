@@ -12,10 +12,10 @@
  * ║  This is the `analyze_limited` contract: static text parsing only.     ║
  * ║                                                                        ║
  * ║  It is NOT a real sandbox. True process isolation (E2B or a            ║
- * ║  worker_thread with memory/time limits) is DEFERRED TO PHASE 6+, when  ║
- * ║  the agent swarm / heavier analysis lands. Until then we accept only   ║
- * ║  CSV here; PDF and any richer format are HELD, not parsed in-process   ║
- * ║  (see the deferral path below).                                        ║
+ * ║  worker_thread with memory/time limits) is still DEFERRED (see         ║
+ * ║  pdf-parser.ts for why). Phase 7 added bounded, in-process PDF text    ║
+ * ║  extraction (pdfjs-dist) alongside CSV; any other format is still      ║
+ * ║  HELD, not parsed in-process (see the deferral path below).            ║
  * ╚══════════════════════════════════════════════════════════════════════╝
  *
  * TRUST MODEL (mirrors scanUpload): acts only on the orgId that rode inside the
@@ -26,6 +26,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { INBOUND_BUCKET } from "./uploads";
+import { parsePdfBuffer } from "./pdf-parser";
 
 // ── bounded-parse limits (MVP) ───────────────────────────────────────────────
 export interface ParseLimits {
@@ -152,7 +153,8 @@ export interface ParseDeps {
 
 export type ParseResult =
   | { ok: true; outcome: "parsed"; rowCount: number; truncated: boolean }
-  | { ok: true; outcome: "deferred_pdf" }
+  | { ok: true; outcome: "parsed_pdf"; pageCount: number; truncated: boolean }
+  | { ok: true; outcome: "deferred_other" }
   | { ok: true; outcome: "skipped"; reason: string }
   | { ok: false; code: string; message: string };
 
@@ -203,18 +205,42 @@ export async function parseUpload(
   const storagePath = row.storage_path as string;
   const fmt = formatOf(row.mime_type as string | null, row.original_filename as string | null);
 
-  // 3. Non-CSV is HELD, not parsed in-process. Honest parked state:
-  //    status stays 'processing', scan_status stays 'clean', extracted_json NULL,
-  //    + an explicit parse.deferred audit row explaining why.
-  if (fmt !== "csv") {
-    const reason = fmt === "pdf" ? "pdf_parsing_requires_sandbox" : "unsupported_format";
-    await writeAudit(db, orgId, "parse.deferred", { payloadId, format: fmt, reason });
-    return { ok: true, outcome: "deferred_pdf" };
+  // 3. Any format we don't extract is HELD, not parsed in-process. Honest
+  //    parked state: status stays 'processing', scan_status stays 'clean',
+  //    extracted_json NULL, + an explicit parse.deferred audit row.
+  if (fmt === "other") {
+    await writeAudit(db, orgId, "parse.deferred", { payloadId, format: fmt, reason: "unsupported_format" });
+    return { ok: true, outcome: "deferred_other" };
   }
 
-  // 4. Download the actual bytes and parse them (bounded, static — see banner).
+  // 4. Download the actual bytes and parse them (bounded — see banner).
   const { data: blob, error: dlErr } = await db.storage.from(INBOUND_BUCKET).download(storagePath);
   if (dlErr || !blob) return { ok: false, code: "STORAGE_ERROR", message: "could not download object" };
+
+  if (fmt === "pdf") {
+    const buffer = Buffer.from(await blob.arrayBuffer());
+    const parsedPdf = await parsePdfBuffer(buffer);
+
+    const { error: updErr } = await db
+      .from("inbound_payloads")
+      .update({ extracted_json: parsedPdf, status: "completed" })
+      .eq("id", payloadId)
+      .eq("org_id", orgId);
+    if (updErr) return { ok: false, code: "DB_ERROR", message: "could not store extraction" };
+
+    await writeAudit(db, orgId, "upload.parsed", {
+      payloadId,
+      parser: parsedPdf.parser,
+      pageCount: parsedPdf.pageCount,
+      truncated: parsedPdf.truncated,
+    });
+
+    const { enqueue: enqueuePdf } = await import("./queue");
+    enqueuePdf({ name: "payload/completed", data: { orgId, payloadId } });
+
+    return { ok: true, outcome: "parsed_pdf", pageCount: parsedPdf.pageCount, truncated: parsedPdf.truncated };
+  }
+
   const text = await blob.text();
   const parsed = parser.parse(text, limits);
 
