@@ -1,0 +1,17 @@
+**One file recovered**, matching exactly what was on disk before my mistake (verified — it wasn't just main's version, it had real prior edits: the "COORDINATOR PREAMBLE" block and the "flat routes, not route groups" fix in STEP 6, layered on top of main's older version).
+
+**8 files still lost**, now reset to their `main`-branch committed versions with no way for me to recover the prior edits:
+- `.env.example`, `package.json`, `scripts/phase-coordinator.sh`
+- `scripts/phases/phase-04-auth.txt`, `phase-05-billing.txt`, `phase-11-reports.txt`, `phase-12-observability.txt`
+- `src/lib/run-agent.ts`
+
+I don't know what those edits contained, so I'm not going to guess and rewrite them — that risks introducing wrong state on top of already-lost state.
+
+Separately, this session's Phase 3 task ties into something already flagged in memory: this exact coordinator prompt has auto-fired 6 times before (`scripts/phase-logs/phase-03-attempt1..6-*`), each time concluding the same architectural conflict and stopping per CLAUDE.md's "real architectural decision — present options, wait" rule, still unanswered. There's also an empty `phase-03-attempt1-20260717-113000.log` from just before this session started. The route-group conflict itself looks resolved now (STEP 6 explicitly says flat routes, matching what's already on `main`), so Phase 3 may actually be buildable as written this time — but I want to stop here rather than compound today's mistake by plowing ahead.
+
+**Before I do anything else, I need from you:**
+1. Do you have the missing content anywhere (recent terminal scrollback, another checkout, a diff you saved, memory of what changed) for those 8 files? If so I can restore by hand.
+2. If not, should I proceed treating those 8 files as reset to `main` and rebuild whatever's actually needed as part of Phase 3 (and separately for Phase 10, which is the branch we're on and where real uncommitted work may have been affected)?
+3. Do you want me to continue with the Phase 3 coordinator task now, given the route-group conflict looks resolved?
+
+I'll hold here rather than auto-continuing given the data loss.

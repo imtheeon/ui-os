@@ -1,0 +1,8 @@
+**Stopping here — not doing a 6th mechanical retry.** I independently verified the prior finding: `app/login`, `app/signup`, `app/dashboard` already exist as flat routes on `main`, and this Phase 3 prompt's `(auth)`/`(dashboard)` route-group paths would collide with them at build time (route groups don't affect the URL). That's an architectural conflict, not a TypeScript/import/git issue, so nothing in this prompt's "common issues" list fixes it — and per this repo's own `CLAUDE.md`, an architectural decision means I present options and wait, not push through.
+
+**Your call:**
+1. Skip Phase 3 (superseded by main's flat routes) — I switch to the uncommitted Phase 10 work on `phase10-live-agents`.
+2. Migrate to route groups for real — move `login`/`signup`/`dashboard` into `(auth)`/`(dashboard)`, build the still-missing pieces (upload, payloads, api-keys, middleware, Tailwind).
+3. Either way, worth disabling whatever auto-fires this Phase 3 prompt — it's now produced 6 identical failed attempts.
+
+I also fixed a memory index gap (the prior session's note on this exact issue wasn't linked from `MEMORY.md`) and bumped it to reflect attempt 6.

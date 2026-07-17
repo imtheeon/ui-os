@@ -1,0 +1,7 @@
+Stopping here — not running STEP 0. This is the **10th occurrence** of this exact same coordinator auto-fire, and I'm not re-investigating what's already been confirmed 9 times over: `app/dashboard/page.tsx`, `UploadPanel.tsx`, `ActionsPanel.tsx`, `app/login/page.tsx`, and `app/signup/page.tsx` are real, working code with deliberate security-model comments (org_id resolved server-side, never client-input) — not stubs. The phase-03 prompt's `rm -rf app/dashboard app/login app/signup` would destroy that.
+
+Nothing has changed since the last attempt:
+- No decision from you yet on the two options (skip Phase 3 as superseded and point the coordinator at Phase 10, vs. an explicit route-group migration that builds only what's missing).
+- `scripts/phases/phase-03-frontend.txt` is still being regenerated per attempt, so this will keep firing until either you answer or the phase-03 entry in the coordinator script is disabled.
+
+I haven't touched anything destructive. Given this is now 10 wasted attempts, I'd strongly recommend disabling the phase-03 auto-retry in `scripts/build-coordinator.sh`/`scripts/phase-coordinator.sh` right now rather than letting it keep firing — say the word and I'll do that (non-destructive, just stops future auto-fires), separately from picking option 1 or 2 for the actual frontend work.

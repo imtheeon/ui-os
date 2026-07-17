@@ -1,0 +1,16 @@
+Confirmed independently — this is the 4th automated attempt at the same stale Phase 3 prompt, and the facts on disk match what the prior three attempts found:
+
+**On `main` already:** `app/login/page.tsx`, `app/signup/page.tsx`, `app/dashboard/page.tsx` (+ `ActionsPanel.tsx`, `UploadPanel.tsx`) — a working auth+dashboard flow, last touched late June.
+
+**What the Phase 3 prompt asks for:** `app/(auth)/login/page.tsx`, `app/(dashboard)/page.tsx`, `app/(dashboard)/upload/page.tsx`, etc. Route groups `(auth)` and `(dashboard)` don't appear in the URL, so these resolve to the identical routes (`/login`, `/`) that already exist as flat files. Next.js treats `app/login/page.tsx` and `app/(auth)/login/page.tsx` as the same path — that's a **build-time duplicate-route error**, not a typecheck error, and not something fixable by "retry until typecheck passes."
+
+There's no TypeScript error, missing import, or git conflict to mechanically fix here — the retry checklist in this prompt doesn't cover the actual situation. This matches CLAUDE.md's explicit stop condition: **"Real architectural decision needed — present options, wait."** I'm not creating duplicate routes, merging, or pushing on a 4th blind retry when three independent attempts already converged on the same finding.
+
+There's also unrelated real work sitting uncommitted on `phase10-live-agents` (`src/lib/run-agent.ts`, `src/check-live-smoke.ts`, `.env.example`) that a Phase 3 branch-and-merge would leave stranded.
+
+This needs a human decision, not another retry:
+
+1. **Skip Phase 3** — it's superseded by what already shipped. Point the coordinator at Phase 10 instead (the branch you're actually on).
+2. **Explicit route-group migration** — I move/rename the existing `app/login`, `app/signup`, `app/dashboard` into `(auth)`/`(dashboard)` groups and add the still-missing pieces (`upload/`, `payloads/`, `settings/api-keys/`, `middleware.ts`, `supabaseClient.ts`, Tailwind). This is real, deliberate work I can do once you say go.
+
+Which do you want? If it's option 2, I'll also suggest disabling whatever is auto-firing this Phase 3 prompt so it stops burning attempts on a stale spec.

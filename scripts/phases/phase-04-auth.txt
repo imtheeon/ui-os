@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
 }
 
 ═══════════════════════════════════════════════════════════════
-STEP 4 — app/(auth)/onboarding/page.tsx
+STEP 4 — app/onboarding/page.tsx
 ═══════════════════════════════════════════════════════════════
 
 Page shown after email verification, before dashboard:
@@ -176,7 +176,7 @@ Page shown after email verification, before dashboard:
 - On success: redirect to /
 
 ═══════════════════════════════════════════════════════════════
-STEP 5 — app/(dashboard)/settings/team/page.tsx
+STEP 5 — app/dashboard/settings/team/page.tsx
 ═══════════════════════════════════════════════════════════════
 
 Team management page:
@@ -190,7 +190,7 @@ Create app/api/org/invites/route.ts:
 - GET: list pending invites for the org
 - DELETE ?inviteId=<id>: revoke invite
 
-Create app/(auth)/invite/page.tsx:
+Create app/invite/page.tsx:
 - "use client"
 - Reads token from URL query param
 - Calls POST /api/auth/accept-invite with { token }
@@ -203,7 +203,7 @@ Create app/api/auth/accept-invite/route.ts:
 - Marks invite as accepted (accepted_at = now())
 
 ═══════════════════════════════════════════════════════════════
-STEP 6 — app/(dashboard)/settings/org/page.tsx
+STEP 6 — app/dashboard/settings/org/page.tsx
 ═══════════════════════════════════════════════════════════════
 
 Org settings page:
@@ -220,7 +220,7 @@ Both auth-gated with resolveOrgFromSession.
 STEP 7 — Add /settings links to sidebar
 ═══════════════════════════════════════════════════════════════
 
-Update app/(dashboard)/layout.tsx sidebar to include:
+Update app/dashboard/layout.tsx sidebar to include:
   Team          → /settings/team
   Org Settings  → /settings/org
   API Keys      → /settings/api-keys
@@ -247,10 +247,10 @@ COMPLETION CRITERIA
 ✓ app/api/auth/accept-invite/route.ts exists
 ✓ app/api/org/invites/route.ts exists
 ✓ app/api/org/settings/route.ts exists
-✓ app/(auth)/onboarding/page.tsx exists
-✓ app/(auth)/invite/page.tsx exists
-✓ app/(dashboard)/settings/team/page.tsx exists
-✓ app/(dashboard)/settings/org/page.tsx exists
+✓ app/onboarding/page.tsx exists
+✓ app/invite/page.tsx exists
+✓ app/dashboard/settings/team/page.tsx exists
+✓ app/dashboard/settings/org/page.tsx exists
 ✓ npm run typecheck exits 0
 ✓ npm run check:agents passes
 ✓ secret scan clean

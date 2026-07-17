@@ -73,7 +73,7 @@ payloads/[id], payloads/[id]/results, org/api-keys, billing/checkout,
 billing/portal, webhooks/stripe.
 
 ═══════════════════════════════════════════════════════════════
-STEP 3 — app/(dashboard)/admin/page.tsx
+STEP 3 — app/dashboard/admin/page.tsx
 ═══════════════════════════════════════════════════════════════
 
 Simple admin dashboard (only accessible to users with role='admin' in auth_profiles):
@@ -118,7 +118,7 @@ COMPLETION CRITERIA
 ✓ sentry.client.config.ts exists
 ✓ sentry.server.config.ts exists
 ✓ app/global-error.tsx exists
-✓ app/(dashboard)/admin/page.tsx exists
+✓ app/dashboard/admin/page.tsx exists
 ✓ @sentry/nextjs in package.json
 ✓ npm run typecheck exits 0
 ✓ npm run check:agents passes

@@ -1,0 +1,18 @@
+This Phase 4 coordinator wants to run `git checkout main && git pull && git checkout -b phase4-auth`, but the current branch (`phase3-frontend`) has real, uncommitted work sitting in the working tree that's never been resolved — this is the same unresolved issue flagged across 11 prior Phase 3 auto-retries in memory:
+
+- **Uncommitted, untracked real code**: `app/dashboard/{layout.tsx,api-keys/,payloads/,upload/}` and `middleware.ts` — previously verified as genuine working dashboard code with deliberate security-model comments (org_id resolved server-side), not stubs.
+- `phase3-frontend` has zero commits of its own (identical HEAD to `main`, `b4e05be`) — all of that work only exists as loose working-tree files.
+- Modified (uncommitted) coordinator scripts: `scripts/phase-coordinator.sh` and several `scripts/phases/*.txt` files.
+
+Mechanically, this Phase 4 prompt's STEP 0 isn't destructive the way Phase 3's `rm -rf` was — but STEP 8 does `git add -A` then commits, merges to `main`, and pushes. That would sweep the unrelated, unreviewed dashboard/middleware files into a commit labeled `"feat(auth): onboarding, org creation, team invites"` and push it straight to `main` — silently mixing two unrelated pieces of work and burying the Phase 3 code's history.
+
+Per CLAUDE.md's own carve-outs ("real architectural decision needed — present options, wait" and "before any git push — always confirm"), I'm stopping here rather than running STEP 0.
+
+Options:
+1. **Commit the Phase 3 dashboard work first** (on `phase3-frontend` or a dedicated branch) so it has its own clean history, *then* let Phase 4 branch off a clean `main`.
+2. **Explicitly authorize folding it in** — if you're fine with the dashboard files landing as part of the Phase 4 auth commit, say so and I'll proceed.
+3. **Stash the untracked work aside** temporarily, run Phase 4 clean, then deal with the dashboard files separately.
+
+Also worth noting: this is the same "Phase 3 stale prompt" situation that's been surfaced ~11 times unanswered — you may want to resolve that decision (skip Phase 3 as superseded vs. do the route-group migration) at the same time, since it's blocking both phases from proceeding cleanly.
+
+How would you like to handle the uncommitted dashboard work before I proceed with Phase 4?
