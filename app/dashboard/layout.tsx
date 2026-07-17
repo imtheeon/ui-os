@@ -44,6 +44,9 @@ export default async function DashboardLayout({
         <Link href="/dashboard/api-keys" style={styles.link}>
           API Keys
         </Link>
+        <Link href="/dashboard/billing" style={styles.link}>
+          Billing
+        </Link>
       </nav>
       <div style={styles.content}>{children}</div>
     </div>
