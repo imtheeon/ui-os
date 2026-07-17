@@ -35,6 +35,12 @@ export default async function DashboardLayout({
         <Link href="/dashboard/payloads" style={styles.link}>
           Payloads
         </Link>
+        <Link href="/dashboard/settings/team" style={styles.link}>
+          Team
+        </Link>
+        <Link href="/dashboard/settings/org" style={styles.link}>
+          Org Settings
+        </Link>
         <Link href="/dashboard/api-keys" style={styles.link}>
           API Keys
         </Link>
