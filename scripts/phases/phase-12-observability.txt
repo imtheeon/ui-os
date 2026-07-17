@@ -1,0 +1,126 @@
+═══════════════════════════════════════════════════════════════
+PHASE 12 — OBSERVABILITY
+Sentry error tracking + admin dashboard
+═══════════════════════════════════════════════════════════════
+
+AUTONOMOUS RULES:
+- SENTRY_DSN and SENTRY_AUTH_TOKEN must never appear in source files.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Branch: phase12-observability → merge to main.
+- Commit: "feat(ops): Sentry error tracking + admin dashboard"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH + INSTALL
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase12-observability
+  npm install @sentry/nextjs
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — Sentry setup
+═══════════════════════════════════════════════════════════════
+
+Run the Sentry wizard to generate config files, OR create them manually:
+
+sentry.client.config.ts:
+  import * as Sentry from "@sentry/nextjs";
+  Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: process.env.NODE_ENV,
+  });
+
+sentry.server.config.ts:
+  import * as Sentry from "@sentry/nextjs";
+  Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: process.env.NODE_ENV,
+  });
+
+sentry.edge.config.ts:
+  import * as Sentry from "@sentry/nextjs";
+  Sentry.init({ dsn: process.env.NEXT_PUBLIC_SENTRY_DSN });
+
+Update next.config.ts to wrap with withSentryConfig:
+  import { withSentryConfig } from "@sentry/nextjs";
+  // ... wrap existing config
+
+app/global-error.tsx:
+  "use client";
+  import * as Sentry from "@sentry/nextjs";
+  import NextError from "next/error";
+  export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+    Sentry.captureException(error);
+    return (
+      <html><body>
+        <NextError statusCode={0} />
+        <button onClick={reset}>Try again</button>
+      </body></html>
+    );
+  }
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — Add Sentry to API route error paths
+═══════════════════════════════════════════════════════════════
+
+In each API route that returns 500, add Sentry.captureException(err) before
+returning the error response. Import Sentry at the top of each route file.
+
+Focus on: uploads/slot, uploads/finalize, ingest/webhook, ingest/email,
+payloads/[id], payloads/[id]/results, org/api-keys, billing/checkout,
+billing/portal, webhooks/stripe.
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — app/(dashboard)/admin/page.tsx
+═══════════════════════════════════════════════════════════════
+
+Simple admin dashboard (only accessible to users with role='admin' in auth_profiles):
+
+Show:
+- Total agents (hardcoded: 201)
+- agent_runs in last 24h (count from DB)
+- agent_runs by status (completed/failed/running)
+- Recent system_audit_logs (last 20 entries, all orgs — admin only)
+- inbound_payloads counts by source and status
+
+Guard: if the current user's auth_profile.role !== 'admin', redirect to /.
+
+Add "Admin" to sidebar (only visible if user is admin).
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — .env.example additions
+═══════════════════════════════════════════════════════════════
+
+# Sentry (Phase 12 — error tracking)
+NEXT_PUBLIC_SENTRY_DSN=
+SENTRY_AUTH_TOKEN=
+SENTRY_ORG=
+SENTRY_PROJECT=
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(ops): Sentry error tracking + admin dashboard"
+5. git checkout main && git merge phase12-observability --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ sentry.client.config.ts exists
+✓ sentry.server.config.ts exists
+✓ app/global-error.tsx exists
+✓ app/(dashboard)/admin/page.tsx exists
+✓ @sentry/nextjs in package.json
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

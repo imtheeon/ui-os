@@ -1,0 +1,279 @@
+═══════════════════════════════════════════════════════════════
+PHASE 11 — CLIENT REPORTS
+Generate PDF/DOCX reports from agent outputs + email delivery
+═══════════════════════════════════════════════════════════════
+
+You are building the report generation system. A Fractional CFO selects a
+completed payload, clicks "Generate Report", and gets a professional PDF
+summarizing what the agents found — ready to send to their client.
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Branch: phase11-reports → merge to main.
+- Commit: "feat(reports): PDF report generation + email delivery"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH + INSTALL
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase11-reports
+  npm install @react-pdf/renderer resend
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — MIGRATION 0207: reports table
+═══════════════════════════════════════════════════════════════
+
+Apply via Supabase MCP (project zmntyhnmhzgtgwujhedf):
+
+CREATE TABLE IF NOT EXISTS reports (
+  id            uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id        uuid        NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  payload_id    uuid        NOT NULL REFERENCES inbound_payloads(id) ON DELETE CASCADE,
+  title         text        NOT NULL,
+  storage_path  text,       -- path in Supabase Storage (reports bucket)
+  status        text        NOT NULL DEFAULT 'generating'
+                CHECK (status IN ('generating', 'ready', 'failed')),
+  recipient_email text,     -- if emailed
+  emailed_at    timestamptz,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS reports_org_id_idx ON reports(org_id);
+CREATE INDEX IF NOT EXISTS reports_payload_id_idx ON reports(payload_id);
+
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tenant_isolation_reports ON reports
+  USING (org_id::text = current_setting('app.current_org_id', true));
+
+Save to src/migrations/0207_reports.sql.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — src/lib/report-generator.ts
+═══════════════════════════════════════════════════════════════
+
+/**
+ * src/lib/report-generator.ts
+ *
+ * Generates a PDF report from a completed payload's agent results.
+ * Uses @react-pdf/renderer for PDF generation.
+ * Stores the PDF in Supabase Storage (reports bucket).
+ */
+import { renderToBuffer } from "@react-pdf/renderer";
+import { createElement } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+export const REPORTS_BUCKET = "reports";
+
+export interface ReportInput {
+  orgId: string;
+  payloadId: string;
+  reportId: string;
+  title: string;
+  agentRuns: Array<{ role: string; status: string; created_at: string }>;
+  proposedActions: Array<{ kind: string; payload: unknown; created_at: string }>;
+}
+
+/** Build a minimal but professional PDF using @react-pdf/renderer */
+async function buildPdf(input: ReportInput): Promise<Buffer> {
+  // Import React PDF components
+  const { Document, Page, Text, View, StyleSheet } = await import("@react-pdf/renderer");
+
+  const styles = StyleSheet.create({
+    page: { padding: 48, fontSize: 11, fontFamily: "Helvetica" },
+    title: { fontSize: 20, fontWeight: "bold", marginBottom: 8 },
+    subtitle: { fontSize: 12, color: "#64748b", marginBottom: 24 },
+    sectionHeader: { fontSize: 14, fontWeight: "bold", marginTop: 20, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: "#e2e8f0", paddingBottom: 4 },
+    row: { flexDirection: "row", marginBottom: 4 },
+    label: { width: 160, color: "#64748b" },
+    value: { flex: 1 },
+    actionBlock: { marginBottom: 12, padding: 8, backgroundColor: "#f8fafc" },
+    actionKind: { fontWeight: "bold", marginBottom: 4 },
+  });
+
+  const doc = createElement(Document, null,
+    createElement(Page, { size: "A4", style: styles.page },
+      createElement(View, null,
+        createElement(Text, { style: styles.title }, input.title),
+        createElement(Text, { style: styles.subtitle },
+          `Generated ${new Date().toLocaleDateString()} · Payload ${input.payloadId.slice(0, 8)}`
+        ),
+        createElement(Text, { style: styles.sectionHeader }, "Agent Analysis Summary"),
+        ...input.agentRuns.map(run =>
+          createElement(View, { style: styles.row, key: run.role },
+            createElement(Text, { style: styles.label }, run.role),
+            createElement(Text, { style: styles.value }, run.status)
+          )
+        ),
+        createElement(Text, { style: styles.sectionHeader }, "Findings & Recommendations"),
+        ...input.proposedActions.map((action, i) =>
+          createElement(View, { style: styles.actionBlock, key: i },
+            createElement(Text, { style: styles.actionKind }, action.kind),
+            createElement(Text, {}, JSON.stringify(action.payload, null, 2).slice(0, 500))
+          )
+        )
+      )
+    )
+  );
+
+  return Buffer.from(await renderToBuffer(doc));
+}
+
+export interface GenerateReportResult {
+  ok: boolean;
+  storagePath?: string;
+  error?: string;
+}
+
+export async function generateReport(
+  input: ReportInput,
+  deps?: { db?: SupabaseClient }
+): Promise<GenerateReportResult> {
+  const db: SupabaseClient = deps?.db ?? (await import("../db")).supabase;
+
+  try {
+    const pdfBuffer = await buildPdf(input);
+    const storagePath = `${input.orgId}/${input.reportId}/report.pdf`;
+
+    const { error: uploadErr } = await db.storage
+      .from(REPORTS_BUCKET)
+      .upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
+
+    if (uploadErr) return { ok: false, error: uploadErr.message };
+
+    await db.from("reports")
+      .update({ status: "ready", storage_path: storagePath })
+      .eq("id", input.reportId)
+      .eq("org_id", input.orgId);
+
+    return { ok: true, storagePath };
+  } catch (err) {
+    await db.from("reports")
+      .update({ status: "failed" })
+      .eq("id", input.reportId)
+      .eq("org_id", input.orgId);
+    return { ok: false, error: (err as Error).message };
+  }
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — app/api/payloads/[id]/report/route.ts
+═══════════════════════════════════════════════════════════════
+
+POST /api/payloads/[id]/report — trigger report generation
+GET  /api/payloads/[id]/report — get report status + download URL
+
+POST handler:
+- Auth → orgId
+- Verify payload exists + is completed (status='completed')
+- Create reports row (status='generating')
+- Enqueue report generation (fire Inngest event 'report/generate' or run inline)
+- Return { reportId }
+
+For MVP: run generateReport() inline (synchronous). Add Inngest event
+('report/generate') handler later.
+
+GET handler:
+- Auth → orgId
+- Return report status
+- If ready: generate a short-lived signed download URL from Supabase Storage
+  and include it in the response as { downloadUrl }
+
+Body for POST: { title?: string } (optional, defaults to "CFO Analysis Report")
+Also accepts: { recipientEmail?: string } — if provided, email the PDF after generation
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — src/lib/email-report.ts
+═══════════════════════════════════════════════════════════════
+
+/**
+ * src/lib/email-report.ts
+ * Send a generated report PDF via Resend.
+ */
+export async function emailReport(params: {
+  to: string;
+  orgName: string;
+  reportTitle: string;
+  pdfBuffer: Buffer;
+}): Promise<{ ok: boolean; error?: string }> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY not set" };
+
+  const { Resend } = await import("resend");
+  const resend = new Resend(apiKey);
+
+  const { error } = await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL ?? "reports@uios.app",
+    to: params.to,
+    subject: `${params.reportTitle} — ${params.orgName}`,
+    html: `<p>Please find your CFO analysis report attached.</p>`,
+    attachments: [
+      {
+        filename: "report.pdf",
+        content: params.pdfBuffer.toString("base64"),
+      },
+    ],
+  });
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — app/(dashboard)/payloads/[id]/page.tsx: add report button
+═══════════════════════════════════════════════════════════════
+
+Update the payload detail page (from Phase 3) to add:
+- "Generate Report" button (only shown if payload status='completed')
+  → calls POST /api/payloads/[id]/report
+  → shows generating spinner
+  → polls GET /api/payloads/[id]/report every 3s
+  → shows "Download PDF" button when ready
+- Optional: "Email to client" input field (email address) + send button
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — app/(dashboard)/reports/page.tsx
+═══════════════════════════════════════════════════════════════
+
+Reports history page:
+- List all reports for the org (query reports table)
+- Show: title, payload_id (truncated), status, created_at, emailed_at
+- Each row: "Download" link (generates signed URL on click)
+Add "Reports" to sidebar nav.
+
+═══════════════════════════════════════════════════════════════
+STEP 7 — .env.example additions
+═══════════════════════════════════════════════════════════════
+
+# Resend (Phase 11 — email reports)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=reports@uios.app
+
+═══════════════════════════════════════════════════════════════
+STEP 8 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(reports): PDF report generation + email delivery"
+5. git checkout main && git merge phase11-reports --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/migrations/0207_reports.sql exists
+✓ src/lib/report-generator.ts exists
+✓ src/lib/email-report.ts exists
+✓ app/api/payloads/[id]/report/route.ts exists
+✓ app/(dashboard)/reports/page.tsx exists
+✓ @react-pdf/renderer in package.json
+✓ resend in package.json
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

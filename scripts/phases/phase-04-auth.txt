@@ -1,0 +1,257 @@
+═══════════════════════════════════════════════════════════════
+PHASE 4 — AUTH & ONBOARDING
+Signup creates org, email verification, profile + invite flow
+═══════════════════════════════════════════════════════════════
+
+You are building proper auth and onboarding. The Supabase auth tables and
+auth_profiles already exist (migration 0002). This phase wires them into the
+UI: org creation on signup, email verification, org settings, and the ability
+to invite teammates.
+
+AUTONOMOUS RULES:
+- Do not stop to ask questions.
+- TypeScript errors: fix and retry until typecheck exits 0.
+- Branch: phase4-auth → merge to main.
+- Commit: "feat(auth): onboarding, org creation, team invites"
+
+═══════════════════════════════════════════════════════════════
+STEP 0 — BRANCH
+═══════════════════════════════════════════════════════════════
+
+  git checkout main && git pull
+  git checkout -b phase4-auth
+
+═══════════════════════════════════════════════════════════════
+STEP 1 — MIGRATION 0205: invite tokens
+═══════════════════════════════════════════════════════════════
+
+Apply via Supabase MCP (project zmntyhnmhzgtgwujhedf):
+
+-- Invite tokens: allow org admins to invite teammates by email
+CREATE TABLE IF NOT EXISTS org_invites (
+  id          uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id      uuid        NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  email       text        NOT NULL,
+  token_hash  text        NOT NULL UNIQUE, -- SHA-256 of the raw token
+  role        text        NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  invited_by  uuid        NOT NULL REFERENCES auth.users(id),
+  accepted_at timestamptz,
+  expires_at  timestamptz NOT NULL DEFAULT (now() + interval '7 days'),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS org_invites_org_id_idx ON org_invites(org_id);
+
+ALTER TABLE org_invites ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tenant_isolation_org_invites ON org_invites
+  USING (org_id::text = current_setting('app.current_org_id', true));
+
+Save to src/migrations/0205_org_invites.sql.
+
+═══════════════════════════════════════════════════════════════
+STEP 2 — app/api/auth/callback/route.ts
+═══════════════════════════════════════════════════════════════
+
+Handle Supabase Auth email confirmation callback:
+
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { cookies } from "next/headers";
+
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = new URL(request.url);
+  const code = searchParams.get("code");
+  const next = searchParams.get("next") ?? "/";
+
+  if (code) {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`);
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 3 — Update signup flow: create org on first signup
+═══════════════════════════════════════════════════════════════
+
+Create app/api/auth/complete-signup/route.ts:
+
+/**
+ * POST /api/auth/complete-signup
+ * Called after email verification. Creates the org row and auth_profile
+ * if they don't already exist for this user.
+ *
+ * Body: { orgName: string }
+ * Auth: session cookie required
+ */
+import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServer } from "@/src/lib/supabaseServer";
+import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
+import { randomUUID } from "node:crypto";
+
+export async function POST(req: NextRequest) {
+  const sbClient = await supabaseServer();
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check if org already exists for this user
+  const existingOrgId = await resolveOrgFromSession(session);
+  if (existingOrgId) {
+    return NextResponse.json({ orgId: existingOrgId, alreadyExists: true });
+  }
+
+  let body: { orgName?: unknown };
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (typeof body.orgName !== "string" || body.orgName.trim().length === 0) {
+    return NextResponse.json({ error: "orgName required" }, { status: 400 });
+  }
+
+  const { supabase: db } = await import("@/src/db");
+  const orgId = randomUUID();
+  const userId = session.user.id;
+
+  // Create org
+  const { error: orgErr } = await db.from("organizations").insert({
+    id: orgId,
+    name: body.orgName.trim().slice(0, 200),
+    subscription_tier: "free",
+  });
+  if (orgErr) {
+    return NextResponse.json({ error: "Could not create organization" }, { status: 500 });
+  }
+
+  // Create auth_profile linking user → org
+  const { error: profileErr } = await db.from("auth_profiles").insert({
+    user_id: userId,
+    org_id: orgId,
+    role: "admin",
+  });
+  if (profileErr) {
+    // Roll back org
+    await db.from("organizations").delete().eq("id", orgId);
+    return NextResponse.json({ error: "Could not create profile" }, { status: 500 });
+  }
+
+  await db.from("system_audit_logs").insert({
+    org_id: orgId,
+    action: "org.created",
+    log_meta: { userId, orgName: body.orgName.trim() },
+  });
+
+  return NextResponse.json({ orgId }, { status: 201 });
+}
+
+═══════════════════════════════════════════════════════════════
+STEP 4 — app/(auth)/onboarding/page.tsx
+═══════════════════════════════════════════════════════════════
+
+Page shown after email verification, before dashboard:
+- "use client"
+- Input field: "What's your organization name?"
+- Submit button calls POST /api/auth/complete-signup
+- On success: redirect to /
+
+═══════════════════════════════════════════════════════════════
+STEP 5 — app/(dashboard)/settings/team/page.tsx
+═══════════════════════════════════════════════════════════════
+
+Team management page:
+- List current team members (query auth_profiles for this org)
+- "Invite teammate" form: email input → calls POST /api/org/invites
+- List pending invites with "Revoke" button
+
+Create app/api/org/invites/route.ts:
+- POST: create invite token, send email via Resend (if RESEND_API_KEY set),
+  return { inviteUrl } where inviteUrl = /invite?token=<raw_token>
+- GET: list pending invites for the org
+- DELETE ?inviteId=<id>: revoke invite
+
+Create app/(auth)/invite/page.tsx:
+- "use client"
+- Reads token from URL query param
+- Calls POST /api/auth/accept-invite with { token }
+- Shows "You've been added to [org name]" + redirect to /
+
+Create app/api/auth/accept-invite/route.ts:
+- Verifies token hash against org_invites
+- Checks not expired
+- Links the current user's auth_profile to the org
+- Marks invite as accepted (accepted_at = now())
+
+═══════════════════════════════════════════════════════════════
+STEP 6 — app/(dashboard)/settings/org/page.tsx
+═══════════════════════════════════════════════════════════════
+
+Org settings page:
+- Show org name, subscription_tier, created_at
+- "Rename org" form (PATCH /api/org/settings)
+- Team member list (link to /settings/team)
+
+Create app/api/org/settings/route.ts:
+- GET: return { name, subscription_tier, created_at }
+- PATCH body { name }: update org name (max 200 chars)
+Both auth-gated with resolveOrgFromSession.
+
+═══════════════════════════════════════════════════════════════
+STEP 7 — Add /settings links to sidebar
+═══════════════════════════════════════════════════════════════
+
+Update app/(dashboard)/layout.tsx sidebar to include:
+  Team          → /settings/team
+  Org Settings  → /settings/org
+  API Keys      → /settings/api-keys
+
+═══════════════════════════════════════════════════════════════
+STEP 8 — TYPECHECK + VERIFY + COMMIT + PUSH
+═══════════════════════════════════════════════════════════════
+
+1. npm run typecheck — exit 0. Fix all errors.
+2. npm run check:agents — still passing.
+3. bash scripts/secret-scan.sh — clean.
+4. git add -A
+   git commit -m "feat(auth): onboarding, org creation, team invites"
+5. git checkout main && git merge phase4-auth --no-ff
+6. git push origin main
+
+═══════════════════════════════════════════════════════════════
+COMPLETION CRITERIA
+═══════════════════════════════════════════════════════════════
+
+✓ src/migrations/0205_org_invites.sql exists
+✓ app/api/auth/callback/route.ts exists
+✓ app/api/auth/complete-signup/route.ts exists
+✓ app/api/auth/accept-invite/route.ts exists
+✓ app/api/org/invites/route.ts exists
+✓ app/api/org/settings/route.ts exists
+✓ app/(auth)/onboarding/page.tsx exists
+✓ app/(auth)/invite/page.tsx exists
+✓ app/(dashboard)/settings/team/page.tsx exists
+✓ app/(dashboard)/settings/org/page.tsx exists
+✓ npm run typecheck exits 0
+✓ npm run check:agents passes
+✓ secret scan clean
+✓ pushed to main

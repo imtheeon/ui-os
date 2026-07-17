@@ -1,0 +1,13 @@
+Before doing any build work, I need to flag what I found — this changes how I should proceed.
+
+**This session is the automated coordinator, running unattended.** `scripts/build-coordinator.sh` feeds `scripts/batches/batch-09.txt` (which is word-for-word the task above) to `claude --dangerously-skip-permissions --print` inside a detached tmux session, with no human watching, and loops through 11 more batches (10-19) after this one — 125 agents total, each ending in a push to `main`.
+
+That conflicts directly with `CLAUDE.md`'s own rule: *"Before any git push — always confirm with user first."* An unattended `--dangerously-skip-permissions` loop structurally can't get that confirmation — there's no one present to give it. I'm not going to merge/push on autopilot just because the batch file says to; that guardrail exists for a reason (catching a bad migration or bug before it lands on `main`, repeatedly, dozens of times, unsupervised).
+
+**Second, and more concerning:** `src/lib/manager.ts.tmp.836.ae865f0c0f7a` (dated Jun 30, three days before the current `manager.ts`) contains a drastically gutted routing table — just `["anomaly_detector", "categorizer"]` plus a conditional `accountant`, versus the real pipeline's 20+ agents. It looks like debris from an interrupted atomic write (write-tmp-then-rename) that never completed — but I can't rule out something worse, and I'm not going to touch or reconcile it silently. I left it untouched.
+
+Also: `src/migrations/test.csv` and `test.pdf` don't belong in a migrations directory (should be `.sql` only) — misplaced, not something I created.
+
+**What I'd like to do:** build out the 6 agents' code and apply migrations via Supabase MCP as specified (that work is reversible and I have the full spec), but **hold every `git push` for your explicit go-ahead** rather than pushing 6 times unattended, and leave the `.tmp` file and stray CSV/PDF alone pending your input.
+
+Do you want me to proceed on that basis? And separately — do you know what that `manager.ts.tmp` file is, or want me to dig into it further before continuing?
