@@ -5,6 +5,7 @@
  * Creates a Stripe Checkout session for the org's subscription and returns { url }.
  */
 import { type NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { supabaseServer } from "@/src/lib/supabaseServer";
 import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
 import { stripe } from "@/src/lib/stripe";
@@ -53,27 +54,33 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (orgErr) {
+    Sentry.captureException(orgErr);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
-  let customerId = org?.stripe_customer_id as string | null | undefined;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      name: (org?.name as string) ?? orgId,
+  try {
+    let customerId = org?.stripe_customer_id as string | null | undefined;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        name: (org?.name as string) ?? orgId,
+        metadata: { org_id: orgId },
+      });
+      customerId = customer.id;
+      await db.from("organizations").update({ stripe_customer_id: customerId }).eq("id", orgId);
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
       metadata: { org_id: orgId },
     });
-    customerId = customer.id;
-    await db.from("organizations").update({ stripe_customer_id: customerId }).eq("id", orgId);
+
+    return NextResponse.json({ url: checkoutSession.url });
+  } catch (err) {
+    Sentry.captureException(err);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
-
-  const checkoutSession = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
-    metadata: { org_id: orgId },
-  });
-
-  return NextResponse.json({ url: checkoutSession.url });
 }

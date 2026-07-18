@@ -1,0 +1,11 @@
+I've completed Sentry setup (config files, global-error boundary, next.config wiring) and instrumented all 9 target API routes with `Sentry.captureException`. Before building the admin dashboard (Step 3), I need to flag a real security problem with how it's specified.
+
+**The problem:** the coordinator prompt says to gate `/dashboard/admin` on `role === 'admin'` and show "system_audit_logs last 20 entries, all orgs" and "inbound_payloads counts by source/status" (implicitly cross-org). But I checked the actual schema (`src/migrations/0002_auth_profiles.sql`): `profiles.role` is **per-organization** — `owner`/`admin`/`member` scoped to that user's own org (e.g., the first signup is auto-made `'owner'` of their own tenant). There is no platform-wide superadmin concept anywhere in this schema.
+
+If I build the page as literally specified, any paying customer who is an `admin` of their *own* org (which is a normal, self-service role any org can grant to its own teammates) would see **every other tenant's** audit logs and payload data. That's a straight multi-tenant data leak, and it directly contradicts this project's entire RLS/`resolveOrgFromSession` isolation model that CLAUDE.md documents as load-bearing.
+
+Two ways to fix this, your call:
+1. **Add a real platform-admin mechanism** — e.g. a `platform_admins` table or an env-var allowlist of specific user IDs/emails (checked in addition to, not instead of, being logged in) — so only actual U-I-OS operators (not tenant admins) can see cross-org data.
+2. **Scope the dashboard to the caller's own org only** (drop "all orgs" from audit logs/payload counts), so any org's `admin` can see their own org's stats — safe, but weaker than what the coordinator asked for.
+
+I'd lean toward (1) since the prompt explicitly wants cross-org visibility for genuine ops observability — I'll add a `PLATFORM_ADMIN_EMAILS` env var checked server-side against the verified session email, layered on top of the existing `role='admin'` check. Want me to proceed that way, or do you prefer (2)?

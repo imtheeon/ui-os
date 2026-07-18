@@ -11,6 +11,7 @@
  * 400:  invalid upload request
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { supabaseServer } from "../../../../src/lib/supabaseServer";
 import { resolveOrgFromSession } from "../../../../src/lib/resolveOrgFromSession";
 import { createUploadSlot } from "../../../../src/lib/uploads";
@@ -40,6 +41,9 @@ export async function POST(req: Request): Promise<Response> {
 
   const result = await createUploadSlot({ orgId, filename, contentType, declaredSize: size });
   if (!result.ok) {
+    if (result.httpStatus >= 500) {
+      Sentry.captureException(new Error(`${result.code}: ${result.message}`));
+    }
     return Response.json({ code: result.code, message: result.message }, { status: result.httpStatus });
   }
   return Response.json(

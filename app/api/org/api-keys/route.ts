@@ -9,6 +9,7 @@
  * DELETE ?keyId=<uuid> → revoke a key
  */
 import { type NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { supabaseServer } from "@/src/lib/supabaseServer";
 import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
 import { generateApiKey } from "@/src/lib/api-key";
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false });
 
   if (error) {
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
@@ -76,6 +78,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error || !data) {
+    Sentry.captureException(error ?? new Error("[org/api-keys] insert returned no data"));
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
@@ -119,6 +122,7 @@ export async function DELETE(req: NextRequest) {
     .eq("org_id", orgId); // ORG-SCOPED — cannot delete another org's key
 
   if (error) {
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 

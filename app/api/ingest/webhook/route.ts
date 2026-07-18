@@ -14,6 +14,7 @@
  */
 import { type NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
+import * as Sentry from "@sentry/nextjs";
 import { extractBearerKey, verifyApiKey } from "@/src/lib/api-key";
 import { enqueue } from "@/src/lib/queue";
 
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
       );
     }
     console.error("[webhook] insert failed:", insErr.message);
+    Sentry.captureException(new Error(`[webhook] insert failed: ${insErr.message}`));
     return NextResponse.json(
       { error: "Internal error" },
       { status: 500 }

@@ -14,6 +14,7 @@
  * documented API contract without renaming the underlying column.
  */
 import { type NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { supabaseServer } from "@/src/lib/supabaseServer";
 import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
 
@@ -43,6 +44,7 @@ export async function GET(
     .maybeSingle();
 
   if (payloadErr) {
+    Sentry.captureException(payloadErr);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   if (!payload) {
@@ -58,6 +60,7 @@ export async function GET(
     .order("created_at", { ascending: true });
 
   if (runsErr) {
+    Sentry.captureException(runsErr);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 
@@ -82,6 +85,7 @@ export async function GET(
     .order("created_at", { ascending: true });
 
   if (actionsErr) {
+    Sentry.captureException(actionsErr);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 

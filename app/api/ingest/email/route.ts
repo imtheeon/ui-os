@@ -15,6 +15,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createHmac } from "node:crypto";
 import { randomUUID } from "node:crypto";
+import * as Sentry from "@sentry/nextjs";
 import { enqueue } from "@/src/lib/queue";
 
 const TIMESTAMP_TOLERANCE_SECONDS = 300;
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
 
   if (!secret || !domain) {
     console.error("[email-ingest] RESEND_WEBHOOK_SECRET or INBOUND_EMAIL_DOMAIN not set");
+    Sentry.captureException(new Error("[email-ingest] RESEND_WEBHOOK_SECRET or INBOUND_EMAIL_DOMAIN not set"));
     return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
@@ -173,6 +175,7 @@ export async function POST(req: NextRequest) {
   const { error: insErr } = await db.from("inbound_payloads").insert(row);
   if (insErr) {
     console.error("[email-ingest] insert failed:", insErr.message);
+    Sentry.captureException(new Error(`[email-ingest] insert failed: ${insErr.message}`));
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 

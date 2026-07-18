@@ -13,6 +13,7 @@
  * 400:  uploaded file violates policy (e.g. too large)
  */
 
+import * as Sentry from "@sentry/nextjs";
 import { supabaseServer } from "../../../../src/lib/supabaseServer";
 import { resolveOrgFromSession } from "../../../../src/lib/resolveOrgFromSession";
 import { finalizeUpload } from "../../../../src/lib/uploads";
@@ -40,6 +41,9 @@ export async function POST(req: Request): Promise<Response> {
 
   const result = await finalizeUpload({ orgId, payloadId });
   if (!result.ok) {
+    if (result.httpStatus >= 500) {
+      Sentry.captureException(new Error(`${result.code}: ${result.message}`));
+    }
     return Response.json({ code: result.code, message: result.message }, { status: result.httpStatus });
   }
   return Response.json({ payloadId: result.payloadId, status: result.status }, { status: 200 });

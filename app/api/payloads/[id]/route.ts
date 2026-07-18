@@ -8,6 +8,7 @@
  * Response 404: { error: "Not found" }
  */
 import { type NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { supabaseServer } from "@/src/lib/supabaseServer";
 import { resolveOrgFromSession } from "@/src/lib/resolveOrgFromSession";
 
@@ -37,6 +38,7 @@ export async function GET(
     .maybeSingle();
 
   if (error) {
+    Sentry.captureException(error);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
   if (!data) {
