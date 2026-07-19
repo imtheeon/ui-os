@@ -10,6 +10,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { supabaseServer } from "../../src/lib/supabaseServer";
+import LogoutButton from "./LogoutButton";
 
 export default async function DashboardLayout({
   children,
@@ -50,6 +51,7 @@ export default async function DashboardLayout({
         <Link href="/dashboard/billing" style={styles.link}>
           Billing
         </Link>
+        <LogoutButton />
       </nav>
       <div style={styles.content}>{children}</div>
     </div>

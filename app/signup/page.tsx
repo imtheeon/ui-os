@@ -149,6 +149,10 @@ export default function SignupPage() {
           {submitting ? "Creating account…" : "Sign up"}
         </button>
       </form>
+      <p style={styles.footer}>
+        Already have an account?{" "}
+        <a href="/login" style={styles.footerLink}>Sign in</a>
+      </p>
     </main>
   );
 }
@@ -160,4 +164,6 @@ const styles: Record<string, React.CSSProperties> = {
   input: { padding: "0.55rem 0.65rem", fontSize: "1rem", border: "1px solid #ccc", borderRadius: 6 },
   button: { padding: "0.6rem", fontSize: "1rem", borderRadius: 6, border: "none", background: "#111", color: "#fff", cursor: "pointer" },
   error: { color: "#b00020", fontSize: "0.9rem", margin: 0 },
+  footer: { marginTop: "1.5rem", fontSize: "0.85rem", color: "#555", textAlign: "center" as const },
+  footerLink: { color: "#2563eb" },
 };

@@ -83,6 +83,10 @@ export default function LoginPage() {
           {submitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      <p style={styles.footer}>
+        Don&apos;t have an account?{" "}
+        <a href="/signup" style={styles.footerLink}>Sign up</a>
+      </p>
     </main>
   );
 }
@@ -94,4 +98,6 @@ const styles: Record<string, React.CSSProperties> = {
   input: { padding: "0.55rem 0.65rem", fontSize: "1rem", border: "1px solid #ccc", borderRadius: 6 },
   button: { padding: "0.6rem", fontSize: "1rem", borderRadius: 6, border: "none", background: "#111", color: "#fff", cursor: "pointer" },
   error: { color: "#b00020", fontSize: "0.9rem", margin: 0 },
+  footer: { marginTop: "1.5rem", fontSize: "0.85rem", color: "#555", textAlign: "center" },
+  footerLink: { color: "#2563eb" },
 };

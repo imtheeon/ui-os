@@ -9,12 +9,16 @@ import { cookies } from "next/headers";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/dashboard";
 
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const SUPABASE_URL =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "https://zmntyhnmhzgtgwujhedf.supabase.co";
+  const SUPABASE_ANON_KEY =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnR5aG5taHpndGd3dWpoZWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMzNjEsImV4cCI6MjA5NzY0OTM2MX0.XN2_sgMwfTp-zTjgGZGukrYFajTOamg8dc5RwW66-k0";
 
-  if (code && SUPABASE_URL && SUPABASE_ANON_KEY) {
+  if (code) {
     const cookieStore = await cookies();
     const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       cookies: {
