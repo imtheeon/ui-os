@@ -5,7 +5,7 @@
  * If the visitor isn't logged in, prompts them to log in / sign up first
  * (the invite is re-checked by /api/auth/accept-invite once they return).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "../../src/lib/supabaseBrowser";
 
@@ -17,6 +17,14 @@ type Status =
   | { kind: "error"; message: string };
 
 export default function InvitePage() {
+  return (
+    <Suspense fallback={<main style={{ maxWidth: 420, margin: "4rem auto", padding: "0 1rem", fontFamily: "system-ui, sans-serif" }}><p>Loading…</p></main>}>
+      <InvitePageInner />
+    </Suspense>
+  );
+}
+
+function InvitePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
