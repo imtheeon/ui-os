@@ -3,7 +3,7 @@
 /**
  * /dashboard/billing — current tier + upgrade / manage-subscription actions.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 interface OrgSettings {
@@ -13,6 +13,14 @@ interface OrgSettings {
 }
 
 export default function BillingPage() {
+  return (
+    <Suspense fallback={<main style={{ maxWidth: 600, margin: "0 auto", padding: "2.5rem 1.5rem", fontFamily: "system-ui, sans-serif" }}>Loading…</main>}>
+      <BillingPageInner />
+    </Suspense>
+  );
+}
+
+function BillingPageInner() {
   const searchParams = useSearchParams();
   const success = searchParams.get("success") === "true";
 
