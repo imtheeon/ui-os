@@ -10,17 +10,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://zmntyhnmhzgtgwujhedf.supabase.co";
+const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptbnR5aG5taHpndGd3dWpoZWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNzMzNjEsImV4cCI6MjA5NzY0OTM2MX0.XN2_sgMwfTp-zTjgGZGukrYFajTOamg8dc5RwW66-k0";
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    // Misconfigured env — fail open here and let downstream server-side
-    // checks (which throw descriptively) surface the real error.
-    return response;
-  }
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {

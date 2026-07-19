@@ -1,0 +1,4 @@
+=== typecheck Sun 07/19/2026 12:37:48.46 === 
+TC_EXIT:0 
+=== typecheck PASSED - running git === 
+wsl: Failed to translate 'Z:\home\urcapsule\ui-os'

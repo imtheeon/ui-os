@@ -62,6 +62,12 @@ export default function SignupPage() {
     // yet — the user must confirm via email before logging in. If it's
     // disabled, a session is returned and the user is already signed in.
     if (data.session) {
+      // Create the org + auth_profile via API (trigger not used)
+      await fetch("/api/auth/complete-signup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ orgName: trimmedOrg }),
+      });
       setStatus({ kind: "signed-in" });
     } else {
       setStatus({ kind: "confirm-email", email: email.trim() });
@@ -84,7 +90,8 @@ export default function SignupPage() {
     return (
       <main style={styles.main}>
         <h1>Account created</h1>
-        <p>Your organization is ready. You can head to the dashboard.</p>
+        <p>Your organization is ready.</p>
+        <a href="/dashboard" style={{ color: "#2563eb", marginTop: "1rem", display: "inline-block" }}>Go to dashboard →</a>
       </main>
     );
   }
