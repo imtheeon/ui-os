@@ -21,11 +21,13 @@ export default async function DashboardPage() {
     data: { session },
   } = await supabase.auth.getSession();
 
+  if (!session) redirect("/login"); // no cookie at all → sign in
+
   // THE chokepoint. It re-verifies the access token internally (getUser), so
   // we deliberately do NOT trust getSession()'s contents here — the resolver
   // is the trust boundary, not getSession.
   const orgId = await resolveOrgFromSession(session);
-  if (!orgId) redirect("/login"); // not signed in / no trusted org → bounce
+  if (!orgId) redirect("/onboarding"); // logged in but no org yet → set up org
 
   // Service-role read, SCOPED to the resolved org. `organizations` is keyed by
   // `id` (the row IS the tenant), so we scope with .eq("id", orgId). Tenant

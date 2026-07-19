@@ -35,7 +35,7 @@ export default function OnboardingPage() {
         setError(body?.error ?? "Could not create organization.");
         return;
       }
-      router.push("/");
+      router.push("/dashboard");
     } catch {
       setError("Network error creating organization.");
     } finally {

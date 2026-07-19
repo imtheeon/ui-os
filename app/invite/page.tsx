@@ -62,7 +62,7 @@ function InvitePageInner() {
           return;
         }
         setStatus({ kind: "accepted", orgName: body.orgName ?? null });
-        setTimeout(() => router.push("/"), 1500);
+        setTimeout(() => router.push("/dashboard"), 1500);
       } catch {
         if (!cancelled) {
           setStatus({ kind: "error", message: "Network error accepting invite." });

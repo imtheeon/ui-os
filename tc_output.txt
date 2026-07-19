@@ -2,3 +2,12 @@
 TC_EXIT:0 
 === typecheck PASSED - running git === 
 wsl: Failed to translate 'Z:\home\urcapsule\ui-os'
+[main f182ea5] fix: resolveOrgFromSession uses profiles table; middleware hardcoded fallbacks
+ 5 files changed, 62 insertions(+), 9 deletions(-)
+ create mode 100644 tc_output.txt
+ create mode 100644 tc_push.bat
+ create mode 100644 tc_push.sh
+wsl: Failed to translate 'Z:\home\urcapsule\ui-os'
+To https://github.com/imtheeon/ui-os.git
+   8271f03..f182ea5  main -> main
+=== DONE === 
