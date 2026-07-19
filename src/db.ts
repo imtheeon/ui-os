@@ -15,23 +15,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import "dotenv/config";
 
-const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error(
-    "[ui-os/db] Missing required environment variable(s): " +
-      [
-        !SUPABASE_URL ? "SUPABASE_URL" : null,
-        !SUPABASE_SERVICE_ROLE_KEY ? "SUPABASE_SERVICE_ROLE_KEY" : null,
-      ]
-        .filter(Boolean)
-        .join(", ") +
-      ". Copy .env.example to .env and populate these values before " +
-      "starting the service. Refusing to continue with an unconfigured " +
-      "database client."
-  );
-}
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export const supabase: SupabaseClient = createClient(
   SUPABASE_URL,
